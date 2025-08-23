@@ -25,6 +25,28 @@ compile_sc_ric() {
     source ./compile_oran_sc_ric.sh "$build_type" "$os_type"
 }
 
+compile_core_network() {
+    local build_type="$1"
+    local os_type="$2"
+
+    echo "Compile Core Network"
+    source ./compile_core_network.sh "$build_type" "$os_type"
+}
+
+compile_gnb() {
+    local build_type="$1"
+    local os_type="$2"
+
+    cp "../docker/gnb/macos/Dockerfile" "../srsRAN_Project/" || {
+        echo "Failed to copy Dockerfile"
+        exit 1
+    }
+
+    echo "Compile gnb"
+    source ./compile_gnb.sh "$build_type" "$os_type"
+}
+
+
 if [[ "$OSTYPE" == "darwin"* ]]; then
     OS_NAME=$(sw_vers -productName)
     OS_VERSION=$(sw_vers -productVersion)
@@ -80,14 +102,32 @@ read -p "Enter choice (y or n): " COMPILE_ALL
 case "$COMPILE_ALL" in
     'y')
         echo "Start Compiling all components"
+
+        compile_sc_ric $BUILD_CHOICE $OS_NAME
+        compile_core_network $BUILD_CHOICE $OS_NAME
+        compile_gnb $BUILD_CHOICE $OS_NAME
+
         ;;
     'n')
-        echo "Compile sc RIC?"
-
+        echo "Compile sc ric?"
         read -p "Enter choice (y or n): " BUILD_SRC_RIC
+
+        echo "Compile core network?"
+        read -p "Enter choice (y or n): " BUILD_CORE_NETWORK
+
+        echo "Compile gnb network?"
+        read -p "Enter choice (y or n): " BUILD_GNB
 
         if [[ "$BUILD_SRC_RIC" == "y" ]]; then
             compile_sc_ric $BUILD_CHOICE $OS_NAME
+        fi
+
+        if [[ "$BUILD_CORE_NETWORK" == "y" ]]; then
+            compile_core_network $BUILD_CHOICE $OS_NAME
+        fi
+
+        if [[ "$BUILD_GNB" == "y" ]]; then
+            compile_gnb $BUILD_CHOICE $OS_NAME
         fi
 
         ;;
