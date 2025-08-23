@@ -7,9 +7,22 @@ echo "**************************************************"
 echo ""
 
 
-compile_src_ric() {
+compile_sc_ric() {
     local build_type="$1"
-    echo "compile SRC RIC $build_type"
+    local os_type="$2"
+
+    echo "Compile SRC RIC of build type: $build_type"
+
+    if [[ "$BUILD_SRC_RIC" == "y" ]]; then
+        echo "Patching sc-ric docker-compose.yml for macOS systems"
+        
+        cp "../docker/oran-sc-ric/macos/docker-compose.yml" "../oran-sc-ric/" || {
+            echo "Failed to copy docker-compose.yml"
+            exit 1
+        }
+    fi
+
+    source ./compile_oran_sc_ric.sh "$build_type" "$os_type"
 }
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -69,12 +82,12 @@ case "$COMPILE_ALL" in
         echo "Start Compiling all components"
         ;;
     'n')
-        echo "Compile src RIC?"
+        echo "Compile sc RIC?"
 
         read -p "Enter choice (y or n): " BUILD_SRC_RIC
 
         if [[ "$BUILD_SRC_RIC" == "y" ]]; then
-            compile_src_ric $BUILD_CHOICE
+            compile_sc_ric $BUILD_CHOICE $OS_NAME
         fi
 
         ;;
