@@ -42,8 +42,27 @@ compile_gnb() {
         exit 1
     }
 
+    mkdir -p "../srsRAN_Project/configs"
+    cp "../oran-sc-ric/e2-agents/srsRAN/gnb_zmq.yaml"  "../srsRAN_Project/configs" || {
+        echo "Failed to copy gnb_zmq.yaml"
+        exit 1
+    }
+
     echo "Compile gnb"
     source ./compile_gnb.sh "$build_type" "$os_type"
+}
+
+compile_srsran_4g() {
+    local build_type="$1"
+    local os_type="$2"
+
+    cp "../docker/srsran_4g/Dockerfile" "../srsRAN_4G/" || {
+        echo "Failed to copy Dockerfile"
+        exit 1
+    }
+
+    echo "Compile srsRAN_4G"
+    source ./compile_srsran_4g.sh "$build_type" "$os_type"
 }
 
 
@@ -118,6 +137,9 @@ case "$COMPILE_ALL" in
         echo "Compile gnb network?"
         read -p "Enter choice (y or n): " BUILD_GNB
 
+        echo "Compile srs ran 4G?"
+        read -p "Enter choice (y or n): " BUILD_SRS_RAN_4G
+
         if [[ "$BUILD_SRC_RIC" == "y" ]]; then
             compile_sc_ric $BUILD_CHOICE $OS_NAME
         fi
@@ -128,6 +150,10 @@ case "$COMPILE_ALL" in
 
         if [[ "$BUILD_GNB" == "y" ]]; then
             compile_gnb $BUILD_CHOICE $OS_NAME
+        fi
+
+        if [[ "$BUILD_SRS_RAN_4G" == "y" ]]; then
+            compile_srsran_4g $BUILD_CHOICE $OS_NAME
         fi
 
         ;;
