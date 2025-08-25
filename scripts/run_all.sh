@@ -6,10 +6,6 @@ echo "*****             CipherCell                 *****"
 echo "**************************************************"
 echo ""
 
-create_log_folder_if_not_exist(){
-    mkdir -p logs
-    mkdir -p logs/compile
-}
 
 compile_sc_ric() {
     local build_type="$1"
@@ -26,15 +22,7 @@ compile_sc_ric() {
         }
     fi
 
-    create_log_folder_if_not_exist
-    python3 compile/compile_oran_sc_ric.py --log ../scripts/logs/compile/oran_sc_ric.log
-    RET_CODE=$?
-    if [ $RET_CODE -ne 0 ]; then
-        echo -e "\033[31mError: compile_oran_sc_ric.py failed with exit code $RET_CODE\033[0m"
-        exit $RET_CODE
-    else
-        echo -e "\033[32mcompile_oran_sc_ric.py completed successfully!\033[0m"
-    fi
+    source ./compile_oran_sc_ric.sh "$build_type" "$os_type"
 }
 
 compile_core_network() {
@@ -42,17 +30,7 @@ compile_core_network() {
     local os_type="$2"
 
     echo "Compile Core Network"
-
-    create_log_folder_if_not_exist
-    python3 compile/compile_core_network.py --log ../../scripts/logs/compile/core_network.log
-    
-    RET_CODE=$?
-    if [ $RET_CODE -ne 0 ]; then
-        echo -e "\033[31mError: compile_core_network.py failed with exit code $RET_CODE\033[0m"
-        exit $RET_CODE
-    else
-        echo -e "\033[32mcompile_core_network.py completed successfully!\033[0m"
-    fi
+    source ./compile_core_network.sh "$build_type" "$os_type"
 }
 
 compile_gnb() {
@@ -83,22 +61,8 @@ compile_srsran_4g() {
         exit 1
     }
 
-    cp "../docker/srsran_4g/docker-compose.yml" "../srsRAN_4G/" || {
-        echo "Failed to copy docker-compose.yml"
-        exit 1
-    }
-
     echo "Compile srsRAN_4G"
-    create_log_folder_if_not_exist
-    python3 compile/compile_srsran_4g.py --log ../scripts/logs/compile/srsRAN_4G.log
-    
-    RET_CODE=$?
-    if [ $RET_CODE -ne 0 ]; then
-        echo -e "\033[31mError: srsran_4g.py failed with exit code $RET_CODE\033[0m"
-        exit $RET_CODE
-    else
-        echo -e "\033[32msrsran_4g.py completed successfully!\033[0m"
-    fi
+    python3 compile/compile_srsran_4g.py
 }
 
 
@@ -161,7 +125,6 @@ case "$COMPILE_ALL" in
         compile_sc_ric $BUILD_CHOICE $OS_NAME
         compile_core_network $BUILD_CHOICE $OS_NAME
         compile_gnb $BUILD_CHOICE $OS_NAME
-        compile_srsran_4g $BUILD_CHOICE $OS_NAME
 
         ;;
     'n')
