@@ -26,6 +26,17 @@ class BuildRunner:
             logging.warning("Log directory not specified in configuration.")
 
     def _build_docker_compose(self, component_name: str, command: List[str]):
+        """
+        /**
+         * @brief Build a component with Docker Compose and log the output.
+         *
+         * Executes the given command, writes logs to <log_dir>/<component>.log,
+         * and shows a progress bar. Raises CalledProcessError on failure.
+         *
+         * @param component_name Component name (used for logging).
+         * @param command Docker Compose command as a list of strings.
+         */
+        """
         self._create_log_dir()
         log_path = os.path.join(self.setup_cfg.environment.log_dir, f"{component_name}.log")
 
