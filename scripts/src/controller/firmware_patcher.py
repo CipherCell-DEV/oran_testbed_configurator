@@ -5,13 +5,14 @@ import yaml
 import os
 import shutil
 
-from scripts.src.setup_configuration import SetupConfiguration, RICImplementation, BuildType
+from scripts.src.model.setup_configuration import SetupConfiguration, RICImplementation, BuildType, ORAN_SC_RIC_SERVICE_IP_MAP
 
 
 class FirmwarePatcher:
     """ Class to patch firmware configuration files based on the provided setup configuration.
     It supports patching for different components like RIC, 5G Core, gNB, and UE.
     """
+
     def __init__(self, setup_configuration: SetupConfiguration, patch_file_path: str):
         self._setup_cfg = setup_configuration
         self._patch_file_path = patch_file_path
@@ -22,23 +23,12 @@ class FirmwarePatcher:
         new_file_path = os.path.join(self._patch_file_path, "patched", "docker", "oran_sc_docker_new.yml")
 
         try:
-            # Load YAML with ordering preserved
             with open(patch_file_path, "r") as patch_file:
                 patch_content = yaml.safe_load(patch_file)
 
-            service_ip_map = {
-                "dbaas": ("DBAAS_IP", "dbaas_ip"),
-                "rtmgr_sim": ("RTMGR_SIM_IP", "rtmgr_sim_ip"),
-                "submgr": ("SUBMGR_IP", "submgr_ip"),
-                "e2term": ("E2TERM_IP", "e2term_ip"),
-                "appmgr": ("APPMGR_IP", "appmgr_ip"),
-                "e2mgr": ("E2MGR_IP", "e2mgr_ip"),
-                "python_xapp_runner": ("XAPP_PY_RUNNER_IP", "xapp_runner_ip"),
-            }
-
             logging.info("Patching ORAN SC RIC docker-compose.yml with custom IP addresses...")
 
-            for service, (env_var, ip_attr) in service_ip_map.items():
+            for service, (env_var, ip_attr) in ORAN_SC_RIC_SERVICE_IP_MAP.items():
                 ip_value = getattr(self._setup_cfg.near_rt_ric.ip_config, ip_attr)
                 patch_content["services"][service]["networks"]["ric_network"]["ipv4_address"] = (
                     f"${{{env_var}:-{ip_value}}}"
@@ -260,6 +250,15 @@ class FirmwarePatcher:
                 os.path.join(self._patch_file_path, "patched", "docker", "gnb_ue.yml"),
                 os.path.join(self._setup_cfg.environment.build_dir, "docker-compose.yml"),
             ),
+            (
+                os.path.join(self._patch_file_path, "templates", "docker", "dockerfile_ue"),
+                os.path.join(self._setup_cfg.environment.build_dir, "srsRAN_4G" "Dockerfile"),
+            ),
+            (
+                os.path.join(self._patch_file_path, "templates", "docker", "dockerfile_gnb"),
+                os.path.join(self._setup_cfg.environment.build_dir, "srsRAN_Project" "Dockerfile"),
+            ),
+
             (
                 os.path.join(self._patch_file_path, "patched", "docker", "oran_sc_docker.yml"),
                 os.path.join(self._setup_cfg.environment.build_dir, "oran-sc-ric", "docker-compose.yml"),

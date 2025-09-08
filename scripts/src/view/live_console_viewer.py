@@ -1,45 +1,15 @@
 import logging
-import subprocess
 import textwrap
 import threading
 import time
 from itertools import zip_longest
-from typing import List
 
 from rich.columns import Columns
 from rich.live import Live
 from rich.panel import Panel
 
-from scripts.src.setup_configuration import SetupConfiguration
-
-
-class Program:
-    def __init__(self, name: str, command: List[str], working_dir: str):
-        self.name = name
-        self.command = command
-        self.process = None
-        self.working_dir: str = working_dir
-
-    def start(self):
-        self.process = subprocess.Popen(
-            self.command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-            universal_newlines=True,
-            cwd=self.working_dir
-        )
-
-    def get_process(self) -> subprocess.Popen:
-        return self.process
-
-    def get_process_name(self) -> str:
-        return self.name
-
-    def wait_process(self):
-        if self.process:
-            self.process.wait()
+from scripts.src.controller.demo_runner import DemoRunner
+from scripts.src.controller.program import Program
 
 
 class ComponentThreadPool:
@@ -90,8 +60,12 @@ class ComponentThreadPool:
 
 
 class LiveConsoleViewer:
-    def __init__(self):
+    def __init__(self, demo_runner: DemoRunner):
         self.thread_pool = ComponentThreadPool()
+        programs = demo_runner.get_programs()
+        logging.info(f"Add {len(programs)} to demo runner.")
+        for program in programs:
+            self.thread_pool.add_program(program)
 
     def start_live_display_loop(self):
         logging.info("Starting live console viewer...")
@@ -99,7 +73,6 @@ class LiveConsoleViewer:
         buffers = {program.get_process_name(): [] for program in self.thread_pool.get_programs_dict().values()}
 
         for identifier in self.thread_pool.get_programs_dict().keys():
-            time.sleep(5)
             self.thread_pool.add_thread(program_identifier=identifier, live_view_buffers=buffers)
             self.thread_pool.start_thread(program_identifier=identifier)
 

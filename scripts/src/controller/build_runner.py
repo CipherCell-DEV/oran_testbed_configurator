@@ -5,7 +5,7 @@ from typing import List
 
 from tqdm import tqdm
 
-from scripts.src.setup_configuration import SetupConfiguration, BuildType, RICImplementation, CoreImplementation
+from scripts.src.model.setup_configuration import SetupConfiguration, BuildType, RICImplementation, CoreImplementation
 
 
 class BuildRunner:
@@ -13,6 +13,7 @@ class BuildRunner:
     Class to handle the build process of RIC, 5G Core, gNB, and UE components.
     It supports both Docker-based and native builds.
     """
+
     def __init__(self, setup_configuration: SetupConfiguration):
         self.setup_cfg = setup_configuration
 
@@ -66,7 +67,6 @@ class BuildRunner:
                 self._build_docker_compose('oran-sc-ric', ["docker", "compose", "build"])
             else:
                 logging.error("Building RIC natively currently not supported!")
-                # Example: call make
 
     def build_5g_core(self):
         """
@@ -76,7 +76,6 @@ class BuildRunner:
         logging.info("Running 5G Core Network build process...")
         os.chdir(self.setup_cfg.environment.build_dir)
         if self.setup_cfg.core_5g.implementation == CoreImplementation.SRS:
-            # TODO: checkout repository if needed
             os.chdir("srsRAN_Project/docker")
             if self.setup_cfg.environment.build_type == BuildType.DOCKER:
                 self._build_docker_compose('5gc', ["docker", "compose", "build", '5gc'])

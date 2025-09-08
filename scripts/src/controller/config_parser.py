@@ -5,20 +5,10 @@ from typing import List
 
 import yaml
 
-from scripts.src.setup_configuration import SetupConfiguration, Core5GCfg, GNBCfg, UECfg, NearRtRICCFG, \
+from scripts.src.model.setup_configuration import SetupConfiguration, Core5GCfg, GNBCfg, UECfg, NearRtRICCFG, \
     RICImplementation, RICRelease, NearRTRICNetworkConfig, USIMCfg, USIMMode, USIMAlgo, GNBType, GNBIPConfig, \
-    EnvironmentCfg, BuildType, UEGatewayCfg, CoreImplementation
-
-DEFAULT_RELEASE = RICRelease.RELEASE_i
-DEFAULT_SRATE = 11.52e6
-DEFAULT_UE_NETNS = "ue1"
-DEFAULT_UE_GW_DEVNAME = "tun_srsue"
-
-CFG_NEAR_RT_RIC = "near_rt_ric"
-CFG_5GC = "5gc"
-CFG_UE = "ue"
-CFG_GNB = "gnb"
-CFG_ENVIRONMENT = "environment"
+    EnvironmentCfg, BuildType, UEGatewayCfg, CoreImplementation, DefaultValues, ComponentIdentifiers, FieldIdentifiers, \
+    UEImplementation
 
 
 class ConfigParser:
@@ -87,7 +77,7 @@ class ConfigParser:
             else:
                 raise ValueError(f"Unsupported Release: {params['release']}")
         else:
-            cfg.release = DEFAULT_RELEASE
+            cfg.release = DefaultValues.DEFAULT_RELEASE
             logging.warning(f"No sc ric release defined use default release i")
 
         if 'network' in params:
@@ -140,11 +130,20 @@ class ConfigParser:
     def _parse_gnb_ip_config(params: dict) -> GNBIPConfig:
         cfg = GNBIPConfig()
 
-        set_ip = lambda p, k: ipaddress.IPv4Address(p[k]) if k in p else (_ for _ in ()).throw(
-            KeyError(f"Missing required parameter for gNB IP config: '{k}'"))
-        cfg.e2 = set_ip(params, 'e2')
-        cfg.ru_sdr = set_ip(params, 'ru_sdr')
-        cfg.cu_cp = set_ip(params, 'cu_cp')
+        def set_ip(p: dict, k: str):
+            if k not in p:
+                raise KeyError(f"Missing required parameter for gNB IP config: '{k}'")
+            return ipaddress.IPv4Address(p[k])
+
+        interfaces_dict = {
+            "e2": "e2",
+            "ru_sdr": "ru_sdr",
+            "cu_cp": "cu_cp",
+        }
+
+        for param_key, attr_name in interfaces_dict.items():
+            setattr(cfg, attr_name, set_ip(params, param_key))
+
         return cfg
 
     @staticmethod
@@ -152,43 +151,43 @@ class ConfigParser:
         logging.info("Parse gNB Configuration")
         cfg = GNBCfg()
 
-        if 'build_type' in params:
-            if params['build_type'] == 'docker':
+        if FieldIdentifiers.BUILD_TYPE in params:
+            if params[FieldIdentifiers.BUILD_TYPE] == 'docker':
                 cfg.build_type = BuildType.DOCKER
-            elif params['build_type'] == 'local':
+            elif params[FieldIdentifiers.BUILD_TYPE] == 'local':
                 cfg.build_type = BuildType.LOCAL
             else:
                 raise ValueError(f"Unsupported build type: {params['build_type']}")
         else:
             raise KeyError("Missing required parameter for gNB config: 'build_type'")
 
-        if 'type' in params:
-            if params['type'] == 'srs':
+        if FieldIdentifiers.GNB_TYPE in params:
+            if params[FieldIdentifiers.GNB_TYPE] == 'srs':
                 cfg.type = GNBType.SRS
             else:
                 raise ValueError(f"Unsupported gNB type: {params['type']}")
         else:
             raise KeyError("Missing required parameter for gNB config: 'type'")
 
-        if 'ip_addr' in params:
-            cfg.ip_config = ConfigParser._parse_gnb_ip_config(params['ip_addr'])
+        if FieldIdentifiers.IP_ADDR in params:
+            cfg.ip_config = ConfigParser._parse_gnb_ip_config(params[FieldIdentifiers.IP_ADDR])
         else:
             raise KeyError("Missing required parameter for gNB config: 'ip_addr'")
 
-        if 'srate' in params:
-            cfg.srate = params['srate']
+        if FieldIdentifiers.SRATE in params:
+            cfg.srate = params[FieldIdentifiers.SRATE]
         else:
             logging.warning("No srate specified for gNB -> Apply default srate 11.52e6")
-            cfg.srate = DEFAULT_SRATE
+            cfg.srate = DefaultValues.DEFAULT_SRATE
 
-        if 'tx_gain' in params:
-            cfg.tx_gain = params['tx_gain']
+        if FieldIdentifiers.TX_GAIN in params:
+            cfg.tx_gain = params[FieldIdentifiers.TX_GAIN]
         else:
             logging.warning("No tx_gain specified for gNB -> Apply default tx_gain 75")
             cfg.tx_gain = 75
 
-        if 'rx_gain' in params:
-            cfg.rx_gain = params['rx_gain']
+        if FieldIdentifiers.RX_GAIN in params:
+            cfg.rx_gain = params[FieldIdentifiers.RX_GAIN]
         else:
             logging.warning("No rx_gain specified for gNB -> Apply default rx_gain 75")
             cfg.rx_gain = 75
@@ -243,13 +242,13 @@ class ConfigParser:
             cfg.netns = params['netns']
         else:
             logging.warning("No netns specified for USIM GW -> Apply default netns 'ue1'")
-            cfg.netns = DEFAULT_UE_NETNS
+            cfg.netns = DefaultValues.DEFAULT_UE_NETNS
 
         if 'ip_devname' in params:
             cfg.ip_devname = params['ip_devname']
         else:
             logging.warning("No ip_devname specified for USIM GW -> Apply default devname 'tun_srsue'")
-            cfg.ip_devname = DEFAULT_UE_GW_DEVNAME
+            cfg.ip_devname = DefaultValues.DEFAULT_UE_GW_DEVNAME
 
         if 'ip_netmask' in params:
             cfg.ip_netmask = ipaddress.IPv4Network(params['ip_netmask'])
@@ -261,10 +260,17 @@ class ConfigParser:
     @staticmethod
     def _parse_ue_cfg(elements: dict) -> List[UECfg]:
         logging.info("Parse UE Configuration")
-
         list_cfgs = []
         for params in elements:
             cfg = UECfg()
+
+            if 'implementation' in params:
+                if params['implementation'] == 'srs':
+                    cfg.implementation = UEImplementation.SRS_4G
+                else:
+                    raise ValueError(f"Unsupported ue implementation: {params['implementation']}")
+            else:
+                raise KeyError("Missing required parameter for USIM GW config: 'ip_netmask'")
 
             if 'build_type' in params:
                 if params['build_type'] == 'docker':
@@ -290,7 +296,7 @@ class ConfigParser:
                 cfg.srate = params['srate']
             else:
                 logging.warning("No srate specified for UE -> Apply default srate 11.52e6")
-                cfg.srate = DEFAULT_SRATE
+                cfg.srate = DefaultValues.DEFAULT_SRATE
 
             if 'usim' in params:
                 cfg.usim = ConfigParser._parse_usim_cfg(params['usim'])
@@ -349,17 +355,18 @@ class ConfigParser:
         with open(file_path, "r") as f:
             parsed_config = yaml.safe_load(f)
             for config_entry in parsed_config:
-                if config_entry == CFG_NEAR_RT_RIC:
+                if config_entry == ComponentIdentifiers.CFG_NEAR_RT_RIC:
                     setup_config.near_rt_ric = ConfigParser._parse_near_rt_ric_cfg(
-                        parsed_config[CFG_NEAR_RT_RIC])
-                elif config_entry == CFG_5GC:
-                    setup_config.core_5g = ConfigParser._parse_5g_cfg(parsed_config[CFG_5GC])
-                elif config_entry == CFG_UE:
-                    setup_config.ue = ConfigParser._parse_ue_cfg(parsed_config[CFG_UE])
-                elif config_entry == CFG_GNB:
-                    setup_config.gnb = ConfigParser._parse_gnb_cfg(parsed_config[CFG_GNB])
-                elif config_entry == CFG_ENVIRONMENT:
-                    setup_config.environment = ConfigParser._parse_environment_cfg(parsed_config[CFG_ENVIRONMENT])
+                        parsed_config[ComponentIdentifiers.CFG_NEAR_RT_RIC])
+                elif config_entry == ComponentIdentifiers.CFG_5GC:
+                    setup_config.core_5g = ConfigParser._parse_5g_cfg(parsed_config[ComponentIdentifiers.CFG_5GC])
+                elif config_entry == ComponentIdentifiers.CFG_UE:
+                    setup_config.ue = ConfigParser._parse_ue_cfg(parsed_config[ComponentIdentifiers.CFG_UE])
+                elif config_entry == ComponentIdentifiers.CFG_GNB:
+                    setup_config.gnb = ConfigParser._parse_gnb_cfg(parsed_config[ComponentIdentifiers.CFG_GNB])
+                elif config_entry == ComponentIdentifiers.CFG_ENVIRONMENT:
+                    setup_config.environment = ConfigParser._parse_environment_cfg(
+                        parsed_config[ComponentIdentifiers.CFG_ENVIRONMENT])
                 else:
                     raise KeyError(f"Unknown configuration section: '{config_entry}'")
 

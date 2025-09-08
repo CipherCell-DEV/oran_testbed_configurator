@@ -162,8 +162,13 @@ class USIMCfg:
                 f"{self.gw}")
 
 
+class UEImplementation(Enum):
+    SRS_4G = 0
+
+
 @dataclass
 class UECfg:
+    implementation: Optional[UEImplementation] = None
     name: Optional[str] = None
     build_type = BuildType = BuildType.DOCKER
     ip: Optional[ipaddress.IPv4Address] = None
@@ -217,3 +222,38 @@ class SetupConfiguration:
                 f"{self.gnb}, \n"
                 f"UECfgs: \n"
                 f"{pformat(self.ue, indent=4)}")
+
+
+class DefaultValues:
+    DEFAULT_RELEASE = RICRelease.RELEASE_i
+    DEFAULT_SRATE = 11.52e6
+    DEFAULT_UE_NETNS = "ue1"
+    DEFAULT_UE_GW_DEVNAME = "tun_srsue"
+
+
+class ComponentIdentifiers:
+    CFG_NEAR_RT_RIC = "near_rt_ric"
+    CFG_5GC = "5gc"
+    CFG_UE = "ue"
+    CFG_GNB = "gnb"
+    CFG_ENVIRONMENT = "environment"
+
+
+class FieldIdentifiers:
+    SRATE = 'srate'
+    IP_ADDR = 'ip_addr'
+    GNB_TYPE = 'type'
+    TX_GAIN = 'tx_gain'
+    RX_GAIN = 'rx_gain'
+    BUILD_TYPE = 'build_type'
+
+
+ORAN_SC_RIC_SERVICE_IP_MAP = {
+    "dbaas": ("DBAAS_IP", "dbaas_ip"),
+    "rtmgr_sim": ("RTMGR_SIM_IP", "rtmgr_sim_ip"),
+    "submgr": ("SUBMGR_IP", "submgr_ip"),
+    "e2term": ("E2TERM_IP", "e2term_ip"),
+    "appmgr": ("APPMGR_IP", "appmgr_ip"),
+    "e2mgr": ("E2MGR_IP", "e2mgr_ip"),
+    "python_xapp_runner": ("XAPP_PY_RUNNER_IP", "xapp_runner_ip"),
+}
