@@ -257,3 +257,11 @@ ORAN_SC_RIC_SERVICE_IP_MAP = {
     "e2mgr": ("E2MGR_IP", "e2mgr_ip"),
     "python_xapp_runner": ("XAPP_PY_RUNNER_IP", "xapp_runner_ip"),
 }
+
+
+@dataclass
+class CommandLineConfig:
+    config_file: Optional[str] = None
+    generate_patch_files: bool = True
+    enable_build: bool = True
+    run_demo: bool = True

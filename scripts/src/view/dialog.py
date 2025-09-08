@@ -1,5 +1,10 @@
 # Define colors using ANSI escape codes
 import logging
+import os
+import sys
+from typing import List
+
+from scripts.src.model.setup_configuration import CommandLineConfig
 
 LOG_COLORS = {
     "DEBUG": "\033[37m",  # White
@@ -97,3 +102,59 @@ def print_start_dialog():
     print("*****             CipherCell                 *****")
     print("**************************************************\n")
 
+def print_help() -> None:
+    """
+    Print command line usage instructions and exit.
+    """
+    help_text = """
+Usage:
+    python main.py [options]
+
+Options:
+    config_file=<path>         Path to the YAML/JSON configuration file.
+    patching=<true|false>      Enable or disable firmware patch generation.
+    build_components=<true|false>
+                               Enable or disable build step.
+    run_demo=<true|false>      Enable or disable demo execution.
+
+    --help                     Show this help message and exit.
+
+Examples:
+    python main.py config_file=./configs/demo.yaml patching=true build_components=false run_demo=true
+    python main.py --help
+"""
+    print(help_text.strip())
+    sys.exit(0)
+
+def parse_command_line_arguments(argv: List[str]) -> CommandLineConfig:
+    cfg = CommandLineConfig()
+
+    def parse_boolean_value(value: str) -> bool:
+        return value.casefold() in ("true", "1", "yes", "on")
+    for v in argv[1:]:
+
+        if v.startswith("--help"):
+            print_help()
+
+        if v.startswith("config_file="):
+            cfg.config_file = v.split("=", 1)[1]
+            if not os.path.exists(cfg.config_file):
+                raise ValueError(f"Config file does not exist: {cfg.config_file}")
+            logging.info(f"Using configuration file: {cfg.config_file}")
+
+        elif v.startswith("patching="):
+            cfg.generate_patch_files = parse_boolean_value(v.split("=", 1)[1])
+            logging.info(f"Patching enabled: {cfg.generate_patch_files}")
+
+        elif v.startswith("build_components="):
+            cfg.enable_build = parse_boolean_value(v.split("=", 1)[1])
+            logging.info(f"Build enabled: {cfg.enable_build}")
+
+        elif v.startswith("run_demo="):
+            cfg.run_demo = parse_boolean_value(v.split("=", 1)[1])
+            logging.info(f"Run demo: {cfg.run_demo}")
+
+        else:
+            logging.warning(f"Ignoring unrecognized argument: {v}")
+
+    return cfg

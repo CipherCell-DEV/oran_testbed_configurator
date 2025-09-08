@@ -347,9 +347,7 @@ class ConfigParser:
         return cfg
 
     @staticmethod
-    def parse_config_file(path: str, cfg_file: str) -> SetupConfiguration:
-        file_path = os.path.join(path, cfg_file)
-
+    def parse_config_file(file_path: str) -> SetupConfiguration:
         setup_config = SetupConfiguration()
 
         with open(file_path, "r") as f:
