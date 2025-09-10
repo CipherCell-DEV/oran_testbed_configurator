@@ -1,6 +1,13 @@
 paches/patched*
 
-__pycache__/
+.idea/
+.DS_Store
+docker-compose.yml
+logs
+.venv
+patches/patched
+
+*__pycache__/
 *.py[cod]
 *$py.class
 
