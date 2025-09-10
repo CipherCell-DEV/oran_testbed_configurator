@@ -70,7 +70,9 @@ if __name__ == "__main__":
 
     if len(sys.argv) > 1:
         dialog_cfg = DialogConfig()
-        print(cmd_line_cfg.config_file)
+        if cmd_line_cfg.config_file is None:
+            print("Error: No configuration file provided. Specify with --config_file=<path>\n""Exit Program ...")
+            exit(1)
         config = ConfigParser.parse_config_file(cmd_line_cfg.config_file)
     else:
         dialog_cfg = run_dialog()
