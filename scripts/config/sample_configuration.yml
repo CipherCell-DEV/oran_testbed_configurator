@@ -1,8 +1,8 @@
 environment:
   build_type: "docker"
   log_level: "INFO"
-  log_dir: "/Users/florian/Documents/Arbeit/Projekte/ciphercell/srsRAN_test_environment/logs"
-  build_dir: "/Users/florian/Documents/Arbeit/Projekte/ciphercell/srsRAN_test_environment"
+  log_dir: "logs"
+  build_dir: "."
 
 near_rt_ric:
   build_type: "docker"
