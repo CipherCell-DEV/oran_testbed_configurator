@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 COPY . .
-RUN chmod +x /app/entrypoint.sh
+RUN chmod +x /app/ue_entrypoint.sh
 
 RUN mkdir build && cd build && cmake -DCMAKE_CXX_FLAGS="-Wno-error=array-bounds" ..  && make -j"$(nproc)"
 

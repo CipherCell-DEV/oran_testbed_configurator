@@ -1,0 +1,8 @@
+#!/bin/bash
+set -e
+
+if ! ip netns list | grep -q "^ue1$"; then
+    sudo ip netns add ue1
+fi
+
+exec ./build/srsue/src/srsue configs/ue_zmq.conf
