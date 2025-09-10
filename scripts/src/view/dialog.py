@@ -1,10 +1,10 @@
-# Define colors using ANSI escape codes
 import logging
 import os
 import sys
 from typing import List
 
-from scripts.src.model.setup_configuration import CommandLineConfig
+from model.dialog_cfg import DialogConfig, CommandLineConfig
+from model.utils_config import BuildType, FILE_DIR
 
 LOG_COLORS = {
     "DEBUG": "\033[37m",  # White
@@ -58,42 +58,27 @@ def ask_yes_no(prompt, default=None):
         print("Invalid input. Enter 'y' or 'n'.\n")
 
 
-def detect_platform_and_release():
-    import platform
-    system = platform.system()
-    release = platform.system()
-    if system == "Linux":
-        return "Linux", release
-    elif system == "Darwin":
-        return "macOS", release
-    elif system == "Windows":
-        return "Windows", release
-    else:
-        return "Unknown"
+def run_dialog() -> DialogConfig:
+    dialog_config = DialogConfig()
 
-
-def run_dialog():
     print("Running interactive configuration dialog using default parameters\n")
 
-    os_type, os_release = detect_platform_and_release()
-    print(f"Detected OS: {os_type} {os_release}\n")
-
     build_type = ask_choice("Choose your build type:", ["Docker", "Native"], default=1)
-    print(f"You chose {'Docker' if build_type == 1 else 'Native'} build.")
+    if build_type == 1:
+        dialog_config.build_type = BuildType.DOCKER
+    else:
+        dialog_config.build_type = BuildType.NATIVE
 
     compile_all = ask_yes_no("Compile all components?", default=False)
     if not compile_all:
-        sc_ric = ask_yes_no("Compile sc ric?", default=False)
-        core_net = ask_yes_no("Compile core network?", default=False)
-        gnb_net = ask_yes_no("Compile gnb network?", default=False)
-        srs_ran_4g = ask_yes_no("Compile srs ran 4G?", default=False)
-
-        if sc_ric:
-            print(f"Compile SRC RIC of build type: {build_type}")
-            if build_type == 1 and os_type == "macOS":
-                print("Patching sc-ric docker-compose.yml for macOS systems")
+        dialog_config.build_near_rt_ric = ask_yes_no("Compile oran sc ric?", default=False)
+        dialog_config.build_core_net = ask_yes_no("Compile 5g core network?", default=False)
+        dialog_config.build_gnb = ask_yes_no("Compile gnb network?", default=False)
+        dialog_config.build_ue = ask_yes_no("Compile srs ran 4G?", default=False)
     else:
         print("Compiling all components...")
+
+    return dialog_config
 
 
 def print_start_dialog():
@@ -101,6 +86,7 @@ def print_start_dialog():
     print("***** Start Building srsRAN test environment *****")
     print("*****             CipherCell                 *****")
     print("**************************************************\n")
+
 
 def print_help() -> None:
     """
@@ -111,46 +97,50 @@ Usage:
     python main.py [options]
 
 Options:
-    config_file=<path>         Path to the YAML/JSON configuration file.
-    patching=<true|false>      Enable or disable firmware patch generation.
-    build_components=<true|false>
+    --config_file=<path>         Path to the YAML/JSON configuration file.
+    --patching=<true|false>      Enable or disable firmware patch generation.
+    --build_components=<true|false>
                                Enable or disable build step.
-    run_demo=<true|false>      Enable or disable demo execution.
+    --run_demo=<true|false>      Enable or disable demo execution.
 
     --help                     Show this help message and exit.
 
 Examples:
-    python main.py config_file=./configs/demo.yaml patching=true build_components=false run_demo=true
+    python main.py --config_file=./configs/sample.yaml --patching=true --build_components=false --run_demo=true
     python main.py --help
 """
     print(help_text.strip())
     sys.exit(0)
+
 
 def parse_command_line_arguments(argv: List[str]) -> CommandLineConfig:
     cfg = CommandLineConfig()
 
     def parse_boolean_value(value: str) -> bool:
         return value.casefold() in ("true", "1", "yes", "on")
+
     for v in argv[1:]:
 
         if v.startswith("--help"):
             print_help()
 
-        if v.startswith("config_file="):
+        if v.startswith("--config_file="):
             cfg.config_file = v.split("=", 1)[1]
+            if not cfg.config_file.startswith('/'):
+                cfg.config_file = os.path.join(FILE_DIR, "../..", cfg.config_file)
             if not os.path.exists(cfg.config_file):
                 raise ValueError(f"Config file does not exist: {cfg.config_file}")
             logging.info(f"Using configuration file: {cfg.config_file}")
 
-        elif v.startswith("patching="):
+        elif v.startswith("--patching="):
             cfg.generate_patch_files = parse_boolean_value(v.split("=", 1)[1])
             logging.info(f"Patching enabled: {cfg.generate_patch_files}")
 
-        elif v.startswith("build_components="):
+        elif v.startswith("--build_components="):
             cfg.enable_build = parse_boolean_value(v.split("=", 1)[1])
             logging.info(f"Build enabled: {cfg.enable_build}")
 
-        elif v.startswith("run_demo="):
+        elif v.startswith("--run_demo="):
             cfg.run_demo = parse_boolean_value(v.split("=", 1)[1])
             logging.info(f"Run demo: {cfg.run_demo}")
 

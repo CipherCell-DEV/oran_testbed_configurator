@@ -16,3 +16,6 @@ class LogLevel(Enum):
     INFO = "INFO"
     WARNING = "WARNING"
     ERROR = "ERROR"
+
+
+MAX_DISPLAY_LINE_LENGTH = 120

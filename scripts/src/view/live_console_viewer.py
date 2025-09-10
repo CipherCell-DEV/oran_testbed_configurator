@@ -1,15 +1,15 @@
 import logging
 import textwrap
 import threading
-import time
 from itertools import zip_longest
 
 from rich.columns import Columns
 from rich.live import Live
 from rich.panel import Panel
 
-from scripts.src.controller.demo_runner import DemoRunner
-from scripts.src.controller.program import Program
+from controller.demo_runner import DemoRunner
+from controller.program import Program
+from model.utils_config import MAX_DISPLAY_LINE_LENGTH
 
 
 class ComponentThreadPool:
@@ -23,13 +23,11 @@ class ComponentThreadPool:
         process = prog.get_process()
         name = prog.get_process_name()
 
-        MAX_LINE_WIDTH = 120  # adjust depending on your terminal size
-
         for line in process.stdout:
-            line = line.rstrip()
+            line = str(line.rstrip())
 
             # Wrap line into multiple shorter lines if necessary
-            wrapped_lines = textwrap.wrap(line, MAX_LINE_WIDTH)
+            wrapped_lines = textwrap.wrap(line, MAX_DISPLAY_LINE_LENGTH)
 
             if not wrapped_lines:  # ensure at least one line goes in
                 wrapped_lines = [""]
