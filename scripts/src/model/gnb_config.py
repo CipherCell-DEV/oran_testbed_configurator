@@ -38,3 +38,18 @@ class GNBCfg:
                 f"    srate={self.srate}, \n"
                 f"    tx_gain={self.tx_gain}, \n"
                 f"    rx_gain={self.rx_gain}")
+
+
+class GnbFieldIdentifiers:
+    SRATE = 'srate'
+    IP_ADDR = 'ip_addr'
+    GNB_TYPE = 'type'
+    TX_GAIN = 'tx_gain'
+    RX_GAIN = 'rx_gain'
+    BUILD_TYPE = 'build_type'
+
+
+class DefaultValuesGNB:
+    DEFAULT_SRATE = 11.52e6
+    TX_GAIN = 75
+    RX_GAIN = 75

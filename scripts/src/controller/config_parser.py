@@ -2,15 +2,16 @@ import os
 import ipaddress
 import logging
 from typing import List
-
 import yaml
 
-from model.core_config import Core5GCfg, CoreImplementation
-from model.gnb_config import GNBIPConfig, GNBCfg, GNBImplementation
-from model.ric_config import NearRTRICNetworkConfig, NearRtRICCFG, RICImplementation, RICRelease
-from model.setup_configuration import DefaultValues, FieldIdentifiers, EnvironmentCfg, SetupConfiguration, \
+from model.core_config import Core5GCfg, CoreImplementation, CoreFieldIdentifiers
+from model.gnb_config import GNBIPConfig, GNBCfg, GNBImplementation, GnbFieldIdentifiers, DefaultValuesGNB
+from model.ric_config import NearRTRICNetworkConfig, NearRtRICCFG, RICImplementation, RICRelease, DefaultValuesRIC, \
+    RICFieldIdentifiers
+from model.setup_configuration import EnvironmentCfg, SetupConfiguration, \
     ComponentIdentifiers
-from model.ue_config import USIMCfg, USIMMode, USIMAlgo, UEGatewayCfg, UECfg, UEImplementation
+from model.ue_config import USIMCfg, USIMMode, USIMAlgo, UEGatewayCfg, UECfg, UEImplementation, DefaultValuesUE, \
+    UEFieldIdentifiers
 from model.utils_config import BuildType, FILE_DIR
 
 
@@ -64,37 +65,37 @@ class ConfigParser:
         logging.info("Parse near-RT RIC Configuration")
         cfg = NearRtRICCFG()
 
-        if 'implementation' in params:
-            if params['implementation'] == 'oran-sc-ric':
+        if RICFieldIdentifiers.IMPLEMENTATION in params:
+            if params[RICFieldIdentifiers.IMPLEMENTATION] == 'oran-sc-ric':
                 cfg.type = RICImplementation.ORAN_SC_RIC
             else:
-                raise ValueError(f"Unsupported RIC implementation: {params['implementation']}")
+                raise ValueError(f"Unsupported RIC implementation: {params[RICFieldIdentifiers.IMPLEMENTATION]}")
         else:
             raise KeyError("Missing required parameter: 'implementation'")
 
-        if 'release' in params:
-            if params['release'] == 'i':
+        if RICFieldIdentifiers.RELEASE in params:
+            if params[RICFieldIdentifiers.RELEASE] == 'i':
                 cfg.release = RICRelease.RELEASE_i
-            elif params['release'] == 'l':
+            elif params[RICFieldIdentifiers.RELEASE] == 'l':
                 cfg.release = RICRelease.RELEASE_l
             else:
-                raise ValueError(f"Unsupported Release: {params['release']}")
+                raise ValueError(f"Unsupported Release: {params[RICFieldIdentifiers.RELEASE]}")
         else:
-            cfg.release = DefaultValues.DEFAULT_RELEASE
+            cfg.release = DefaultValuesRIC.DEFAULT_RELEASE
             logging.warning(f"No sc ric release defined use default release i")
 
-        if 'network' in params:
+        if RICFieldIdentifiers.NETWORK in params:
             cfg.ip_config = ConfigParser._parse_network_config(params['network'])
         else:
             logging.warning("No IP address specified -> Apply default network config")
             cfg.ip_config = NearRTRICNetworkConfig()
-            cfg.ip_config.subnet = ipaddress.IPv4Network('10.0.2.0/24')
-            cfg.ip_config.dbaas_ip = ipaddress.IPv4Address('10.0.2.12')
-            cfg.ip_config.e2term_ip = ipaddress.IPv4Address('10.0.2.10')
-            cfg.ip_config.e2mgr_ip = ipaddress.IPv4Address('10.0.2.11')
-            cfg.ip_config.submgr_ip = ipaddress.IPv4Address('10.0.2.14')
-            cfg.ip_config.rtmgr_sim_ip = ipaddress.IPv4Address('10.0.2.15')
-            cfg.ip_config.xapp_runner_ip = ipaddress.IPv4Address('10.0.2.20')
+            cfg.ip_config.subnet = DefaultValuesRIC.DEFAULT_NETWORK_CONFIG['subnet']
+            cfg.ip_config.dbaas_ip = DefaultValuesRIC.DEFAULT_NETWORK_CONFIG['dbaas_ip']
+            cfg.ip_config.e2term_ip = DefaultValuesRIC.DEFAULT_NETWORK_CONFIG['e2term_ip']
+            cfg.ip_config.e2mgr_ip = DefaultValuesRIC.DEFAULT_NETWORK_CONFIG['e2mgr_ip']
+            cfg.ip_config.submgr_ip = DefaultValuesRIC.DEFAULT_NETWORK_CONFIG['submgr_ip']
+            cfg.ip_config.rtmgr_sim_ip = DefaultValuesRIC.DEFAULT_NETWORK_CONFIG['rtmgr_sim_ip']
+            cfg.ip_config.xapp_runner_ip = DefaultValuesRIC.DEFAULT_NETWORK_CONFIG['xapp_runner_ip']
 
         return cfg
 
@@ -104,23 +105,23 @@ class ConfigParser:
         logging.info("Parse 5GC Core Configuration")
         cfg = Core5GCfg()
 
-        if 'implementation' in params:
-            if params['implementation'] == 'srs':
+        if CoreFieldIdentifiers.IMPLEMENTATION in params:
+            if params[CoreFieldIdentifiers.IMPLEMENTATION] == 'srs':
                 cfg.implementation = CoreImplementation.SRS
             else:
-                raise ValueError(f"Unsupported 5GC type: {params['type']}")
+                raise ValueError(f"Unsupported 5GC type: {params[CoreFieldIdentifiers.IMPLEMENTATION]}")
         else:
             raise KeyError("Missing required parameter for 5GC config: 'type'")
 
-        if 'ip_addr' in params:
-            cfg.ip = ipaddress.IPv4Address(params['ip_addr'])
+        if CoreFieldIdentifiers.IP_ADDR in params:
+            cfg.ip = ipaddress.IPv4Address(params[CoreFieldIdentifiers.IP_ADDR])
         else:
-            raise KeyError("Missing required parameter for 5GC config: 'ip'")
+            raise KeyError(f"Missing required parameter for 5GC config: '{CoreFieldIdentifiers.IP_ADDR}'")
 
-        if 'subnet' in params:
-            cfg.network = ipaddress.IPv4Network(params['subnet'])
+        if CoreFieldIdentifiers.SUBNET in params:
+            cfg.network = ipaddress.IPv4Network(params[CoreFieldIdentifiers.SUBNET])
         else:
-            raise KeyError("Missing required parameter for 5GC config: 'subnet'")
+            raise KeyError(f"Missing required parameter for 5GC config: '{CoreFieldIdentifiers.SUBNET}'")
 
         if cfg.ip not in cfg.network:
             raise ValueError(
@@ -154,46 +155,46 @@ class ConfigParser:
         logging.info("Parse gNB Configuration")
         cfg = GNBCfg()
 
-        if FieldIdentifiers.BUILD_TYPE in params:
-            if params[FieldIdentifiers.BUILD_TYPE] == 'docker':
+        if GnbFieldIdentifiers.BUILD_TYPE in params:
+            if params[GnbFieldIdentifiers.BUILD_TYPE] == 'docker':
                 cfg.build_type = BuildType.DOCKER
-            elif params[FieldIdentifiers.BUILD_TYPE] == 'local':
+            elif params[GnbFieldIdentifiers.BUILD_TYPE] == 'local':
                 cfg.build_type = BuildType.NATIVE
             else:
                 raise ValueError(f"Unsupported build type: {params['build_type']}")
         else:
             raise KeyError("Missing required parameter for gNB config: 'build_type'")
 
-        if FieldIdentifiers.GNB_TYPE in params:
-            if params[FieldIdentifiers.GNB_TYPE] == 'srs':
+        if GnbFieldIdentifiers.GNB_TYPE in params:
+            if params[GnbFieldIdentifiers.GNB_TYPE] == 'srs':
                 cfg.type = GNBImplementation.SRS
             else:
-                raise ValueError(f"Unsupported gNB type: {params['type']}")
+                raise ValueError(f"Unsupported gNB type: {params[GnbFieldIdentifiers.GNB_TYPE]}")
         else:
-            raise KeyError("Missing required parameter for gNB config: 'type'")
+            raise KeyError(f"Missing required parameter for gNB config: '{GnbFieldIdentifiers.GNB_TYPE}'")
 
-        if FieldIdentifiers.IP_ADDR in params:
-            cfg.ip_config = ConfigParser._parse_gnb_ip_config(params[FieldIdentifiers.IP_ADDR])
+        if GnbFieldIdentifiers.IP_ADDR in params:
+            cfg.ip_config = ConfigParser._parse_gnb_ip_config(params[GnbFieldIdentifiers.IP_ADDR])
         else:
-            raise KeyError("Missing required parameter for gNB config: 'ip_addr'")
+            raise KeyError(f"Missing required parameter for gNB config: '{GnbFieldIdentifiers.IP_ADDR}'")
 
-        if FieldIdentifiers.SRATE in params:
-            cfg.srate = params[FieldIdentifiers.SRATE]
+        if GnbFieldIdentifiers.SRATE in params:
+            cfg.srate = params[GnbFieldIdentifiers.SRATE]
         else:
-            logging.warning("No srate specified for gNB -> Apply default srate 11.52e6")
-            cfg.srate = DefaultValues.DEFAULT_SRATE
+            logging.warning(f"No srate specified for gNB -> Apply default srate {DefaultValuesGNB.DEFAULT_SRATE}")
+            cfg.srate = DefaultValuesGNB.DEFAULT_SRATE
 
-        if FieldIdentifiers.TX_GAIN in params:
-            cfg.tx_gain = params[FieldIdentifiers.TX_GAIN]
+        if GnbFieldIdentifiers.TX_GAIN in params:
+            cfg.tx_gain = params[GnbFieldIdentifiers.TX_GAIN]
         else:
-            logging.warning("No tx_gain specified for gNB -> Apply default tx_gain 75")
-            cfg.tx_gain = 75
+            logging.warning(f"No tx_gain specified for gNB -> Apply default tx_gain '{DefaultValuesGNB.TX_GAIN}'")
+            cfg.tx_gain = DefaultValuesGNB.TX_GAIN
 
-        if FieldIdentifiers.RX_GAIN in params:
-            cfg.rx_gain = params[FieldIdentifiers.RX_GAIN]
+        if GnbFieldIdentifiers.RX_GAIN in params:
+            cfg.rx_gain = params[GnbFieldIdentifiers.RX_GAIN]
         else:
-            logging.warning("No rx_gain specified for gNB -> Apply default rx_gain 75")
-            cfg.rx_gain = 75
+            logging.warning(f"No rx_gain specified for gNB -> Apply default rx_gain '{DefaultValuesGNB.RX_GAIN}'")
+            cfg.rx_gain = DefaultValuesGNB.RX_GAIN
 
         return cfg
 
@@ -201,33 +202,37 @@ class ConfigParser:
     def _parse_usim_cfg(params: dict) -> USIMCfg:
         logging.info("Parse USIM Configuration")
         cfg = USIMCfg()
-        if 'mode' in params:
-            if params['mode'] == 'soft':
+        if UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.MODE in params:
+            if params[UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.MODE] == 'soft':
                 cfg.mode = USIMMode.SOFT
-            elif params['mode'] == 'hard':
+            elif params[UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.MODE] == 'hard':
                 cfg.mode = USIMMode.HARD
             else:
-                raise ValueError(f"Unsupported USIM mode: {params['mode']}")
+                raise ValueError(f"Unsupported USIM mode: {params[UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.MODE]}")
         else:
-            raise KeyError("Missing required parameter for USIM config: 'mode'")
+            raise KeyError(
+                f"Missing required parameter for USIM config: '{UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.MODE}'")
 
-        if 'algo' in params:
-            if params['algo'] == 'milenage':
+        if UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.ALGO in params:
+            if params[UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.ALGO] == 'milenage':
                 cfg.algo = USIMAlgo.MILENAGE
-            elif params['algo'] == 'xor':
+            elif params[UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.ALGO] == 'xor':
                 cfg.algo = USIMAlgo.XOR
-            elif params['algo'] == 'comp':
+            elif params[UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.ALGO] == 'comp':
                 cfg.algo = USIMAlgo.COMP
-            elif params['algo'] == 'comp128_1':
+            elif params[UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.ALGO] == 'comp128_1':
                 cfg.algo = USIMAlgo.COMP128_1
-            elif params['algo'] == 'comp128_2':
+            elif params[UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.ALGO] == 'comp128_2':
                 cfg.algo = USIMAlgo.COMP128_2
-            elif params['algo'] == 'comp128_3':
+            elif params[UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.ALGO] == 'comp128_3':
                 cfg.algo = USIMAlgo.COMP128_3
             else:
                 raise ValueError(f"Unsupported USIM algorithm: {params['algo']}")
 
-        for key in ['opc', 'k', 'imsi', 'imei']:
+        for key in [UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.OPC,
+                    UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.KEY,
+                    UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.IMSI,
+                    UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.IMEI]:
             cfg_value = params.get(key)
             if cfg_value is not None:
                 setattr(cfg, key, cfg_value)
@@ -237,26 +242,29 @@ class ConfigParser:
         return cfg
 
     @staticmethod
-    def _parse_usim_gw(params: dict) -> UEGatewayCfg:
+    def _parse_ue_gw(params: dict) -> UEGatewayCfg:
         logging.info("Parse USIM Gateway Configuration")
         cfg = UEGatewayCfg()
 
-        if 'netns' in params:
-            cfg.netns = params['netns']
+        if UEFieldIdentifiers.GATEWAY_IDENTIFIERS.NETNS in params:
+            cfg.netns = params[UEFieldIdentifiers.GATEWAY_IDENTIFIERS.NETNS]
         else:
             logging.warning("No netns specified for USIM GW -> Apply default netns 'ue1'")
-            cfg.netns = DefaultValues.DEFAULT_UE_NETNS
+            cfg.netns = DefaultValuesUE.DEFAULT_UE_NETNS
 
-        if 'ip_devname' in params:
-            cfg.ip_devname = params['ip_devname']
+        if UEFieldIdentifiers.GATEWAY_IDENTIFIERS.IP_DEVNAME in params:
+            cfg.ip_devname = params[UEFieldIdentifiers.GATEWAY_IDENTIFIERS.IP_DEVNAME]
         else:
-            logging.warning("No ip_devname specified for USIM GW -> Apply default devname 'tun_srsue'")
-            cfg.ip_devname = DefaultValues.DEFAULT_UE_GW_DEVNAME
+            logging.warning(
+                f"No {UEFieldIdentifiers.GATEWAY_IDENTIFIERS.IP_DEVNAME} specified for USIM GW -> Apply default "
+                f"devname '{DefaultValuesUE.DEFAULT_UE_GW_DEVNAME}'")
+            cfg.ip_devname = DefaultValuesUE.DEFAULT_UE_GW_DEVNAME
 
-        if 'ip_netmask' in params:
-            cfg.ip_netmask = ipaddress.IPv4Network(params['ip_netmask'])
+        if UEFieldIdentifiers.GATEWAY_IDENTIFIERS.IP_NETMASK in params:
+            cfg.ip_netmask = ipaddress.IPv4Network(params[UEFieldIdentifiers.GATEWAY_IDENTIFIERS.IP_NETMASK])
         else:
-            raise KeyError("Missing required parameter for USIM GW config: 'ip_netmask'")
+            raise KeyError(
+                f"Missing required parameter for USIM GW config: '{UEFieldIdentifiers.GATEWAY_IDENTIFIERS.IP_NETMASK}'")
 
         return cfg
 
@@ -267,47 +275,49 @@ class ConfigParser:
         for params in elements:
             cfg = UECfg()
 
-            if 'implementation' in params:
-                if params['implementation'] == 'srs':
+            if UEFieldIdentifiers.IMPLEMENTATION in params:
+                if params[UEFieldIdentifiers.IMPLEMENTATION] == 'srs':
                     cfg.implementation = UEImplementation.SRS_4G
                 else:
-                    raise ValueError(f"Unsupported ue implementation: {params['implementation']}")
+                    raise ValueError(f"Unsupported ue implementation: {params[UEFieldIdentifiers.IMPLEMENTATION]}")
             else:
-                raise KeyError("Missing required parameter for USIM GW config: 'ip_netmask'")
+                raise KeyError(f"Missing required parameter '{UEFieldIdentifiers.IMPLEMENTATION}'")
 
-            if 'build_type' in params:
-                if params['build_type'] == 'docker':
+            if UEFieldIdentifiers.BUILD_TYPE in params:
+                if params[UEFieldIdentifiers.BUILD_TYPE] == 'docker':
                     cfg.build_type = BuildType.DOCKER
-                elif params['build_type'] == 'local':
+                elif params[UEFieldIdentifiers.BUILD_TYPE] == 'local':
                     cfg.build_type = BuildType.NATIVE
                 else:
-                    raise ValueError(f"Unsupported build type: {params['build_type']}")
+                    raise ValueError(f"Unsupported build type: {params[UEFieldIdentifiers.BUILD_TYPE]}")
             else:
-                raise KeyError("Missing required parameter for UE config: 'build_type'")
+                raise KeyError(f"Missing required parameter for UE config: '{UEFieldIdentifiers.BUILD_TYPE}'")
 
-            if 'name' in params:
-                cfg.name = params['name']
+            if UEFieldIdentifiers.NAME in params:
+                cfg.name = params[UEFieldIdentifiers.NAME]
             else:
-                raise KeyError("Missing required parameter for UE config: 'name'")
+                raise KeyError(f"Missing required parameter for UE config: '{UEFieldIdentifiers.NAME}'")
 
-            if 'ip_addr' in params:
-                cfg.ip = ipaddress.IPv4Address(params['ip_addr'])
+            if UEFieldIdentifiers.IP_ADDR in params:
+                cfg.ip = ipaddress.IPv4Address(params[UEFieldIdentifiers.IP_ADDR])
             else:
-                raise KeyError("Missing required parameter for UE config: 'ip_addr'")
+                raise KeyError(f"Missing required parameter for UE config: '{UEFieldIdentifiers.IP_ADDR}'")
 
-            if 'srate' in params:
-                cfg.srate = params['srate']
+            if UEFieldIdentifiers.SRATE in params:
+                cfg.srate = params[UEFieldIdentifiers.SRATE]
             else:
-                logging.warning("No srate specified for UE -> Apply default srate 11.52e6")
-                cfg.srate = DefaultValues.DEFAULT_SRATE
+                logging.warning(
+                    f"No srate specified for UE -> Apply default {UEFieldIdentifiers.SRATE} "
+                    f"{DefaultValuesUE.DEFAULT_SRATE}")
+                cfg.srate = DefaultValuesUE.DEFAULT_SRATE
 
-            if 'usim' in params:
-                cfg.usim = ConfigParser._parse_usim_cfg(params['usim'])
+            if UEFieldIdentifiers.USIM in params:
+                cfg.usim = ConfigParser._parse_usim_cfg(params[UEFieldIdentifiers.USIM])
             else:
-                raise KeyError("Missing required parameter for UE config: 'usim'")
+                raise KeyError(f"Missing required parameter for UE config: '{UEFieldIdentifiers.USIM}'")
 
-            if 'gateway' in params:
-                cfg.gateway = ConfigParser._parse_usim_gw(params['gateway'])
+            if UEFieldIdentifiers.GATEWAY in params:
+                cfg.gateway = ConfigParser._parse_ue_gw(params[UEFieldIdentifiers.GATEWAY])
 
             list_cfgs.append(cfg)
 

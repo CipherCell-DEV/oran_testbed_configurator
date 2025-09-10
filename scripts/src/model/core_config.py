@@ -18,3 +18,9 @@ class Core5GCfg:
         return (f"Core5GCfg: \n"
                 f"    ip={self.ip}, \n"
                 f"    network={self.network}")
+
+
+class CoreFieldIdentifiers:
+    IMPLEMENTATION = 'implementation'
+    IP_ADDR = 'ip_addr'
+    SUBNET = 'subnet'

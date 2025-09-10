@@ -2,6 +2,8 @@ import ipaddress
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
+
+from model.gnb_config import DefaultValuesGNB
 from model.utils_config import BuildType
 
 
@@ -80,3 +82,36 @@ class UECfg:
                 f"    ip={self.ip}, \n"
                 f"    srate={self.srate}, \n"
                 f"{self.usim}")
+
+
+class USIMFieldIdentifiers:
+    MODE = "mode"
+    ALGO = 'algo'
+    OPC = 'opc'
+    KEY = 'k'
+    IMSI = 'imsi'
+    IMEI = 'imei'
+
+
+class GatewayFieldIdentifiers:
+    NETNS = 'netns'
+    IP_DEVNAME = 'ip_devname'
+    IP_NETMASK = 'ip_netmask'
+
+
+class UEFieldIdentifiers:
+    IMPLEMENTATION = 'implementation'
+    BUILD_TYPE = 'build_type'
+    NAME = 'name'
+    IP_ADDR = 'ip_addr'
+    SRATE = 'srate'
+    GATEWAY = 'gateway'
+    USIM = 'usim'
+    USIM_FIELD_IDENTIFIERS = USIMFieldIdentifiers()
+    GATEWAY_IDENTIFIERS = GatewayFieldIdentifiers()
+
+
+class DefaultValuesUE:
+    DEFAULT_UE_NETNS = "ue1"
+    DEFAULT_UE_GW_DEVNAME = "tun_srsue"
+    DEFAULT_SRATE = DefaultValuesGNB.DEFAULT_SRATE

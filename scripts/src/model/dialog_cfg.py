@@ -11,3 +11,11 @@ class DialogConfig:
     build_gnb: Optional[bool] = True
     build_ue: Optional[bool] = True
     build_type: Optional[BuildType] = BuildType.DOCKER
+
+
+@dataclass
+class CommandLineConfig:
+    config_file: Optional[str] = None
+    generate_patch_files: bool = True
+    enable_build: bool = True
+    run_demo: bool = True

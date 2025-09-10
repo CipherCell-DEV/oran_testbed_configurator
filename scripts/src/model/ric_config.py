@@ -59,3 +59,22 @@ class NearRtRICCFG:
                 f"    type={self.type}, \n"
                 f"    release={self.release}, \n"
                 f"{self.ip_config}")
+
+
+class RICFieldIdentifiers:
+    IMPLEMENTATION = 'implementation'
+    RELEASE = 'release'
+    NETWORK = 'network'
+
+
+class DefaultValuesRIC:
+    DEFAULT_RELEASE = RICRelease.RELEASE_i
+    DEFAULT_NETWORK_CONFIG = {
+        'subnet': ipaddress.IPv4Network('10.0.2.0/24'),
+        'dbaas_ip': ipaddress.IPv4Address('10.0.2.12'),
+        'e2term_ip': ipaddress.IPv4Address('10.0.2.10'),
+        'e2mgr_ip': ipaddress.IPv4Address('10.0.2.11'),
+        'submgr_ip': ipaddress.IPv4Address('10.0.2.14'),
+        'rtmgr_sim_ip': ipaddress.IPv4Address('10.0.2.15'),
+        'xapp_runner_ip': ipaddress.IPv4Address('10.0.2.20')
+    }
