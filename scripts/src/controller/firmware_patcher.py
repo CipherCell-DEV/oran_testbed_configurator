@@ -254,11 +254,11 @@ class FirmwarePatcher:
             ),
             (
                 os.path.join(self._patch_file_path, "templates", "docker", "dockerfile_ue"),
-                os.path.join(self._setup_cfg.environment.build_dir, "srsRAN_4G" "Dockerfile"),
+                os.path.join(self._setup_cfg.environment.build_dir, "srsRAN_4G", "Dockerfile"),
             ),
             (
                 os.path.join(self._patch_file_path, "templates", "docker", "dockerfile_gnb"),
-                os.path.join(self._setup_cfg.environment.build_dir, "srsRAN_Project" "Dockerfile"),
+                os.path.join(self._setup_cfg.environment.build_dir, "srsRAN_Project", "Dockerfile"),
             ),
 
             (
