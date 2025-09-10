@@ -5,7 +5,9 @@ import yaml
 import os
 import shutil
 
-from scripts.src.model.setup_configuration import SetupConfiguration, RICImplementation, BuildType, ORAN_SC_RIC_SERVICE_IP_MAP
+from model.ric_config import ORAN_SC_RIC_SERVICE_IP_MAP, RICImplementation
+from model.setup_configuration import SetupConfiguration
+from model.utils_config import BuildType
 
 
 class FirmwarePatcher:

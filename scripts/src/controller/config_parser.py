@@ -5,10 +5,13 @@ from typing import List
 
 import yaml
 
-from scripts.src.model.setup_configuration import SetupConfiguration, Core5GCfg, GNBCfg, UECfg, NearRtRICCFG, \
-    RICImplementation, RICRelease, NearRTRICNetworkConfig, USIMCfg, USIMMode, USIMAlgo, GNBType, GNBIPConfig, \
-    EnvironmentCfg, BuildType, UEGatewayCfg, CoreImplementation, DefaultValues, ComponentIdentifiers, FieldIdentifiers, \
-    UEImplementation
+from model.core_config import Core5GCfg, CoreImplementation
+from model.gnb_config import GNBIPConfig, GNBCfg, GNBImplementation
+from model.ric_config import NearRTRICNetworkConfig, NearRtRICCFG, RICImplementation, RICRelease
+from model.setup_configuration import DefaultValues, FieldIdentifiers, EnvironmentCfg, SetupConfiguration, \
+    ComponentIdentifiers
+from model.ue_config import USIMCfg, USIMMode, USIMAlgo, UEGatewayCfg, UECfg, UEImplementation
+from model.utils_config import BuildType, FILE_DIR
 
 
 class ConfigParser:
@@ -155,7 +158,7 @@ class ConfigParser:
             if params[FieldIdentifiers.BUILD_TYPE] == 'docker':
                 cfg.build_type = BuildType.DOCKER
             elif params[FieldIdentifiers.BUILD_TYPE] == 'local':
-                cfg.build_type = BuildType.LOCAL
+                cfg.build_type = BuildType.NATIVE
             else:
                 raise ValueError(f"Unsupported build type: {params['build_type']}")
         else:
@@ -163,7 +166,7 @@ class ConfigParser:
 
         if FieldIdentifiers.GNB_TYPE in params:
             if params[FieldIdentifiers.GNB_TYPE] == 'srs':
-                cfg.type = GNBType.SRS
+                cfg.type = GNBImplementation.SRS
             else:
                 raise ValueError(f"Unsupported gNB type: {params['type']}")
         else:
@@ -276,7 +279,7 @@ class ConfigParser:
                 if params['build_type'] == 'docker':
                     cfg.build_type = BuildType.DOCKER
                 elif params['build_type'] == 'local':
-                    cfg.build_type = BuildType.LOCAL
+                    cfg.build_type = BuildType.NATIVE
                 else:
                     raise ValueError(f"Unsupported build type: {params['build_type']}")
             else:
@@ -317,7 +320,7 @@ class ConfigParser:
 
         if 'build_type' in params:
             if params['build_type'] == 'local':
-                cfg.build_type = BuildType.LOCAL
+                cfg.build_type = BuildType.NATIVE
             elif params['build_type'] == 'docker':
                 cfg.build_type = BuildType.DOCKER
             else:
@@ -335,12 +338,12 @@ class ConfigParser:
             cfg.log_level = 'INFO'
 
         if 'log_dir' in params:
-            cfg.log_dir = params['log_dir']
+            cfg.log_dir = os.path.join(FILE_DIR, '../..', params['log_dir'])
         else:
             logging.warning("No log directory specified -> Logging to console only")
 
         if 'build_dir' in params:
-            cfg.build_dir = params['build_dir']
+            cfg.build_dir = os.path.join(FILE_DIR, '../..', params['build_dir'])
         else:
             raise KeyError("Missing required parameter for Environment config: 'build_dir'")
 

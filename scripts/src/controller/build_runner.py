@@ -5,7 +5,11 @@ from typing import List
 
 from tqdm import tqdm
 
-from scripts.src.model.setup_configuration import SetupConfiguration, BuildType, RICImplementation, CoreImplementation
+from model.setup_configuration import SetupConfiguration
+
+from model.core_config import CoreImplementation
+from model.ric_config import RICImplementation
+from model.utils_config import BuildType
 
 
 class BuildRunner:

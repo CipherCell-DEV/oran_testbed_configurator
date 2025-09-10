@@ -1,10 +1,14 @@
-import logging
 import os
 from typing import List
 
-from scripts.src.controller.program import Program
-from scripts.src.model.setup_configuration import SetupConfiguration, RICImplementation, BuildType, CoreImplementation, \
-    GNBType, UEImplementation
+from controller.program import Program
+
+from model.setup_configuration import SetupConfiguration
+
+from model.core_config import CoreImplementation
+from model.gnb_config import GNBImplementation
+from model.ric_config import RICImplementation
+from model.ue_config import UEImplementation
 
 
 class DemoRunner:
@@ -70,7 +74,7 @@ class DemoRunner:
 
     def _create_gnb(self):
         """Create the gNB program."""
-        if self._cfg.gnb.type == GNBType.SRS:
+        if self._cfg.gnb.type == GNBImplementation.SRS:
             self._program_pool.append(
                 Program(
                     working_dir=self._cfg.environment.build_dir,
