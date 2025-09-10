@@ -22,7 +22,7 @@ def patch_firmware(setup_cfg: SetupConfiguration, dialog_config: DialogConfig):
     Apply required firmware and Docker image patches for the demo environment.
     """
     fw_patcher = FirmwarePatcher(setup_configuration=setup_cfg,
-                                 patch_file_path=os.path.join(os.getcwd(), "patches"))
+                                 patch_file_path=os.path.join(FILE_DIR, "../..", "patches"))
 
     if dialog_config.build_near_rt_ric:
         fw_patcher.patch_ric_firmware()
