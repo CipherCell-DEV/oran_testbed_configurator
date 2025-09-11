@@ -103,10 +103,7 @@ class FirmwarePatcher:
                         "volumes": [
                             "./srsRAN_4G/configs:/app/configs"
                         ],
-                        "command": [
-                            "sh", "-c",
-                            f"sudo ip netns add ue1 && exec ./build/srsue/src/srsue configs/{ue.name}_zmq.conf"
-                        ],
+                        "entrypoint": ["/app/entrypoint.sh"],
                         "stdin_open": True,
                         "tty": True,
                         "restart": "unless-stopped"

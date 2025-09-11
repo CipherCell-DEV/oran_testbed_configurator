@@ -27,29 +27,7 @@ services:
     user: root
     volumes:
       - ./srsRAN_Project/configs:/app/configs
-    command: ["./build/apps/gnb/gnb", "-c", "./configs/gnb_zmq.yaml"]
-    stdin_open: true
-    tty: true
-    restart: unless-stopped
-
-  ue:
-    build: ./srsRAN_4G
-    container_name: srsran_ue
-    platform: linux/amd64
-    networks:
-      docker_ran:
-        ipv4_address: 10.53.1.4   # Pick another unused IP
-      oran-sc-ric_ric_network:
-        ipv4_address: 10.0.2.5   # UE IP if needed on RIC network
-      internal_net:
-        ipv4_address: 172.28.0.3   # UE IP on internal network
-    user: root
-    privileged: true
-    cap_add:
-      - NET_ADMIN
-    volumes:
-      - ./srsRAN_4G/configs:/app/configs
-    #entrypoint: ["/app/entrypoint.sh"]
+    command: [ "./build/apps/gnb/gnb", "-c", "./configs/gnb_zmq.yaml" ]
     stdin_open: true
     tty: true
     restart: unless-stopped
