@@ -1,0 +1,11 @@
+[
+    {
+        "label": "Debug xapp_Security",
+        "adapter": "Debugpy",
+        "request": "launch",
+        "program": "${ZED_FILE}",
+        "args": [],
+        "python": "/usr/local/bin/python"
+        //"cwd": "/workspaces/xapp-security/test_xapp"
+    }
+]
