@@ -103,7 +103,7 @@ class FirmwarePatcher:
                         "volumes": [
                             "./srsRAN_4G/configs:/app/configs"
                         ],
-                        "entrypoint": ["/app/entrypoint.sh"],
+                        "entrypoint": ["/app/ue_entrypoint.sh"],
                         "stdin_open": True,
                         "tty": True,
                         "restart": "unless-stopped"
