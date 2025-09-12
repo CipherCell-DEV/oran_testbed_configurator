@@ -246,6 +246,14 @@ class FirmwarePatcher:
         logging.info("Copying patched files to build directory...")
         file_mappings = [
             (
+                os.path.join(self._patch_file_path, "patched", "config", "gnb_zmq.yaml"),
+                os.path.join("srsRAN_Project/configs", "gnb_zmq.yaml"),
+            ),
+            (
+                os.path.join(self._patch_file_path, "patched", "config", "ue1_zmq.conf"),
+                os.path.join("srsRAN_4G/configs", "ue_zmq.conf"),
+            ),
+            (
                 os.path.join(self._patch_file_path, "patched", "docker", "gnb_ue.yml"),
                 os.path.join(self._setup_cfg.environment.build_dir, "docker-compose.yml"),
             ),
