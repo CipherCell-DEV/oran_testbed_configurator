@@ -271,7 +271,7 @@ class FirmwarePatcher:
             ),
 
             (
-                os.path.join(self._patch_file_path, "patched", "docker", "oran_sc_docker.yml"),
+                os.path.join(self._patch_file_path, "patched", "docker", "oran_sc_docker_new.yml"),
                 os.path.join(self._setup_cfg.environment.build_dir, "oran-sc-ric", "docker-compose.yml"),
             ),
             (
