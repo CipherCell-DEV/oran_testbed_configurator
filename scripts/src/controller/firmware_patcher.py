@@ -200,7 +200,7 @@ class FirmwarePatcher:
                     f"base_srate={self._setup_cfg.gnb.srate}"
                 )  # Fix support multiple UE's
 
-                patch_content['ru_sdr']['srate'] = self._setup_cfg.gnb.srate
+                patch_content['ru_sdr']['srate'] = float(self._setup_cfg.gnb.srate)/1e6
                 patch_content['ru_sdr']['tx_gain'] = self._setup_cfg.gnb.tx_gain
                 patch_content['ru_sdr']['rx_gain'] = self._setup_cfg.gnb.rx_gain
 
