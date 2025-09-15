@@ -19,7 +19,18 @@ class FirmwarePatcher:
         self._setup_cfg = setup_configuration
         self._patch_file_path = patch_file_path
 
+    def _create_folders_if_not_exits(self):
+        patched_folder = os.path.join(self._patch_file_path, "patched")
+        docker_folder = os.path.join(self._patch_file_path, "patched", "docker")
+        config_folder = os.path.join(self._patch_file_path, "patched", "config")
+
+        for folder in [patched_folder, docker_folder, config_folder]:
+            if not os.path.exists(folder):
+                logging.info(f"Implement non existing folder {folder}")
+                os.makedirs(folder)
+
     def _patch_oran_sc_docker_compose(self):
+        self._create_folders_if_not_exits()
         """ Patch the ORAN SC RIC docker-compose.yml file with custom IP addresses and subnet. """
         patch_file_path = os.path.join(self._patch_file_path, "templates", "docker", "oran_sc_docker.yml")
         new_file_path = os.path.join(self._patch_file_path, "patched", "docker", "oran_sc_docker_new.yml")
@@ -54,6 +65,7 @@ class FirmwarePatcher:
             raise
 
     def _patch_srs_ran_sc_docker_compose(self):
+        self._create_folders_if_not_exits()
         patch_file_path = os.path.join(self._patch_file_path, "templates", "docker", "srs_ran_5gc.yml")
         new_file_path = os.path.join(self._patch_file_path, "patched", "docker", "srs_ran_5gc.yml")
 
@@ -80,13 +92,14 @@ class FirmwarePatcher:
             raise
 
     def _patch_gnb_docker(self, patch_content: dict):
+        self._create_folders_if_not_exits()
         pass
         # Patch gnb network
         # patch_content['services']['ue']['networks']['internal_net']['ipv4_address'] = (
         #   f"{self._setup_cfg.ue.sdr_ue}")
 
     def _patch_ue_docker(self, patch_content: dict):
-
+        self._create_folders_if_not_exits()
         for i, ue in enumerate(self._setup_cfg.ue):
             ue_dict = {
                 "services": {
@@ -103,7 +116,7 @@ class FirmwarePatcher:
                         "volumes": [
                             "./srsRAN_4G/configs:/app/configs"
                         ],
-                        "entrypoint": ["/app/ue_entrypoint.sh"],
+                        "entrypoint": f"/app/ue_entrypoint.sh {ue.name}",
                         "stdin_open": True,
                         "tty": True,
                         "restart": "unless-stopped"
@@ -244,15 +257,13 @@ class FirmwarePatcher:
 
     def copy_files_to_location(self):
         logging.info("Copying patched files to build directory...")
+
         file_mappings = [
             (
                 os.path.join(self._patch_file_path, "patched", "config", "gnb_zmq.yaml"),
                 os.path.join(self._setup_cfg.environment.build_dir, "srsRAN_Project", "configs", "gnb_zmq.yaml"),
             ),
-            (
-                os.path.join(self._patch_file_path, "patched", "config", "ue1_zmq.conf"),
-                os.path.join(self._setup_cfg.environment.build_dir,"srsRAN_4G", "configs", "ue_zmq.conf"),
-            ),
+
             (
                 os.path.join(self._patch_file_path, "patched", "docker", "gnb_ue.yml"),
                 os.path.join(self._setup_cfg.environment.build_dir, "docker-compose.yml"),
@@ -279,6 +290,13 @@ class FirmwarePatcher:
                 os.path.join(self._setup_cfg.environment.build_dir, "srsRAN_Project", "docker", "docker-compose.yml"),
             ),
         ]
+
+        # Allow dynamic adding of additional ue configurations
+        for ue in self._setup_cfg.ue:
+            file_mappings.append((
+                os.path.join(self._patch_file_path, "patched", "config", f"{ue.name}_zmq.conf"),
+                os.path.join(self._setup_cfg.environment.build_dir, "srsRAN_4G", "configs", "f{ue.name}_zmq.conf"),
+            ))
 
         for src, dst in file_mappings:
             try:
