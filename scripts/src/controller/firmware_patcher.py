@@ -200,7 +200,7 @@ class FirmwarePatcher:
                     f"base_srate={self._setup_cfg.gnb.srate}"
                 )  # Fix support multiple UE's
 
-                patch_content['ru_sdr']['srate'] = self._setup_cfg.gnb.srate
+                patch_content['ru_sdr']['srate'] = float(self._setup_cfg.gnb.srate)/1e6
                 patch_content['ru_sdr']['tx_gain'] = self._setup_cfg.gnb.tx_gain
                 patch_content['ru_sdr']['rx_gain'] = self._setup_cfg.gnb.rx_gain
 
@@ -246,6 +246,14 @@ class FirmwarePatcher:
         logging.info("Copying patched files to build directory...")
         file_mappings = [
             (
+                os.path.join(self._patch_file_path, "patched", "config", "gnb_zmq.yaml"),
+                os.path.join(self._setup_cfg.environment.build_dir, "srsRAN_Project", "configs", "gnb_zmq.yaml"),
+            ),
+            (
+                os.path.join(self._patch_file_path, "patched", "config", "ue1_zmq.conf"),
+                os.path.join(self._setup_cfg.environment.build_dir,"srsRAN_4G", "configs", "ue_zmq.conf"),
+            ),
+            (
                 os.path.join(self._patch_file_path, "patched", "docker", "gnb_ue.yml"),
                 os.path.join(self._setup_cfg.environment.build_dir, "docker-compose.yml"),
             ),
@@ -263,7 +271,7 @@ class FirmwarePatcher:
             ),
 
             (
-                os.path.join(self._patch_file_path, "patched", "docker", "oran_sc_docker.yml"),
+                os.path.join(self._patch_file_path, "patched", "docker", "oran_sc_docker_new.yml"),
                 os.path.join(self._setup_cfg.environment.build_dir, "oran-sc-ric", "docker-compose.yml"),
             ),
             (
