@@ -74,7 +74,6 @@ class FirmwarePatcher:
         try:
             with open(patch_file_path, "r") as patch_file:
                 patch_content = yaml.safe_load(patch_file)
-                print(patch_content)
 
                 patch_content['services']['5gc']['networks']['ran'][
                     'ipv4_address'] = f"${{OPEN5GS_IP:-{self._setup_cfg.core_5g.ip}}}"

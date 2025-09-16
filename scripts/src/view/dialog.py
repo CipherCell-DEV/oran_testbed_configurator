@@ -29,7 +29,7 @@ def setup_logging():
     handler.setFormatter(LevelColorFormatter("%(asctime)s [%(levelname)s] %(message)s"))
 
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     logger.addHandler(handler)
 
 
