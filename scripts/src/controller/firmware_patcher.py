@@ -1,10 +1,11 @@
 import logging
+import os
+import shutil
 import textwrap
 
 import yaml
-import os
-import shutil
 
+from controller.folder_manager import FolderManager
 from model.ric_config import ORAN_SC_RIC_SERVICE_IP_MAP, RICImplementation
 from model.setup_configuration import SetupConfiguration
 from model.utils_config import BuildType
@@ -19,18 +20,8 @@ class FirmwarePatcher:
         self._setup_cfg = setup_configuration
         self._patch_file_path = patch_file_path
 
-    def _create_folders_if_not_exits(self):
-        patched_folder = os.path.join(self._patch_file_path, "patched")
-        docker_folder = os.path.join(self._patch_file_path, "patched", "docker")
-        config_folder = os.path.join(self._patch_file_path, "patched", "config")
-
-        for folder in [patched_folder, docker_folder, config_folder]:
-            if not os.path.exists(folder):
-                logging.info(f"Implement non existing folder {folder}")
-                os.makedirs(folder)
-
     def _patch_oran_sc_docker_compose(self):
-        self._create_folders_if_not_exits()
+        FolderManager.create_patch_folders(self._patch_file_path)
         """ Patch the ORAN SC RIC docker-compose.yml file with custom IP addresses and subnet. """
         patch_file_path = os.path.join(self._patch_file_path, "templates", "docker", "oran_sc_docker.yml")
         new_file_path = os.path.join(self._patch_file_path, "patched", "docker", "oran_sc_docker_new.yml")
@@ -65,7 +56,7 @@ class FirmwarePatcher:
             raise
 
     def _patch_srs_ran_sc_docker_compose(self):
-        self._create_folders_if_not_exits()
+        FolderManager.create_patch_folders(self._patch_file_path)
         patch_file_path = os.path.join(self._patch_file_path, "templates", "docker", "srs_ran_5gc.yml")
         new_file_path = os.path.join(self._patch_file_path, "patched", "docker", "srs_ran_5gc.yml")
 
@@ -92,14 +83,14 @@ class FirmwarePatcher:
             raise
 
     def _patch_gnb_docker(self, patch_content: dict):
-        self._create_folders_if_not_exits()
+        FolderManager.create_patch_folders(self._patch_file_path)
         pass
         # Patch gnb network
         # patch_content['services']['ue']['networks']['internal_net']['ipv4_address'] = (
         #   f"{self._setup_cfg.ue.sdr_ue}")
 
     def _patch_ue_docker(self, patch_content: dict):
-        self._create_folders_if_not_exits()
+        FolderManager.create_patch_folders(self._patch_file_path)
         for i, ue in enumerate(self._setup_cfg.ue):
             ue_dict = {
                 "services": {
@@ -191,7 +182,6 @@ class FirmwarePatcher:
             out_path = os.path.join(
                 self._patch_file_path, "patched", "config", f"{ue.name}_zmq.conf"
             )
-            os.makedirs(os.path.dirname(out_path), exist_ok=True)
             with open(out_path, "w") as new_file:
                 new_file.write(ue_config)
 
@@ -213,7 +203,7 @@ class FirmwarePatcher:
                     f"base_srate={self._setup_cfg.gnb.srate}"
                 )  # Fix support multiple UE's
 
-                patch_content['ru_sdr']['srate'] = float(self._setup_cfg.gnb.srate)/1e6
+                patch_content['ru_sdr']['srate'] = float(self._setup_cfg.gnb.srate) / 1e6
                 patch_content['ru_sdr']['tx_gain'] = self._setup_cfg.gnb.tx_gain
                 patch_content['ru_sdr']['rx_gain'] = self._setup_cfg.gnb.rx_gain
 
@@ -257,6 +247,7 @@ class FirmwarePatcher:
 
     def copy_files_to_location(self):
         logging.info("Copying patched files to build directory...")
+        FolderManager.create_project_config_folders(self._setup_cfg)
 
         file_mappings = [
             (
@@ -295,7 +286,7 @@ class FirmwarePatcher:
         for ue in self._setup_cfg.ue:
             file_mappings.append((
                 os.path.join(self._patch_file_path, "patched", "config", f"{ue.name}_zmq.conf"),
-                os.path.join(self._setup_cfg.environment.build_dir, "srsRAN_4G", "configs", "f{ue.name}_zmq.conf"),
+                os.path.join(self._setup_cfg.environment.build_dir, "srsRAN_4G", "configs", f"{ue.name}_zmq.conf"),
             ))
 
         for src, dst in file_mappings:

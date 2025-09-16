@@ -5,6 +5,7 @@ from typing import List
 
 from tqdm import tqdm
 
+from controller.folder_manager import FolderManager
 from model.setup_configuration import SetupConfiguration
 
 from model.core_config import CoreImplementation
@@ -21,13 +22,14 @@ class BuildRunner:
     def __init__(self, setup_configuration: SetupConfiguration):
         self.setup_cfg = setup_configuration
 
-    def _create_log_dir(self):
-        """Create log directory if it doesn't exist."""
-        if self.setup_cfg.environment.log_dir:
-            os.makedirs(self.setup_cfg.environment.log_dir, exist_ok=True)
-            logging.info(f"Log directory created at {self.setup_cfg.environment.log_dir}")
-        else:
-            logging.warning("Log directory not specified in configuration.")
+    @staticmethod
+    def _check_docker_compose_daemon_is_running() -> bool:
+        try:
+            subprocess.run(["docker", "info"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+            return False
+        except subprocess.CalledProcessError:
+            logging.error("Docker does not appear to be running. Please start Docker before building components.")
+            return False
 
     def _build_docker_compose(self, component_name: str, command: List[str]):
         """
@@ -41,7 +43,11 @@ class BuildRunner:
          * @param command Docker Compose command as a list of strings.
          */
         """
-        self._create_log_dir()
+        if not BuildRunner._check_docker_compose_daemon_is_running():
+            logging.error("Quit current build")
+            return False
+
+        FolderManager.create_log_dir(self.setup_cfg)
         log_path = os.path.join(self.setup_cfg.environment.log_dir, f"{component_name}.log")
 
         logging.info(f"Building {component_name} using Docker...")
@@ -68,7 +74,7 @@ class BuildRunner:
                          log_path)
             print()
 
-    def build_ric(self):
+    def build_ric(self) -> bool:
         """
         Build the RIC component based on the specified implementation and build type.
         Returns: None
@@ -79,11 +85,12 @@ class BuildRunner:
         if self.setup_cfg.near_rt_ric.type == RICImplementation.ORAN_SC_RIC:
             os.chdir("oran-sc-ric")
             if self.setup_cfg.environment.build_type == BuildType.DOCKER:
-                self._build_docker_compose('oran-sc-ric', ["docker", "compose", "build"])
+                return self._build_docker_compose('oran-sc-ric', ["docker", "compose", "build"])
             else:
                 logging.error("Building RIC natively currently not supported!")
+        return False
 
-    def build_5g_core(self):
+    def build_5g_core(self) -> bool:
         """
         Build the 5G Core Network component based on the specified implementation and build type.
         Returns:
@@ -93,11 +100,15 @@ class BuildRunner:
         if self.setup_cfg.core_5g.implementation == CoreImplementation.SRS:
             os.chdir("srsRAN_Project/docker")
             if self.setup_cfg.environment.build_type == BuildType.DOCKER:
-                self._build_docker_compose('5gc', ["docker", "compose", "build", '5gc'])
+                return self._build_docker_compose('5gc', ["docker", "compose", "build", '5gc'])
             else:
-                logging.warning("Building 5GC natively... -> Currently not supported!")
+                logging.error("Building 5GC natively... -> Currently not supported!")
+        else:
+            logging.error(
+                "The selected 5G Core implementation is not supported. Currently, only SRS 5G Core is supported.")
+        return False
 
-    def build_gnb_ue(self):
+    def build_gnb_ue(self) -> bool:
         """
         Build the gNB and UE components based on the specified build types.
         Returns: None
@@ -109,6 +120,7 @@ class BuildRunner:
         if self.setup_cfg.gnb.build_type == BuildType.DOCKER or is_docker_ue:
             logging.info("Building gNB and UE using Docker...")
             os.chdir(self.setup_cfg.environment.build_dir)
-            self._build_docker_compose('gnb_ue', ["docker", "compose", "build"])
+            return self._build_docker_compose('gnb_ue', ["docker", "compose", "build"])
         else:  # native build
             logging.error("Building gNB and UE natively... -> Currently not supported!")
+            return False

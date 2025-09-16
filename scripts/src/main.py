@@ -1,3 +1,4 @@
+import logging
 import sys
 import pathlib
 
@@ -38,20 +39,25 @@ def patch_firmware(setup_cfg: SetupConfiguration, dialog_config: DialogConfig):
     fw_patcher.copy_files_to_location()
 
 
-def build_firmware(setup_cfg: SetupConfiguration, dialog_config: DialogConfig):
+def build_firmware(setup_cfg: SetupConfiguration, dialog_config: DialogConfig) -> bool:
     """
     Build all software components required for the demo (RIC, 5G Core, gNB/UE).
     """
     build_runner = BuildRunner(setup_configuration=setup_cfg)
 
     if dialog_config.build_near_rt_ric:
-        build_runner.build_ric()
+        if not build_runner.build_ric():
+            return False
 
     if dialog_config.build_core_net:
-        build_runner.build_5g_core()
+        if not build_runner.build_5g_core():
+            return False
 
     if dialog_config.build_ue:
-        build_runner.build_gnb_ue()
+        if not build_runner.build_gnb_ue():
+            return False
+
+    return True
 
 
 def run_demo(setup_cfg: SetupConfiguration):
@@ -91,11 +97,16 @@ if __name__ == "__main__":
         dialog_cfg = run_dialog()
         config = ConfigParser.parse_config_file(DEFAULT_CFG_FILE)
 
+    checkout_repositories(config)
+
     if cmd_line_cfg.generate_patch_files:
         patch_firmware(config, dialog_cfg)
 
+    firmware_build_success = True
     if cmd_line_cfg.enable_build:
-        build_firmware(config, dialog_cfg)
+        firmware_build_success = build_firmware(config, dialog_cfg)
+        if not firmware_build_success:
+            logging.error("Exit Program!")
 
-    if cmd_line_cfg.run_demo:
+    if firmware_build_success and cmd_line_cfg.run_demo:
         run_demo(config)
