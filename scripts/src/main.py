@@ -1,6 +1,8 @@
 import sys
 import pathlib
 
+from controller.component_checkout_manager import ComponentCheckoutManager
+
 sys.path.insert(0, str(pathlib.Path(__file__).parent.resolve()))
 
 import os
@@ -52,7 +54,7 @@ def build_firmware(setup_cfg: SetupConfiguration, dialog_config: DialogConfig):
         build_runner.build_gnb_ue()
 
 
-def run_demo(setup_cfg: SetupConfiguration, dialog_cfg: DialogConfig):
+def run_demo(setup_cfg: SetupConfiguration):
     """
     Start the demo environment and launch the live console viewer.
     """
@@ -60,6 +62,17 @@ def run_demo(setup_cfg: SetupConfiguration, dialog_cfg: DialogConfig):
     demo_runner.create_programs()
     live_view = LiveConsoleViewer(demo_runner=demo_runner)
     live_view.start_live_display_loop()
+
+
+def checkout_repositories(setup_cfg: SetupConfiguration):
+    """
+    Clone (check out) all repositories required for the current setup configuration.
+    """
+    component_checkout_mgr = ComponentCheckoutManager(setup_config=setup_cfg)
+    component_checkout_mgr.checkout_ric()
+    component_checkout_mgr.checkout_5g_core()
+    component_checkout_mgr.checkout_gnb()
+    component_checkout_mgr.checkout_ue()
 
 
 if __name__ == "__main__":
@@ -85,4 +98,4 @@ if __name__ == "__main__":
         build_firmware(config, dialog_cfg)
 
     if cmd_line_cfg.run_demo:
-        run_demo(config, dialog_cfg)
+        run_demo(config)
