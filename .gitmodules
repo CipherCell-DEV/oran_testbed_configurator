@@ -1,12 +1,3 @@
 [submodule "srsRAN_Project"]
 	path = srsRAN_Project
 	url = git@github.com:srsran/srsRAN_Project.git
-[submodule "oran-sc-ric"]
-	path = oran-sc-ric
-	url = https://github.com/srsran/oran-sc-ric
-[submodule "srsRAN_4G"]
-	path = srsRAN_4G
-	url = https://github.com/srsran/srsRAN_4G
-[submodule "srsRAN_Project_jbpf"]
-	path = srsRAN_Project_jbpf
-	url = https://github.com/xfoukas/srsRAN_Project_jbpf
