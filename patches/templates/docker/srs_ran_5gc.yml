@@ -22,13 +22,13 @@ services:
   5gc:
     container_name: open5gs_5gc
     build:
-      context: open5gs
+      context: srsRAN_Project/docker/open5gs
       target: open5gs
       args:
         OS_VERSION: "22.04"
         OPEN5GS_VERSION: "v2.7.0"
     env_file:
-      - ${OPEN_5GS_ENV_FILE:-open5gs/open5gs.env}
+      - ${OPEN_5GS_ENV_FILE:-srsRAN_Project/docker/open5gs/open5gs.env}
     privileged: true
     ports:
       - "9999:9999/tcp"
@@ -45,53 +45,11 @@ services:
       ran:
         ipv4_address: ${OPEN5GS_IP:-10.53.1.2}
 
-  gnb:
-    container_name: srsran_gnb
-    # Build info
-    image: srsran/gnb
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-      args:
-        OS_VERSION: "24.04"
-    # privileged mode is requred only for accessing usb devices
-    privileged: true
-    # Extra capabilities always required
-    cap_add:
-      - SYS_NICE
-      - CAP_SYS_PTRACE
-    volumes:
-      # Access USB to use some SDRs
-      - /dev/bus/usb/:/dev/bus/usb/
-      # Sharing images between the host and the pod.
-      # It's also possible to download the images inside the pod
-      - /usr/share/uhd/images:/usr/share/uhd/images
-      # Save logs and more into gnb-storage
-      - gnb-storage:/tmp
-    # It creates a file/folder into /config_name inside the container
-    # Its content would be the value of the file used to create the config
-    configs:
-      - gnb_config.yml
-    # Customize your desired network mode.
-    # current netowrk configuration creastes a private netwoek with both containers attached
-    # An alterantive would be `network: host"`. That would expose your host network into the container. It's the easiest to use if the 5gc is not in your PC
-    networks:
-      ran:
-        ipv4_address: ${GNB_IP:-10.53.1.3}
-      metrics:
-        ipv4_address: 172.19.1.3
-    # Start GNB container after 5gc is up and running
-    depends_on:
-      5gc:
-        condition: service_healthy
-    # Command to run into the final container
-    command: gnb -c /gnb_config.yml cu_cp amf --addr ${OPEN5GS_IP:-10.53.1.2} --bind_addr ${GNB_IP:-10.53.1.3}
-
   telegraf:
     container_name: telegraf
     image: srsran/telegraf
     build:
-      context: telegraf  
+      context: srsRAN_Project/docker/telegraf
     depends_on:
       influxdb:
         condition: service_healthy
@@ -129,7 +87,7 @@ services:
     container_name: grafana
     image: srsran/grafana
     build:
-      context: grafana
+      context: srsRAN_Project/docker/grafana
       args:
         GF_VERSION: ${GF_VERSION}
         LOGO_URL: ${GF_LOGO_URL}
@@ -148,7 +106,7 @@ services:
 
 configs:
   gnb_config.yml:
-    file: ${GNB_CONFIG_PATH:-../configs/gnb_rf_b200_tdd_n78_20mhz.yml} # Path to your desired config file
+    file: ${GNB_CONFIG_PATH:-srsRAN_Project/configs/gnb_rf_b200_tdd_n78_20mhz.yml} # Path to your desired config file
 
 volumes:
   gnb-storage:
