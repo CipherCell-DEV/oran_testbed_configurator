@@ -47,9 +47,10 @@ class DemoRunner:
         if self._cfg.near_rt_ric.type == RICImplementation.ORAN_SC_RIC:
             self._program_pool.append(
                 Program(
-                    working_dir=os.path.join(self._cfg.environment.build_dir, "oran-sc-ric"),
+                    working_dir=self._cfg.environment.build_dir,
                     name="RIC",
-                    command=["docker", "compose", "up"],
+                    command=["docker", "compose", "up", "dbaas", "rtmgr_sim", "submgr", "e2term", "appmgr",
+                             "e2mgr", "python_xapp_runner"]
                 )
             )
         else:
@@ -62,9 +63,9 @@ class DemoRunner:
         if self._cfg.core_5g.implementation == CoreImplementation.SRS:
             self._program_pool.append(
                 Program(
-                    working_dir=os.path.join(self._cfg.environment.build_dir, "srsRAN_Project", "docker"),
+                    working_dir=self._cfg.environment.build_dir,
                     name="5G-core",
-                    command=["docker", "compose", "up", "--build", "5gc"],
+                    command=["docker", "compose", "up", "5gc"],
                 )
             )
         else:

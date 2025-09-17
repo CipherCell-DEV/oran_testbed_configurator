@@ -84,9 +84,10 @@ class BuildRunner:
         os.chdir(self.setup_cfg.environment.build_dir)
 
         if self.setup_cfg.near_rt_ric.type == RICImplementation.ORAN_SC_RIC:
-            os.chdir("oran-sc-ric")
             if self.setup_cfg.environment.build_type == BuildType.DOCKER:
-                return self._build_docker_compose('oran-sc-ric', ["docker", "compose", "build"])
+                return self._build_docker_compose('oran-sc-ric', ["docker", "compose", "build",
+                                                                  "dbaas", "rtmgr_sim", "submgr", "e2term", "appmgr",
+                                                                  "e2mgr", "python_xapp_runner"])
             else:
                 logging.error("Building RIC natively currently not supported!")
         return False
@@ -99,7 +100,6 @@ class BuildRunner:
         logging.info("Running 5G Core Network build process...")
         os.chdir(self.setup_cfg.environment.build_dir)
         if self.setup_cfg.core_5g.implementation == CoreImplementation.SRS:
-            os.chdir("srsRAN_Project/docker")
             if self.setup_cfg.environment.build_type == BuildType.DOCKER:
                 return self._build_docker_compose('5gc', ["docker", "compose", "build", '5gc'])
             else:
@@ -109,19 +109,35 @@ class BuildRunner:
                 "The selected 5G Core implementation is not supported. Currently, only SRS 5G Core is supported.")
         return False
 
-    def build_gnb_ue(self) -> bool:
+    def build_gnb(self) -> bool:
         """
         Build the gNB and UE components based on the specified build types.
         Returns: None
         """
-        logging.info("Running gNB and UE build process...")
+        logging.info("Running gNB build process...")
 
-        is_docker_ue = any(ue.build_type == BuildType.DOCKER for ue in self.setup_cfg.ue)
-
-        if self.setup_cfg.gnb.build_type == BuildType.DOCKER or is_docker_ue:
-            logging.info("Building gNB and UE using Docker...")
+        if self.setup_cfg.gnb.build_type == BuildType.DOCKER:
+            logging.info("Building gNB using Docker...")
             os.chdir(self.setup_cfg.environment.build_dir)
-            return self._build_docker_compose('gnb_ue', ["docker", "compose", "build"])
+            return self._build_docker_compose('gnb', ["docker", "compose", "build", "gnb"])
         else:  # native build
-            logging.error("Building gNB and UE natively... -> Currently not supported!")
+            logging.error("Building gNB natively... -> Currently not supported!")
             return False
+
+    def build_ues(self) -> bool:
+        """
+        Build the gNB and UE components based on the specified build types.
+        Returns: None
+        """
+        logging.info("Running UE build process...")
+        os.chdir(self.setup_cfg.environment.build_dir)
+        for ue in self.setup_cfg.ue:
+            if ue.build_type == BuildType.DOCKER:
+                logging.info(f"Building UE ({ue.name}) using Docker...")
+                ue_ret = self._build_docker_compose('ue', ["docker", "compose", "build", ue.name])
+                if not ue_ret:
+                    return False
+            elif ue.build_type == BuildType.NATIVE:
+                logging.error(f"Building UE {ue.name} natively... -> Currently not supported!")
+                return False
+        return True
