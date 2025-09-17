@@ -15,7 +15,7 @@ services:
     image: rtmgr_sim:${SC_RIC_VERSION}
     platform: linux/amd64
     build:
-      context: ./ric/images/rtmgr_sim
+      context: ./oran-sc-ric/ric/images/rtmgr_sim
       dockerfile: ./Dockerfile
       args:
         SC_RIC_VERSION: ${SC_RIC_VERSION}
@@ -31,10 +31,10 @@ services:
     - RMR_SRC_ID=${RTMGR_SIM_IP}
     volumes:
     - type: bind
-      source: ./ric/configs/rtmgr.yaml
+      source: ./oran-sc-ric/ric/configs/rtmgr.yaml
       target: /opt/rmsimulator/resources/configuration.yaml
     - type: bind
-      source: ./ric/configs/routes.rtg
+      source: ./oran-sc-ric/ric/configs/routes.rtg
       target: /opt/config/uta-rtg.rt
     networks:
       ric_network:
@@ -59,10 +59,10 @@ services:
     command: ./submgr -f $${CFG_FILE}
     volumes:
     - type: bind
-      source: ./ric/configs/submgr.yaml
+      source: ./oran-sc-ric/ric/configs/submgr.yaml
       target: /opt/config/submgr-config.yaml
     - type: bind
-      source: ./ric/configs/routes.rtg
+      source: ./oran-sc-ric/ric/configs/routes.rtg
       target: /opt/config/submgr-uta-rtg.rt
     networks:
       ric_network:
@@ -85,10 +85,10 @@ services:
     command: ./e2 -p config -f config.conf
     volumes:
     - type: bind
-      source: ./ric/configs/e2term.conf
+      source: ./oran-sc-ric/ric/configs/e2term.conf
       target: /opt/e2/config/config.conf
     - type: bind
-      source: ./ric/configs/routes.rtg
+      source: ./oran-sc-ric/ric/configs/routes.rtg
       target: /opt/e2/dockerRouter.txt
     networks:
       ric_network:
@@ -109,10 +109,10 @@ services:
     - RMR_SRC_ID=${APPMGR_IP}
     volumes:
     - type: bind
-      source: ./ric/configs/routes.rtg
+      source: ./oran-sc-ric/ric/configs/routes.rtg
       target: /opt/ric/config/router.txt
     - type: bind
-      source: ./ric/configs/appmgr.yaml
+      source: ./oran-sc-ric/ric/configs/appmgr.yaml
       target: /opt/ric/config/appmgr.yaml
     networks:
       ric_network:
@@ -134,10 +134,10 @@ services:
     command: ./main -port=3800 -f /opt/E2Manager/resources/configuration.yaml
     volumes:
     - type: bind
-      source: ./ric/configs/routes.rtg
+      source: ./oran-sc-ric/ric/configs/routes.rtg
       target: /opt/E2Manager/router.txt
     - type: bind
-      source: ./ric/configs/e2mgr.yaml
+      source: ./oran-sc-ric/ric/configs/e2mgr.yaml
       target: /opt/E2Manager/resources/configuration.yaml
     networks:
       ric_network:
@@ -148,7 +148,7 @@ services:
     image: python_xapp_runner:${SC_RIC_VERSION}
     platform: linux/amd64
     build:
-      context: ./ric/images/ric-plt-xapp-frame-py
+      context: ./oran-sc-ric/ric/images/ric-plt-xapp-frame-py
       dockerfile: ./Dockerfile
     env_file:
     - .env
@@ -164,7 +164,7 @@ services:
     - /bin/bash
     volumes:
     - type: bind
-      source: ./ric/configs/routes.rtg
+      source: ./oran-sc-ric/ric/configs/routes.rtg
       target: /opt/ric/config/uta-rtg.rt
     - type: bind
       source: ./xApps/python
