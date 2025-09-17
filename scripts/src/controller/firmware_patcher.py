@@ -10,6 +10,7 @@ from controller.folder_manager import FolderManager
 from model.core_config import CoreImplementation
 from model.ric_config import ORAN_SC_RIC_SERVICE_IP_MAP, RICImplementation
 from model.setup_configuration import SetupConfiguration
+from model.ue_config import USIMMode, USIMAlgo
 from model.utils_config import BuildType
 
 
@@ -136,6 +137,20 @@ class FirmwarePatcher:
             logging.error(f"Failed to parse YAML patch file: {e}")
             raise
 
+    def _get_usim_mode(self):
+        if self._setup_cfg.ue[0].usim.mode == USIMMode.HARD:
+            return "hard"
+        elif self._setup_cfg.ue[0].usim.mode == USIMMode.SOFT:
+            return "soft"
+
+    def _get_usim_algorithm(self):
+        if self._setup_cfg.ue[0].usim.algo == USIMAlgo.XOR:
+            return "xor" # NOT TESTED
+        elif self._setup_cfg.ue[0].usim.algo == USIMAlgo.COMP:
+            return "comp" # NOT TESTED
+        elif self._setup_cfg.ue[0].usim.algo == USIMAlgo.MILENAGE:
+            return "milenage"
+
     def _patch_gnb_docker(self, patch_content: dict):
         FolderManager.create_patch_folders(self._patch_file_path)
         pass  # TODO implement patching!!
@@ -202,8 +217,8 @@ class FirmwarePatcher:
     file_max_size = -1
 
     [usim]
-    mode = {ue.usim.mode}
-    algo = {ue.usim.algo}
+    mode = {self._get_usim_mode()}
+    algo = {self._get_usim_algorithm()}
     opc  = {ue.usim.opc}
     k    = {ue.usim.k}
     imsi = {ue.usim.imsi}
@@ -250,7 +265,7 @@ class FirmwarePatcher:
 
                 patch_content['ru_sdr']['device_args'] = (
                     f"tx_port=tcp://0.0.0.0:2000,"
-                    f"rx_port=tcp://{self._setup_cfg.ue[0].ip}:2001," # TODO Allow multiple UEs
+                    f"rx_port=tcp://{self._setup_cfg.ue[0].ip}:2001,"  # TODO Allow multiple UEs
                     f"base_srate={self._setup_cfg.gnb.srate}"
                 )
 
