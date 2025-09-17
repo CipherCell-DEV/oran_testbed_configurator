@@ -178,7 +178,7 @@ class FirmwarePatcher:
     nof_antennas = 1
 
     device_name = zmq
-    device_args = tx_port=tcp://{ue.ip}:2001,rx_port=tcp://{self._setup_cfg.gnb.ip_config.ru_sdr}:2000,base_srate={ue.srate}
+    device_args = tx_port=tcp://0.0.0.0:2001,rx_port=tcp://{self._setup_cfg.gnb.ip_config.ru_sdr}:2000,base_srate={ue.srate}
 
     [rat.eutra]
     dl_earfcn = 2850
@@ -249,10 +249,10 @@ class FirmwarePatcher:
                 patch_content['cu_cp']['amf']['bind_addr'] = f"{self._setup_cfg.gnb.ip_config.cu_cp}"
 
                 patch_content['ru_sdr']['device_args'] = (
-                    f"tx_port=tcp://{self._setup_cfg.gnb.ip_config.ru_sdr}:2000,"
-                    f"rx_port=tcp://{self._setup_cfg.ue[0].ip}:2001,"
+                    f"tx_port=tcp://0.0.0.0:2000,"
+                    f"rx_port=tcp://{self._setup_cfg.ue[0].ip}:2001," # TODO Allow multiple UEs
                     f"base_srate={self._setup_cfg.gnb.srate}"
-                )  # Fix support multiple UE's
+                )
 
                 patch_content['ru_sdr']['srate'] = float(self._setup_cfg.gnb.srate) / 1e6
                 patch_content['ru_sdr']['tx_gain'] = self._setup_cfg.gnb.tx_gain
