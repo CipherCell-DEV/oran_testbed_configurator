@@ -41,7 +41,7 @@ services:
         image: nexus3.o-ran-sc.org:10002/o-ran-sc/ric-plt-submgr:${SUBMGR_VER}
         build:
             context: ./ric
-            dockerfile: ./images/submrg/Dockerfile
+            dockerfile: ./images/submgr/Dockerfile
             args:
                 SUBMGR_VER: ${SUBMGR_VER}
         platform: linux/amd64
