@@ -235,7 +235,7 @@ class FirmwarePatcher:
     [gw]
     netns = {ue.gateway.netns}
     ip_devname = {ue.gateway.ip_devname}
-    ip_netmask = {ue.gateway.ip_netmask}
+    ip_netmask = {ue.gateway.ip_netmask.broadcast_address}
 
     [gui]
     enable = false
