@@ -60,8 +60,8 @@ services:
         cap_add:
             - SYS_NICE
             - CAP_SYS_PTRACE
-        volumes:
-            # Access USB to use some SDRs
+        #volumes:
+        # Access USB to use some SDRs
         #  - /dev/bus/usb/:/dev/bus/usb/
         # Sharing images between the host and the pod.
         # It's also possible to download the images inside the pod

@@ -115,9 +115,6 @@ class FirmwarePatcher:
                         "user": "root",
                         "privileged": True,
                         "cap_add": ["NET_ADMIN"],
-                        "volumes": [
-                            "./srsRAN_4G/configs:/app/configs"
-                        ],
                         "entrypoint": f"/app/ue_entrypoint.sh {ue.name}",
                         "stdin_open": True,
                         "tty": True,
