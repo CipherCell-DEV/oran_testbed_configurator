@@ -1,0 +1,5 @@
+ARG E2MGR_VER=6.0.4
+FROM nexus3.o-ran-sc.org:10002/o-ran-sc/ric-plt-e2mgr:${E2MGR_VER}
+
+COPY ./configs/routes.rtg /opt/E2Manager/router.txt
+COPY ./configs/e2mgr.yaml  /opt/E2Manager/resources/configuration.yaml

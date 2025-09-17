@@ -39,6 +39,11 @@ services:
         container_name: ric_submgr
         hostname: submgr
         image: nexus3.o-ran-sc.org:10002/o-ran-sc/ric-plt-submgr:${SUBMGR_VER}
+        build:
+            context: ./ric
+            dockerfile: ./images/submrg/Dockerfile
+            args:
+                SUBMGR_VER: ${SUBMGR_VER}
         platform: linux/amd64
         depends_on:
             - dbaas
@@ -53,13 +58,6 @@ services:
             - RMR_SEED_RT=/opt/config/submgr-uta-rtg.rt
             - RMR_SRC_ID=${SUBMGR_IP}
         command: ./submgr -f $${CFG_FILE}
-        volumes:
-            - type: bind
-              source: ./ric/configs/submgr.yaml
-              target: /opt/config/submgr-config.yaml
-            - type: bind
-              source: ./ric/configs/routes.rtg
-              target: /opt/config/submgr-uta-rtg.rt
         networks:
             ric_network:
                 ipv4_address: ${SUBMGR_IP:-10.0.2.13}
@@ -69,6 +67,11 @@ services:
         hostname: e2term
         platform: linux/amd64
         image: nexus3.o-ran-sc.org:10002/o-ran-sc/ric-plt-e2:${E2TERM_VER}
+        build:
+            context: ./ric
+            dockerfile: ./images/e2term/Dockerfile
+            args:
+                E2TERM_VER: ${E2TERM_VER}
         #Uncomment ports to use the RIC from outside the docker network.
         #ports:
         #  - "36421:36421/sctp"
@@ -83,13 +86,6 @@ services:
             - RMR_SEED_RT=/opt/e2/dockerRouter.txt
             - RMR_SRC_ID=${E2TERM_IP}
         command: ./e2 -p config -f config.conf
-        volumes:
-            - type: bind
-              source: ./ric/configs/e2term.conf
-              target: /opt/e2/config/config.conf
-            - type: bind
-              source: ./ric/configs/routes.rtg
-              target: /opt/e2/dockerRouter.txt
         networks:
             ric_network:
                 ipv4_address: ${E2TERM_IP:-10.0.2.10}
@@ -98,6 +94,11 @@ services:
         container_name: ric_appmgr
         hostname: appmgr
         image: nexus3.o-ran-sc.org:10002/o-ran-sc/ric-plt-appmgr:${APPMGR_VER}
+        build:
+            context: ./ric
+            dockerfile: ./images/appmgr/Dockerfile
+            args:
+                APPMGR_VER: ${APPMGR_VER}
         platform: linux/amd64
         env_file:
             - .env
@@ -108,13 +109,6 @@ services:
             - SERVICE_NAME=ric_${APPMGR_NAME}_service
             - RMR_SEED_RT=/opt/ric/config/router.txt
             - RMR_SRC_ID=${APPMGR_IP}
-        volumes:
-            - type: bind
-              source: ./ric/configs/routes.rtg
-              target: /opt/ric/config/router.txt
-            - type: bind
-              source: ./ric/configs/appmgr.yaml
-              target: /opt/ric/config/appmgr.yaml
         networks:
             ric_network:
                 ipv4_address: ${APPMGR_IP:-10.0.2.14}
@@ -123,6 +117,11 @@ services:
         container_name: ric_e2mgr
         hostname: e2mgr
         image: nexus3.o-ran-sc.org:10002/o-ran-sc/ric-plt-e2mgr:${E2MGR_VER}
+        build:
+            context: ./ric
+            dockerfile: ./images/e2mgr/Dockerfile
+            args:
+                E2MGR_VER: ${E2MGR_VER}
         platform: linux/amd64
         env_file:
             - .env
@@ -134,13 +133,6 @@ services:
             - RMR_SEED_RT=/opt/E2Manager/router.txt
             - RMR_SRC_ID=${E2MGR_IP}
         command: ./main -port=3800 -f /opt/E2Manager/resources/configuration.yaml
-        volumes:
-            - type: bind
-              source: ./ric/configs/routes.rtg
-              target: /opt/E2Manager/router.txt
-            - type: bind
-              source: ./ric/configs/e2mgr.yaml
-              target: /opt/E2Manager/resources/configuration.yaml
         networks:
             ric_network:
                 ipv4_address: ${E2MGR_IP:-10.0.2.11}

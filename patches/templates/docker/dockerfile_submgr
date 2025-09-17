@@ -1,0 +1,6 @@
+ARG  SUBMGR_VER=latest
+FROM nexus3.o-ran-sc.org:10002/o-ran-sc/ric-plt-submgr:${SUBMGR_VER}
+
+
+COPY ./configs/submgr.yaml /opt/config/submgr-config.yaml
+COPY ./configs/routes.rtg /opt/config/submgr-uta-rtg.rt

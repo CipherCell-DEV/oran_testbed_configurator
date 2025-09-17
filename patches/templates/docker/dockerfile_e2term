@@ -1,0 +1,5 @@
+ARG E2TERM_VER=6.0.4
+FROM nexus3.o-ran-sc.org:10002/o-ran-sc/ric-plt-e2:${E2TERM_VER}
+
+COPY ./configs/e2term.conf /opt/e2/config/config.conf
+COPY ./configs/routes.rtg /opt/e2/dockerRouter.txt
