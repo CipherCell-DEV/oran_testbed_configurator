@@ -259,13 +259,38 @@ class FirmwarePatcher:
     def copy_files_to_location(self):
         logging.info("Copying patched files to build directory...")
         FolderManager.create_project_config_folders(self._setup_cfg)
+        FolderManager.create_project_build_folders(self._setup_cfg)
 
         file_mappings = [
+            (
+                os.path.join(self._patch_file_path, "templates", "docker", "dockerfile_appmgr"),
+                os.path.join(self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images" ,"appmgr", "Dockerfile"),
+            ),
+            (
+                os.path.join(self._patch_file_path, "templates", "docker", "dockerfile_submgr"),
+                os.path.join(self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images" ,"submgr", "Dockerfile"),
+            ),
+            (
+                os.path.join(self._patch_file_path, "templates", "docker", "dockerfile_e2term"),
+                os.path.join(self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images" ,"e2term", "Dockerfile"),
+            ),
+            (
+                os.path.join(self._patch_file_path, "templates", "docker", "dockerfile_rtmgr_sim"),
+                os.path.join(self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images" ,"rtmgr_sim", "Dockerfile"),
+            ),
+            (
+                os.path.join(self._patch_file_path, "templates", "docker", "dockerfile_e2mgr"),
+                os.path.join(self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images" ,"e2mgr", "Dockerfile"),
+            ),
+            (
+                os.path.join(self._patch_file_path, "templates", "docker", "dockerfile_ric_plt_xapp_frame-py"),
+                os.path.join(self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images" ,"ric-plt-xapp-frame-py", "Dockerfile"),
+            ),
+
             (
                 os.path.join(self._patch_file_path, "patched", "config", "gnb_zmq.yaml"),
                 os.path.join(self._setup_cfg.environment.build_dir, "srsRAN_Project", "configs", "gnb_zmq.yaml"),
             ),
-
             (
                 os.path.join(self._patch_file_path, "patched", "docker", "gnb_ue.yml"),
                 os.path.join(self._setup_cfg.environment.build_dir, "docker-compose.yml"),
