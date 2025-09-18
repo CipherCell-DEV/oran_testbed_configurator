@@ -6,10 +6,10 @@ from controller.program_state_monitor import ProgramStateMonitor, ProgramState
 from model.setup_configuration import SetupConfiguration
 from model.utils_config import ProgramType
 
-RESTART_TIMEOUT_RIC_IN_S = 10
-RESTART_TIMEOUT_CORE_IN_S = 10
-RESTART_TIMEOUT_GNB_IN_S = 5
-RESTART_TIMEOUT_UE_IN_S = 10
+RESTART_TIMEOUT_RIC_IN_S = 30
+RESTART_TIMEOUT_CORE_IN_S = 30
+RESTART_TIMEOUT_GNB_IN_S = 30
+RESTART_TIMEOUT_UE_IN_S = 30
 
 
 class Program:
