@@ -1,6 +1,7 @@
 import logging
 import textwrap
 import threading
+import time
 from itertools import zip_longest
 
 from rich.columns import Columns
@@ -9,7 +10,13 @@ from rich.panel import Panel
 
 from controller.demo_runner import DemoRunner
 from controller.program import Program
+from controller.program_state_monitor import ProgramState
 from model.utils_config import MAX_DISPLAY_LINE_LENGTH
+
+NR_LINES_IN_LIVE_VIEW = 10
+
+# Avoid busy waiting when checking if a component is in running state
+WAIT_BETWEEN_STATE_CHECKS_IN_S = 1
 
 
 class ComponentThreadPool:
@@ -20,23 +27,22 @@ class ComponentThreadPool:
     @staticmethod
     def run_thread(prog: Program, live_view_buffers: dict):
         prog.start()
+        process_state_checker = prog.get_program_state_checker()
         process = prog.get_process()
         name = prog.get_process_name()
 
         for line in process.stdout:
             line = str(line.rstrip())
-
-            # Wrap line into multiple shorter lines if necessary
+            process_state_checker.analyze_input_stream(line)
             wrapped_lines = textwrap.wrap(line, MAX_DISPLAY_LINE_LENGTH)
 
-            if not wrapped_lines:  # ensure at least one line goes in
+            if not wrapped_lines:
                 wrapped_lines = [""]
 
             live_view_buffers[name].extend(wrapped_lines)
 
-            # Keep only last 10 lines
-            if len(live_view_buffers[name]) > 10:
-                live_view_buffers[name] = live_view_buffers[name][-10:]
+            if len(live_view_buffers[name]) > NR_LINES_IN_LIVE_VIEW:
+                live_view_buffers[name] = live_view_buffers[name][-NR_LINES_IN_LIVE_VIEW:]
 
     def add_program(self, program: Program):
         logging.info(f"Adding program {program.name} to thread pool.")
@@ -62,17 +68,39 @@ class LiveConsoleViewer:
         self.thread_pool = ComponentThreadPool()
         programs = demo_runner.get_programs()
         logging.info(f"Add {len(programs)} to demo runner.")
-        for program in programs:
-            self.thread_pool.add_program(program)
+
+        self.thread_pool.add_program(programs['ric'])
+        self.thread_pool.add_program(programs['5g_core'])
+        self.thread_pool.add_program(programs['gnb'])
+        self.thread_pool.add_program(programs['ue'][0])  # TODO support multiple UEs
 
     def start_live_display_loop(self):
         logging.info("Starting live console viewer...")
 
         buffers = {program.get_process_name(): [] for program in self.thread_pool.get_programs_dict().values()}
 
-        for identifier in self.thread_pool.get_programs_dict().keys():
-            self.thread_pool.add_thread(program_identifier=identifier, live_view_buffers=buffers)
-            self.thread_pool.start_thread(program_identifier=identifier)
+        def wait_until_component_is_up(identifier: str):
+            current_state = ProgramState.STOPPED
+            while current_state != ProgramState.RUNNING:
+                current_state = self.thread_pool.get_programs_dict()[identifier].get_current_state()
+                time.sleep(WAIT_BETWEEN_STATE_CHECKS_IN_S)
+
+        self.thread_pool.add_thread(program_identifier='RIC', live_view_buffers=buffers)
+        self.thread_pool.start_thread(program_identifier='RIC')
+        wait_until_component_is_up('RIC')
+
+        self.thread_pool.add_thread(program_identifier='5G-core', live_view_buffers=buffers)
+        self.thread_pool.start_thread(program_identifier='5G-core')
+        wait_until_component_is_up('5G-core')
+
+        self.thread_pool.add_thread(program_identifier='gNB', live_view_buffers=buffers)
+        self.thread_pool.start_thread(program_identifier='gNB')
+        wait_until_component_is_up('gNB')
+
+        # TODO allow multiple UEs
+        self.thread_pool.add_thread(program_identifier='UE-ue1', live_view_buffers=buffers)
+        self.thread_pool.start_thread(program_identifier='UE-ue1')
+        wait_until_component_is_up('UE-ue1')
 
         def chunked(iterable, n, fillvalue=None):
             args = [iter(iterable)] * n
