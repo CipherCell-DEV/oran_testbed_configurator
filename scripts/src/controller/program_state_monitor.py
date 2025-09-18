@@ -41,7 +41,7 @@ class ProgramStateMonitor:
         self._triggers: Dict[Tuple[ProgramType, ProgramState], List[Tuple[str, ProgramState]]] = {
             # RIC
             (ProgramType.RIC, ProgramState.STOPPED): [
-                ("Container ric_e2mgr  Created", ProgramState.INITIALIZING)
+                ("Running", ProgramState.INITIALIZING)
             ],
             (ProgramType.RIC, ProgramState.INITIALIZING): [
                 ("RMR is ready now ...", ProgramState.RUNNING)
@@ -49,7 +49,7 @@ class ProgramStateMonitor:
 
             # 5G Core
             (ProgramType.CORE, ProgramState.STOPPED): [
-                ("Container open5gs_5gc  Created", ProgramState.INITIALIZING)
+                ("open5gs_5gc", ProgramState.INITIALIZING)
             ],
             (ProgramType.CORE, ProgramState.INITIALIZING): [
                 ("UDR initialize...done", ProgramState.RUNNING)
@@ -57,7 +57,7 @@ class ProgramStateMonitor:
 
             # gNB
             (ProgramType.GNB, ProgramState.STOPPED): [
-                ("Container srsran_gnb  Created", ProgramState.INITIALIZING)
+                ("--== srsRAN", ProgramState.INITIALIZING)
             ],
             (ProgramType.GNB, ProgramState.INITIALIZING): [
                 ("==== gNB started ===", ProgramState.RUNNING)
@@ -65,7 +65,7 @@ class ProgramStateMonitor:
 
             # UE #TODO (currently only first UE supported)
             (ProgramType.UE, ProgramState.STOPPED): [
-                ("Container ue", ProgramState.INITIALIZING)
+                ("Attaching to ue", ProgramState.INITIALIZING)
             ],
             (ProgramType.UE, ProgramState.INITIALIZING): [
                 ("RRC NR reconfiguration successful.", ProgramState.RUNNING)
@@ -102,8 +102,9 @@ class ProgramStateMonitor:
             if trigger in input_stream:
                 if not self._perform_state_transition(key[1], next_state):
                     raise Exception("Error incorrect state transition")
-                logging.info(f"{self._program_type}: started successfully ✅")
-                print()
+                if self._current_state == ProgramState.RUNNING:
+                    logging.info(f"{self._program_type}: started successfully ✅")
+                    print()
 
     def watchdog_function(self):
         """
