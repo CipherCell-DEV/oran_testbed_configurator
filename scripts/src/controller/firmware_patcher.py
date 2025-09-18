@@ -239,9 +239,6 @@ class FirmwarePatcher:
 
     [gui]
     enable = false
-
-    [expert]
-    lte_sample_rates = true
     """
             ue_config = textwrap.dedent(ue_config).lstrip("\n")
 
