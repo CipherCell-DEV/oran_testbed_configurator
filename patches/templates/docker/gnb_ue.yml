@@ -1,10 +1,6 @@
 version: "3.9"
 
 networks:
-    docker_ran:
-        external: true
-    oran-sc-ric_ric_network:
-        external: true
     internal_net:
         driver: bridge
         ipam:
@@ -18,9 +14,9 @@ services:
         privileged: true
         platform: linux/amd64
         networks:
-            docker_ran:
+            ran:
                 ipv4_address: 10.53.1.3 # Pick an unused IP
-            oran-sc-ric_ric_network:
+            ric_network:
                 ipv4_address: 10.0.2.3 # gNB IP on RIC network
             internal_net:
                 ipv4_address: 172.28.0.2 # gNB IP on internal network

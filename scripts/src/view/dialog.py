@@ -83,8 +83,7 @@ def run_dialog() -> DialogConfig:
 
 def print_start_dialog():
     print("\n**************************************************")
-    print("***** Start Building srsRAN test environment *****")
-    print("*****             CipherCell                 *****")
+    print("*****    Starting CipherCell Configurator     *****")
     print("**************************************************\n")
 
 
