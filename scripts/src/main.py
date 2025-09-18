@@ -24,6 +24,7 @@ def patch_firmware(setup_cfg: SetupConfiguration, dialog_config: DialogConfig):
     """
     Apply required firmware and Docker image patches for the demo environment.
     """
+    print("\n***********Patch Components***********\n")
     fw_patcher = FirmwarePatcher(setup_configuration=setup_cfg,
                                  patch_file_path=os.path.join(FILE_DIR, "../..", "patches"))
 
@@ -38,6 +39,7 @@ def build_firmware(setup_cfg: SetupConfiguration, dialog_config: DialogConfig) -
     """
     Build all software components required for the demo (RIC, 5G Core, gNB/UE).
     """
+    print("\n***********Build Components***********\n")
     build_runner = BuildRunner(setup_configuration=setup_cfg)
 
     if dialog_config.build_near_rt_ric:
@@ -63,6 +65,7 @@ def run_demo(setup_cfg: SetupConfiguration):
     """
     Start the demo environment and launch the live console viewer.
     """
+    print("\n***********Run Demo***********\n")
     demo_runner = DemoRunner(setup_cfg)
     demo_runner.create_programs()
     live_view = LiveConsoleViewer(demo_runner=demo_runner)
