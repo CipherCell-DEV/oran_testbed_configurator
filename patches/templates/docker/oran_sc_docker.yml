@@ -158,6 +158,7 @@ services:
     - RMR_SEED_RT=/opt/ric/config/uta-rtg.rt
     - RMR_SRC_ID=${XAPP_PY_RUNNER_IP}
     - RMR_RTG_SVC
+    - DEBUG=0
     stdin_open: true
     tty: true
     entrypoint:
@@ -167,7 +168,7 @@ services:
       source: ./oran-sc-ric/ric/configs/routes.rtg
       target: /opt/ric/config/uta-rtg.rt
     - type: bind
-      source: ./xApps/python
+      source: ./oran-sc-ric/xApps/python
       target: /opt/xApps
     networks:
       ric_network:
