@@ -19,150 +19,108 @@
 #
 
 services:
-  5gc:
-    container_name: open5gs_5gc
-    build:
-      context: open5gs
-      target: open5gs
-      args:
-        OS_VERSION: "22.04"
-        OPEN5GS_VERSION: "v2.7.0"
-    env_file:
-      - ${OPEN_5GS_ENV_FILE:-open5gs/open5gs.env}
-    privileged: true
-    ports:
-      - "9999:9999/tcp"
-    # Uncomment port to use the 5gc from outside the docker network
-    #  - "38412:38412/sctp"
-    #  - "2152:2152/udp"
-    command: 5gc -c open5gs-5gc.yml
-    healthcheck:
-      test: [ "CMD-SHELL", "nc -z 127.0.0.20 7777" ]
-      interval: 3s
-      timeout: 1s
-      retries: 60
-    networks:
-      ran:
-        ipv4_address: ${OPEN5GS_IP:-10.53.1.2}
+    5gc:
+        container_name: open5gs_5gc
+        build:
+            context: srsRAN_Project/docker/open5gs
+            target: open5gs
+            args:
+                OS_VERSION: "22.04"
+                OPEN5GS_VERSION: "v2.7.0"
+        env_file:
+            - ${OPEN_5GS_ENV_FILE:-srsRAN_Project/docker/open5gs/open5gs.env}
+        privileged: true
+        ports:
+            - "9999:9999/tcp"
+        # Uncomment port to use the 5gc from outside the docker network
+        #  - "38412:38412/sctp"
+        #  - "2152:2152/udp"
+        command: 5gc -c open5gs-5gc.yml
+        healthcheck:
+            test: ["CMD-SHELL", "nc -z 127.0.0.20 7777"]
+            interval: 3s
+            timeout: 1s
+            retries: 60
+        networks:
+            ran:
+                ipv4_address: ${OPEN5GS_IP:-10.53.1.2}
 
-  gnb:
-    container_name: srsran_gnb
-    # Build info
-    image: srsran/gnb
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-      args:
-        OS_VERSION: "24.04"
-    # privileged mode is requred only for accessing usb devices
-    privileged: true
-    # Extra capabilities always required
-    cap_add:
-      - SYS_NICE
-      - CAP_SYS_PTRACE
-    volumes:
-      # Access USB to use some SDRs
-      - /dev/bus/usb/:/dev/bus/usb/
-      # Sharing images between the host and the pod.
-      # It's also possible to download the images inside the pod
-      - /usr/share/uhd/images:/usr/share/uhd/images
-      # Save logs and more into gnb-storage
-      - gnb-storage:/tmp
-    # It creates a file/folder into /config_name inside the container
-    # Its content would be the value of the file used to create the config
-    configs:
-      - gnb_config.yml
-    # Customize your desired network mode.
-    # current netowrk configuration creastes a private netwoek with both containers attached
-    # An alterantive would be `network: host"`. That would expose your host network into the container. It's the easiest to use if the 5gc is not in your PC
-    networks:
-      ran:
-        ipv4_address: ${GNB_IP:-10.53.1.3}
-      metrics:
-        ipv4_address: 172.19.1.3
-    # Start GNB container after 5gc is up and running
-    depends_on:
-      5gc:
-        condition: service_healthy
-    # Command to run into the final container
-    command: gnb -c /gnb_config.yml cu_cp amf --addr ${OPEN5GS_IP:-10.53.1.2} --bind_addr ${GNB_IP:-10.53.1.3}
+    telegraf:
+        container_name: telegraf
+        image: srsran/telegraf
+        build:
+            context: srsRAN_Project/docker/telegraf
+        depends_on:
+            influxdb:
+                condition: service_healthy
+        env_file:
+            - .env
+        # volumes:
+        #   - /tmp/metrics.txt:/etc/srs/metrics.txt:ro # Uncomment to use an input metrics file
+        networks:
+            metrics:
+                ipv4_address: 172.19.1.4
 
-  telegraf:
-    container_name: telegraf
-    image: srsran/telegraf
-    build:
-      context: telegraf  
-    depends_on:
-      influxdb:
-        condition: service_healthy
-    env_file:
-      - .env
-    # volumes:
-    #   - /tmp/metrics.txt:/etc/srs/metrics.txt:ro # Uncomment to use an input metrics file
-    networks:
-      metrics:
-        ipv4_address: 172.19.1.4
+    influxdb:
+        container_name: influxdb
+        image: influxdb:${INFLUXDB3_VERSION}
+        user: "0:0"
+        volumes:
+            - influxdb-storage:/var/lib/influxdb3:rw
+        env_file:
+            - .env
+        environment:
+            - LOG_FILTER=${INFLUXDB3_LOG_LEVEL}
+        command: >
+            --object-store=memory --data-dir=/var/lib/influxdb3 --plugin-dir=/var/lib/influxdb3-plugins --node-id="${INFLUXDB_NODE_ID:-node0}" --http-bind="${INFLUXDB3_HTTP_BIND_ADDR}" --without-auth
+        restart: on-failure:10
+        healthcheck:
+            test: >
+                curl -f ${INFLUXDB3_HOST_URL}/health
+            timeout: 5s
+            interval: 1s
+        networks:
+            metrics:
+                ipv4_address: 172.19.1.5
 
-  influxdb:
-    container_name: influxdb
-    image: influxdb:${INFLUXDB3_VERSION}
-    user: "0:0"
-    volumes:
-      - influxdb-storage:/var/lib/influxdb3:rw
-    env_file:
-      - .env
-    environment:
-      - LOG_FILTER=${INFLUXDB3_LOG_LEVEL}
-    command: >
-      --object-store=memory --data-dir=/var/lib/influxdb3 --plugin-dir=/var/lib/influxdb3-plugins --node-id="${INFLUXDB_NODE_ID:-node0}" --http-bind="${INFLUXDB3_HTTP_BIND_ADDR}" --without-auth
-    restart: on-failure:10
-    healthcheck:
-      test: >
-        curl -f ${INFLUXDB3_HOST_URL}/health
-      timeout: 5s
-      interval: 1s
-    networks:
-      metrics:
-        ipv4_address: 172.19.1.5
+    grafana:
+        container_name: grafana
+        image: srsran/grafana
+        build:
+            context: srsRAN_Project/docker/grafana
+            args:
+                GF_VERSION: ${GF_VERSION}
+                LOGO_URL: ${GF_LOGO_URL}
+        volumes:
+            - grafana-storage:/var/lib/grafana:rw
+        env_file:
+            - .env
+        depends_on:
+            telegraf:
+                condition: service_started
+        ports:
+            - 3300:${GF_PORT}
+        networks:
+            metrics:
+                ipv4_address: 172.19.1.6
 
-  grafana:
-    container_name: grafana
-    image: srsran/grafana
-    build:
-      context: grafana
-      args:
-        GF_VERSION: ${GF_VERSION}
-        LOGO_URL: ${GF_LOGO_URL}
-    volumes:
-      - grafana-storage:/var/lib/grafana:rw
-    env_file:
-      - .env
-    depends_on:
-      telegraf:
-        condition: service_started
-    ports:
-      - 3300:${GF_PORT}
-    networks:
-      metrics:
-        ipv4_address: 172.19.1.6
-
-configs:
-  gnb_config.yml:
-    file: ${GNB_CONFIG_PATH:-../configs/gnb_rf_b200_tdd_n78_20mhz.yml} # Path to your desired config file
+#configs:
+#  gnb_config.yml:
+#    file: ${GNB_CONFIG_PATH:-srsRAN_Project/configs/gnb_rf_b200_tdd_n78_20mhz.yml} # Path to your desired config file
 
 volumes:
-  gnb-storage:
-  grafana-storage:
-  influxdb-storage:
+    gnb-storage:
+    grafana-storage:
+    influxdb-storage:
 
 networks:
-  ran:
-    ipam:
-      driver: default
-      config:
-        - subnet: 10.53.1.0/24
-  metrics:
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.19.1.0/24
+    ran:
+        ipam:
+            driver: default
+            config:
+                - subnet: 10.53.1.0/24
+    metrics:
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.19.1.0/24

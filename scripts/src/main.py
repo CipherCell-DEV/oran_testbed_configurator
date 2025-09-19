@@ -24,25 +24,22 @@ def patch_firmware(setup_cfg: SetupConfiguration, dialog_config: DialogConfig):
     """
     Apply required firmware and Docker image patches for the demo environment.
     """
+    print("\n***********Patch Components***********\n")
     fw_patcher = FirmwarePatcher(setup_configuration=setup_cfg,
                                  patch_file_path=os.path.join(FILE_DIR, "../..", "patches"))
 
-    if dialog_config.build_near_rt_ric:
-        fw_patcher.patch_ric_firmware()
-
-    if dialog_config.build_core_net:
-        fw_patcher.patch_5g_core()
-
-    if dialog_config.build_gnb:
-        fw_patcher.patch_ue_gnb_docker()
+    if not fw_patcher.patch_single_docker_compose():
+        return False
 
     fw_patcher.copy_files_to_location()
+    return True
 
 
 def build_firmware(setup_cfg: SetupConfiguration, dialog_config: DialogConfig) -> bool:
     """
     Build all software components required for the demo (RIC, 5G Core, gNB/UE).
     """
+    print("\n***********Build Components***********\n")
     build_runner = BuildRunner(setup_configuration=setup_cfg)
 
     if dialog_config.build_near_rt_ric:
@@ -53,8 +50,12 @@ def build_firmware(setup_cfg: SetupConfiguration, dialog_config: DialogConfig) -
         if not build_runner.build_5g_core():
             return False
 
+    if dialog_config.build_gnb:
+        if not build_runner.build_gnb():
+            return False
+
     if dialog_config.build_ue:
-        if not build_runner.build_gnb_ue():
+        if not build_runner.build_ues():
             return False
 
     return True
@@ -64,6 +65,7 @@ def run_demo(setup_cfg: SetupConfiguration):
     """
     Start the demo environment and launch the live console viewer.
     """
+    print("\n***********Run Demo***********\n")
     demo_runner = DemoRunner(setup_cfg)
     demo_runner.create_programs()
     live_view = LiveConsoleViewer(demo_runner=demo_runner)
@@ -100,7 +102,9 @@ if __name__ == "__main__":
     checkout_repositories(config)
 
     if cmd_line_cfg.generate_patch_files:
-        patch_firmware(config, dialog_cfg)
+        if not patch_firmware(config, dialog_cfg):
+            logging.error("Could not patch firmware! -> Exit program")
+            exit(0)
 
     firmware_build_success = True
     if cmd_line_cfg.enable_build:

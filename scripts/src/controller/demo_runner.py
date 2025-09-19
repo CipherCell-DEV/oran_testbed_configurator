@@ -1,13 +1,8 @@
-import os
-from typing import List
-
-from controller.program import Program
-
-from model.setup_configuration import SetupConfiguration
-
+from controller.program import Program, ProgramType
 from model.core_config import CoreImplementation
 from model.gnb_config import GNBImplementation
 from model.ric_config import RICImplementation
+from model.setup_configuration import SetupConfiguration
 from model.ue_config import UEImplementation
 
 
@@ -19,10 +14,9 @@ class DemoRunner:
 
     def __init__(self, setup_cfg: SetupConfiguration):
         self._cfg = setup_cfg
-        # TODO maintain order of execution!
-        self._program_pool: List[Program] = []
+        self._program_pool: dict[str: Program] = {}
 
-    def get_programs(self) -> list[Program]:
+    def get_programs(self) -> dict[str: Program]:
         """
         Get the list of prepared Program instances.
 
@@ -45,13 +39,15 @@ class DemoRunner:
     def _create_ric(self):
         """Create the Near-RT RIC program."""
         if self._cfg.near_rt_ric.type == RICImplementation.ORAN_SC_RIC:
-            self._program_pool.append(
-                Program(
-                    working_dir=os.path.join(self._cfg.environment.build_dir, "oran-sc-ric"),
-                    name="RIC",
-                    command=["docker", "compose", "up"],
-                )
-            )
+            self._program_pool.update({'ric': Program(
+                working_dir=self._cfg.environment.build_dir,
+                name="RIC",
+                command=["docker", "compose", "up", "dbaas", "rtmgr_sim", "submgr", "e2term", "appmgr",
+                         "e2mgr", "python_xapp_runner"],
+                setup_cfg=self._cfg,
+                program_type=ProgramType.RIC,
+                enable_program_state_checker=True
+            )})
         else:
             raise KeyError(
                 f"Selected Near-RT RIC implementation '{self._cfg.near_rt_ric.type}' is not supported"
@@ -60,13 +56,12 @@ class DemoRunner:
     def _create_core(self):
         """Create the 5G Core program."""
         if self._cfg.core_5g.implementation == CoreImplementation.SRS:
-            self._program_pool.append(
-                Program(
-                    working_dir=os.path.join(self._cfg.environment.build_dir, "srsRAN_Project", "docker"),
-                    name="5G-core",
-                    command=["docker", "compose", "up", "--build", "5gc"],
-                )
-            )
+            self._program_pool.update({'5g_core': Program(working_dir=self._cfg.environment.build_dir,
+                                                          name="5G-core",
+                                                          command=["docker", "compose", "up", "5gc"],
+                                                          setup_cfg=self._cfg,
+                                                          program_type=ProgramType.CORE,
+                                                          enable_program_state_checker=True)})
         else:
             raise KeyError(
                 f"Selected 5G Core implementation '{self._cfg.core_5g.implementation}' is not supported"
@@ -75,12 +70,13 @@ class DemoRunner:
     def _create_gnb(self):
         """Create the gNB program."""
         if self._cfg.gnb.type == GNBImplementation.SRS:
-            self._program_pool.append(
-                Program(
-                    working_dir=self._cfg.environment.build_dir,
-                    name="gNB",
-                    command=["docker", "compose", "up", "gnb"],
-                )
+            self._program_pool.update({'gnb': Program(
+                working_dir=self._cfg.environment.build_dir,
+                name="gNB",
+                command=["docker", "compose", "up", "gnb"],
+                setup_cfg=self._cfg,
+                program_type=ProgramType.GNB,
+                enable_program_state_checker=True)}
             )
         else:
             raise KeyError(
@@ -91,13 +87,16 @@ class DemoRunner:
         """Create programs for all configured UEs."""
         for ue in self._cfg.ue:
             if ue.implementation == UEImplementation.SRS_4G:
-                self._program_pool.append(
-                    Program(
-                        working_dir=self._cfg.environment.build_dir,
-                        name=f"UE-{ue.name}",
-                        command=["docker", "compose", "up", ue.name],
-                    )
-                )
+                if 'ue' not in self._program_pool:
+                    self._program_pool.update({'ue': []})
+                self._program_pool['ue'].append(Program(
+                    working_dir=self._cfg.environment.build_dir,
+                    name=f"UE-{ue.name}",
+                    command=["docker", "compose", "up", ue.name],
+                    setup_cfg=self._cfg,
+                    program_type=ProgramType.UE,
+                    enable_program_state_checker=True
+                ))
             else:
                 raise KeyError(
                     f"Selected UE implementation '{ue.implementation}' is not supported"

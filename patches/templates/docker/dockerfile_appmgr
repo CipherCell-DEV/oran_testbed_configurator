@@ -1,0 +1,5 @@
+ARG  APPMGR_VER=0.5.7
+FROM nexus3.o-ran-sc.org:10002/o-ran-sc/ric-plt-appmgr:${APPMGR_VER}
+
+COPY ./configs/routes.rtg /opt/ric/config/router.txt
+COPY ./configs/appmgr.yaml /opt/ric/config/appmgr.yaml

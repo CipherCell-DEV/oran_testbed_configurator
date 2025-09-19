@@ -1,5 +1,15 @@
+import logging
 import subprocess
-from typing import List
+from typing import List, Optional
+
+from controller.program_state_monitor import ProgramStateMonitor, ProgramState
+from model.setup_configuration import SetupConfiguration
+from model.utils_config import ProgramType
+
+RESTART_TIMEOUT_RIC_IN_S = 30
+RESTART_TIMEOUT_CORE_IN_S = 30
+RESTART_TIMEOUT_GNB_IN_S = 30
+RESTART_TIMEOUT_UE_IN_S = 30
 
 
 class Program:
@@ -9,7 +19,9 @@ class Program:
     single external command with its own working directory.
     """
 
-    def __init__(self, name: str, command: List[str], working_dir: str):
+    def __init__(self, name: str, command: List[str], working_dir: str, program_type: ProgramType,
+                 setup_cfg: SetupConfiguration,
+                 enable_program_state_checker: Optional[bool] = False):
         """
         Initialize a Program instance.
 
@@ -18,10 +30,36 @@ class Program:
                            (e.g., ["python3", "app.py"]).
         @param working_dir The directory in which the command will be run.
         """
+        self._reader_thread = None
+        self._reader_running = None
         self.name = name
         self.command = command
         self.process: subprocess.Popen | None = None
         self.working_dir: str = working_dir
+
+        restart_timeout = 0
+        if program_type == ProgramType.RIC:
+            restart_timeout = RESTART_TIMEOUT_RIC_IN_S
+        elif program_type == ProgramType.CORE:
+            restart_timeout = RESTART_TIMEOUT_CORE_IN_S
+        elif program_type == ProgramType.GNB:
+            restart_timeout = RESTART_TIMEOUT_GNB_IN_S
+        elif program_type == ProgramType.UE:
+            restart_timeout = RESTART_TIMEOUT_UE_IN_S
+
+        self._program_state_checker: ProgramStateMonitor = \
+            (ProgramStateMonitor(program_type=program_type,
+                                 setup_config=setup_cfg,
+                                 restart_timeout_in_s=restart_timeout) if enable_program_state_checker else None)
+
+    def get_current_state(self) -> ProgramState:
+        if self._program_state_checker:
+            return self._program_state_checker.get_current_state()
+        else:
+            return ProgramState.UNDEFINED
+
+    def get_program_state_checker(self):
+        return self._program_state_checker
 
     def start(self):
         """
@@ -33,13 +71,16 @@ class Program:
         """
         self.process = subprocess.Popen(
             self.command,
-            stdout=subprocess.PIPE,       # capture standard output
-            stderr=subprocess.STDOUT,     # redirect stderr into stdout
-            text=True,                    # decode bytes -> str
-            bufsize=1,                    # line-buffered output
-            universal_newlines=True,      # ensure consistent line endings
-            cwd=self.working_dir          # set working directory
+            stdout=subprocess.PIPE,  # capture standard output
+            stderr=subprocess.STDOUT,  # redirect stderr into stdout
+            text=True,  # decode bytes -> str
+            bufsize=1,  # line-buffered output
+            universal_newlines=True,  # ensure consistent line endings
+            cwd=self.working_dir  # set working directory
         )
+
+        if self._program_state_checker:
+            self._program_state_checker.start_watchdog_thread()
 
     def get_process(self) -> subprocess.Popen:
         """
