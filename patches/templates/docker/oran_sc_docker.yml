@@ -12,7 +12,7 @@ services:
     rtmgr_sim:
         container_name: ric_rtmgr_sim
         hostname: rtmgr_sim
-        image: localhost:4000/rtmgr_sim:${SC_RIC_VERSION}
+        image: localhost:4000/rtmgr_sim:${SC_RIC_VERSION}-selftag
         platform: linux/amd64
         build:
             context: ./oran-sc-ric/ric
@@ -35,7 +35,7 @@ services:
     submgr:
         container_name: ric_submgr
         hostname: submgr
-        image: localhost:4000/ric-plt-submgr:${SUBMGR_VER}
+        image: localhost:4000/ric-plt-submgr:${SUBMGR_VER}-selftag
         platform: linux/amd64
         build:
             context: ./oran-sc-ric/ric
@@ -62,7 +62,7 @@ services:
         container_name: ric_e2term
         hostname: e2term
         platform: linux/amd64
-        image: localhost:4000/ric-plt-e2:${E2TERM_VER}
+        image: localhost:4000/ric-plt-e2:${E2TERM_VER}-selftag
         build:
             context: ./oran-sc-ric/ric
             dockerfile: ./images/e2term/Dockerfile
@@ -85,7 +85,7 @@ services:
     appmgr:
         container_name: ric_appmgr
         hostname: appmgr
-        image: localhost:4000/ric-plt-appmgr:${APPMGR_VER}
+        image: localhost:4000/ric-plt-appmgr:${APPMGR_VER}-selftag
         build:
             context: ./oran-sc-ric/ric
             dockerfile: ./images/appmgr/Dockerfile
@@ -107,7 +107,7 @@ services:
     e2mgr:
         container_name: ric_e2mgr
         hostname: e2mgr
-        image: localhost:4000/ric-plt-e2mgr:${E2MGR_VER}
+        image: localhost:4000/ric-plt-e2mgr:${E2MGR_VER}-selftag
         build:
             context: ./oran-sc-ric/ric
             dockerfile: ./images/e2mgr/Dockerfile
@@ -130,7 +130,7 @@ services:
     python_xapp_runner:
         container_name: python_xapp_runner
         hostname: python_xapp_runner
-        image: localhost:4000/python_xapp_runner:${SC_RIC_VERSION}
+        image: localhost:4000/python_xapp_runner:${SC_RIC_VERSION}-selftag
         platform: linux/amd64
         build:
             context: ./oran-sc-ric/

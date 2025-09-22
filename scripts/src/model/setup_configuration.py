@@ -22,6 +22,7 @@ class EnvironmentCfg:
     log_dir: Optional[str] = None
     build_dir: Optional[str] = None
     docker_registry: Optional[str] = "localhost:4000"
+    tag_appendix: Optional[str] = None
 
     def __str__(self):
         return (f"EnvironmentCfg: \n"
@@ -29,7 +30,8 @@ class EnvironmentCfg:
                 f"    log_level={self.log_level}, \n"
                 f"    log_dir={self.log_dir}, \n"
                 f"    build_dir={self.build_dir}, \n"
-                f"    docker_registry={self.docker_registry}")
+                f"    docker_registry={self.docker_registry}, \n"
+                f"    tag_appendix={self.tag_appendix}")
 
 
 class SetupConfiguration:

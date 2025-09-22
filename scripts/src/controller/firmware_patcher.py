@@ -2,6 +2,7 @@ import logging
 import os
 import shutil
 import textwrap
+from tokenize import String
 from typing import Dict, Any
 
 import yaml
@@ -22,6 +23,18 @@ class FirmwarePatcher:
     def __init__(self, setup_configuration: SetupConfiguration, patch_file_path: str ):
         self._setup_cfg = setup_configuration
         self._patch_file_path = patch_file_path
+
+    def get_tag_or_empty_string(self, prefix :str) -> str:
+        if (self._setup_cfg.environment.tag_appendix == None):
+            return  ""
+        else:
+            return  f"{prefix}{self._setup_cfg.environment.tag_appendix}"
+
+    def replace_tag_and_image(self, string: str) -> str:
+        string = string.replace("localhost:4000", self._setup_cfg.environment.docker_registry)
+        string = string.replace("-selftag", self.get_tag_or_empty_string("-"))
+        return string.replace(":selftag", self.get_tag_or_empty_string(":"))
+
 
     def patch_single_docker_compose(self) -> bool:
         """
@@ -91,7 +104,7 @@ class FirmwarePatcher:
 
             for service in patch_content["services"]:
                 if "image" in patch_content["services"][service]:
-                    patch_content["services"][service]["image"] =  patch_content["services"][service]["image"].replace("localhost:4000", self._setup_cfg.environment.docker_registry)
+                    patch_content["services"][service]["image"] =  self.replace_tag_and_image(patch_content["services"][service]["image"])
 
             for service, (env_var, ip_attr) in ORAN_SC_RIC_SERVICE_IP_MAP.items():
                 ip_value = getattr(self._setup_cfg.near_rt_ric.ip_config, ip_attr)
@@ -135,7 +148,7 @@ class FirmwarePatcher:
                 patch_content['networks']['ran']['ipam']['config'][0][
                     'subnet'] = f"{self._setup_cfg.core_5g.network}"
 
-                patch_content['services']['5gc']['image'] = patch_content['services']['5gc']['image'].replace("localhost:4000", self._setup_cfg.environment.docker_registry)
+                patch_content['services']['5gc']['image'] = self.replace_tag_and_image(patch_content['services']['5gc']['image'])
 
                 return patch_content
 
@@ -159,7 +172,7 @@ class FirmwarePatcher:
 
     def _patch_gnb_docker(self, patch_content: dict):
         FolderManager.create_patch_folders(self._patch_file_path)
-        patch_content["services"]["gnb"].update({"image" : patch_content["services"]["gnb"]["image"].replace("localhost:4000", self._setup_cfg.environment.docker_registry)})
+        patch_content["services"]["gnb"].update({"image" : self.replace_tag_and_image(patch_content["services"]["gnb"]["image"])})
        # TODO implement patching!!
 
     def _patch_ue_docker(self, patch_content: dict):
@@ -168,7 +181,7 @@ class FirmwarePatcher:
             ue_dict = {
                 "services": {
                     f"{ue.name}": {
-                        "image": f"{self._setup_cfg.environment.docker_registry}/ue",
+                        "image": f"{self._setup_cfg.environment.docker_registry}/ue{self.get_tag_or_empty_string(":")}",
                         "build": "./srsRAN_4G",
                         "container_name": f"{ue.name}",
                         "platform": "linux/amd64",

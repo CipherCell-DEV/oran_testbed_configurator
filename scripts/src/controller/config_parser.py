@@ -360,6 +360,9 @@ class ConfigParser:
         if 'docker_registry' in params:
             cfg.docker_registry = params["docker_registry"]
 
+        if 'tag_appendix' in params:
+            cfg.tag_appendix = params["tag_appendix"]
+
         return cfg
 
     @staticmethod

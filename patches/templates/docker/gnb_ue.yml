@@ -10,7 +10,7 @@ networks:
 services:
     gnb:
         build: ./srsRAN_Project
-        image: localhost:4000/gnb
+        image: localhost:4000/gnb:selftag
         container_name: srsran_gnb
         privileged: true
         platform: linux/amd64
