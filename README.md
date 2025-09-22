@@ -62,4 +62,4 @@ All components run in a fully Dockerized environment, ready for immediate experi
 
 ### Documentation
 
-Full setup and usage instructions are available in the [CipherCell Wiki](https://florianfrank.github.io/CipherCellWiki/docs/category/setup-srsran-based-test-environment).
+Full setup and usage instructions are available in the [CipherCell Wiki](https://florianfrank.github.io/CipherCellWiki/docs/category/ciphercell-configurator).
