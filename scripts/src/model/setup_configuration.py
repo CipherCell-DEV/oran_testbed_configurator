@@ -21,7 +21,7 @@ class EnvironmentCfg:
     log_level: Optional[LogLevel] = None
     log_dir: Optional[str] = None
     build_dir: Optional[str] = None
-    docker_registry: Optional[str] = None
+    docker_registry: Optional[str] = "localhost:4000"
 
     def __str__(self):
         return (f"EnvironmentCfg: \n"
