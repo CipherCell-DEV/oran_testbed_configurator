@@ -19,7 +19,7 @@ class FirmwarePatcher:
     It supports patching for different components like RIC, 5G Core, gNB, and UE.
     """
 
-    def __init__(self, setup_configuration: SetupConfiguration, patch_file_path: str):
+    def __init__(self, setup_configuration: SetupConfiguration, patch_file_path: str ):
         self._setup_cfg = setup_configuration
         self._patch_file_path = patch_file_path
 
@@ -89,6 +89,10 @@ class FirmwarePatcher:
 
             logging.info("Patching ORAN SC RIC docker-compose.yml with custom IP addresses...")
 
+            for service in patch_content["services"]:
+                if "image" in patch_content["services"][service]:
+                    patch_content["services"][service]["image"] =  patch_content["services"][service]["image"].replace("localhost:4000", self._setup_cfg.environment.docker_registry)
+
             for service, (env_var, ip_attr) in ORAN_SC_RIC_SERVICE_IP_MAP.items():
                 ip_value = getattr(self._setup_cfg.near_rt_ric.ip_config, ip_attr)
                 patch_content["services"][service]["networks"]["ric_network"]["ipv4_address"] = (
@@ -131,6 +135,8 @@ class FirmwarePatcher:
                 patch_content['networks']['ran']['ipam']['config'][0][
                     'subnet'] = f"{self._setup_cfg.core_5g.network}"
 
+                patch_content['services']['5gc']['image'] = patch_content['services']['5gc']['image'].replace("localhost:4000", self._setup_cfg.environment.docker_registry)
+
                 return patch_content
 
         except yaml.YAMLError as e:
@@ -153,7 +159,8 @@ class FirmwarePatcher:
 
     def _patch_gnb_docker(self, patch_content: dict):
         FolderManager.create_patch_folders(self._patch_file_path)
-        pass  # TODO implement patching!!
+        patch_content["services"]["gnb"].update({"image" : patch_content["services"]["gnb"]["image"].replace("localhost:4000", self._setup_cfg.environment.docker_registry)})
+       # TODO implement patching!!
 
     def _patch_ue_docker(self, patch_content: dict):
         FolderManager.create_patch_folders(self._patch_file_path)
@@ -161,6 +168,7 @@ class FirmwarePatcher:
             ue_dict = {
                 "services": {
                     f"{ue.name}": {
+                        "image": f"{self._setup_cfg.environment.docker_registry}/ue",
                         "build": "./srsRAN_4G",
                         "container_name": f"{ue.name}",
                         "platform": "linux/amd64",

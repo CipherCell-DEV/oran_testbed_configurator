@@ -357,6 +357,9 @@ class ConfigParser:
         else:
             raise KeyError("Missing required parameter for Environment config: 'build_dir'")
 
+        if 'docker_registry' in params:
+            cfg.docker_registry = params["docker_registry"]
+
         return cfg
 
     @staticmethod
