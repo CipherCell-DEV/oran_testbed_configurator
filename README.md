@@ -1,4 +1,6 @@
-<img src="doc/cipher_cell_configurator_logo.svg" alt="Logo" width="400"/>
+<p align="center">
+  <img src="doc/cipher_cell_configurator_logo.svg" alt="Logo" width="500"/>
+</p>
 
 ## Overview
 
