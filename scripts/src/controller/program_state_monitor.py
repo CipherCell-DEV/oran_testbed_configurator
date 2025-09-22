@@ -97,6 +97,9 @@ class ProgramStateMonitor:
         Analyze a log line (input stream) and check whether it matches a known trigger.
         If a trigger is found, perform the corresponding state transition.
         """
+        error_indication = ["error", "Error", "ERROR", "fail", "Fail"]
+        if any(i in input_stream for i in error_indication):
+        	logging.error(f"{input_stream}")
         key = (self._program_type, self.get_current_state())
         for trigger, next_state in self._triggers.get(key, []):
             if trigger in input_stream:
