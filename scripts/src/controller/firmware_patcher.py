@@ -23,6 +23,7 @@ class FirmwarePatcher:
     def __init__(self, setup_configuration: SetupConfiguration, patch_file_path: str ):
         self._setup_cfg = setup_configuration
         self._patch_file_path = patch_file_path
+        self._images_to_push = list()
 
     def get_tag_or_empty_string(self, prefix :str) -> str:
         if (self._setup_cfg.environment.tag_appendix == None):
@@ -33,7 +34,11 @@ class FirmwarePatcher:
     def replace_tag_and_image(self, string: str) -> str:
         string = string.replace("localhost:4000", self._setup_cfg.environment.docker_registry)
         string = string.replace("-selftag", self.get_tag_or_empty_string("-"))
-        return string.replace(":selftag", self.get_tag_or_empty_string(":"))
+        string =  string.replace(":selftag", self.get_tag_or_empty_string(":"))
+        return string
+
+    def get_images_to_push(self):
+        return self._images_to_push
 
 
     def patch_single_docker_compose(self) -> bool:
@@ -75,6 +80,12 @@ class FirmwarePatcher:
             combined_file_path = os.path.join(
                 self._patch_file_path, "patched", "docker", "docker_combined.yml"
             )
+
+            for service in single_config["services"]:
+                if "image" in single_config["services"][service]:
+                    if self._setup_cfg.environment.docker_registry in single_config["services"][service]["image"]:
+                        self._images_to_push.append(service)
+
             with open(combined_file_path, "w", encoding="utf-8") as new_file:
                 yaml.safe_dump(
                     single_config,

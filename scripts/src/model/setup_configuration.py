@@ -23,7 +23,7 @@ class EnvironmentCfg:
     build_dir: Optional[str] = None
     docker_registry: Optional[str] = "localhost:4000"
     tag_appendix: Optional[str] = None
-
+    push_local_images: Optional[bool] = False
     def __str__(self):
         return (f"EnvironmentCfg: \n"
                 f"    build_type={self.build_type}, \n"

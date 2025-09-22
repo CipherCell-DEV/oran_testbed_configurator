@@ -141,3 +141,22 @@ class BuildRunner:
                 logging.error(f"Building UE {ue.name} natively... -> Currently not supported!")
                 return False
         return True
+
+    def push_images(self, images_to_push: list[str]) -> bool:
+        if self.setup_cfg.environment.push_local_images != True:
+            return True
+        for image in images_to_push:
+            logging.info(f"Pushing {image}")
+            process = subprocess.Popen(
+                f"docker compose push {image}".split(),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                cwd=self.setup_cfg.environment.build_dir
+            )
+
+            if process.wait() != 0:
+                logging.error(f"Failed to push {image}")
+                return False
+        return True

@@ -5,6 +5,7 @@ environment:
   build_dir: "."
   docker_registry: "132.231.14.130:8080"
   tag_appendix: latest
+  push_local_images: true 
 
 near_rt_ric:
   build_type: "docker"
