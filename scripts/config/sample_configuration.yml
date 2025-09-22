@@ -4,7 +4,7 @@ environment:
   log_dir: "logs"
   build_dir: "."
   docker_registry: "132.231.14.130:8080"
-  tag_appendix: erik
+  tag_appendix: latest
 
 near_rt_ric:
   build_type: "docker"
