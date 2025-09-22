@@ -15,24 +15,19 @@ It consists of the following components:
 - gNodeB  
 - User Equipment (UE)
 
-> ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)  
-> The environment is **fully containerized** with Docker, ensuring consistency across systems and simplifying setup and maintenance.
-
-The implementation was tested on the following systems:
-
-![Platform: Linux](https://img.shields.io/badge/Platform-Linux-lightgrey?logo=linux)
-![Platform: macOS](https://img.shields.io/badge/Platform-macOS-lightgrey?logo=apple)
-
-
 ### Features
+
+>![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)  
+> Supports a fully **fully containerized** environment, ensuring consistency across systems and simplifying setup and maintenance.  
+>
+> **Tested platforms:** </br>![Linux](https://img.shields.io/badge/Platform-Linux-lightgrey?logo=linux) ![macOS](https://img.shields.io/badge/Platform-macOS-lightgrey?logo=apple)
+
 
 - **Centralized configuration** of all components, including:
   - Network configuration  
   - Build type (native or Docker)  
   - Definition of multiple UEs
   - Component-specific parameters (e.g., gain rates, eSIM settings)
-
-A detailed documentation can be find in our wiki:
 
 ### Quick Start
 
@@ -47,7 +42,7 @@ Set up a simple **Dockerized O-RAN test environment** in just two commands.
 **1. Clone the repository:**  
 ```bash
 git clone git@github.com:CipherCell-DEV/oran-deploy-manager.git
-cd oran-deploy-manager
+cd oran-deploy-manager[README.md](README.md)
 ```
 
 2. Start the environment:
