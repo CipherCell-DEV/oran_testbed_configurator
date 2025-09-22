@@ -21,6 +21,7 @@
 services:
     5gc:
         container_name: open5gs_5gc
+        image: localhost:4000/open5gs-5gc
         build:
             context: srsRAN_Project/docker/open5gs
             target: open5gs
