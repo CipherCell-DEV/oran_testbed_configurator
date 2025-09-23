@@ -1,5 +1,10 @@
 paches/patched*
 
+oran-sc-ric/
+srsRAN_4G/
+srsRAN_Project/
+.env
+
 .idea/
 .DS_Store
 docker-compose.yml
