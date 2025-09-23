@@ -5,7 +5,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 10.45.1.0/16  # Internal network subnet
+        - subnet: 10.45.0.0/16  # Internal network subnet
 
 services:
   gnb:
