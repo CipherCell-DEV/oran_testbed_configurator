@@ -30,7 +30,7 @@ ue:
       name: "ue1"
       build_type: "docker"
       ue_type: "srsUE"
-      ip_addr: 172.28.0.3
+      ip_addr: 10.45.1.2
       srate: 11.52e6
       usim:
           mode: soft
@@ -48,7 +48,7 @@ gnb:
   build_type: "docker"
   ip_addr:
       e2: 10.0.2.3
-      ru_sdr: 172.28.0.2
+      ru_sdr: 10.45.1.1
       cu_cp: 10.53.1.3
   srate: 11.52e6
   tx_gain: 75
