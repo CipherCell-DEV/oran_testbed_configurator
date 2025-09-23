@@ -357,6 +357,15 @@ class ConfigParser:
         else:
             raise KeyError("Missing required parameter for Environment config: 'build_dir'")
 
+        if 'docker_registry' in params:
+            cfg.docker_registry = params["docker_registry"]
+
+        if 'tag_appendix' in params:
+            cfg.tag_appendix = params["tag_appendix"]
+
+        if 'push_local_images' in params:
+            cfg.push_local_images = params["push_local_images"]
+
         return cfg
 
     @staticmethod
