@@ -19,9 +19,26 @@ class FirmwarePatcher:
     It supports patching for different components like RIC, 5G Core, gNB, and UE.
     """
 
-    def __init__(self, setup_configuration: SetupConfiguration, patch_file_path: str):
+    def __init__(self, setup_configuration: SetupConfiguration, patch_file_path: str ):
         self._setup_cfg = setup_configuration
         self._patch_file_path = patch_file_path
+        self._images_to_push = list()
+
+    def get_tag_or_empty_string(self, prefix :str) -> str:
+        if (self._setup_cfg.environment.tag_appendix == None):
+            return  ""
+        else:
+            return  f"{prefix}{self._setup_cfg.environment.tag_appendix}"
+
+    def replace_tag_and_image(self, string: str) -> str:
+        string = string.replace("localhost:4000", self._setup_cfg.environment.docker_registry)
+        string = string.replace("-selftag", self.get_tag_or_empty_string("-"))
+        string =  string.replace(":selftag", self.get_tag_or_empty_string(":"))
+        return string
+
+    def get_images_to_push(self):
+        return self._images_to_push
+
 
     def patch_single_docker_compose(self) -> bool:
         """
@@ -62,6 +79,12 @@ class FirmwarePatcher:
             combined_file_path = os.path.join(
                 self._patch_file_path, "patched", "docker", "docker_combined.yml"
             )
+
+            for service in single_config["services"]:
+                if "image" in single_config["services"][service]:
+                    if self._setup_cfg.environment.docker_registry in single_config["services"][service]["image"]:
+                        self._images_to_push.append(service)
+
             with open(combined_file_path, "w", encoding="utf-8") as new_file:
                 yaml.safe_dump(
                     single_config,
@@ -88,6 +111,10 @@ class FirmwarePatcher:
                 patch_content = yaml.safe_load(patch_file)
 
             logging.info("Patching ORAN SC RIC docker-compose.yml with custom IP addresses...")
+
+            for service in patch_content["services"]:
+                if "image" in patch_content["services"][service]:
+                    patch_content["services"][service]["image"] =  self.replace_tag_and_image(patch_content["services"][service]["image"])
 
             for service, (env_var, ip_attr) in ORAN_SC_RIC_SERVICE_IP_MAP.items():
                 ip_value = getattr(self._setup_cfg.near_rt_ric.ip_config, ip_attr)
@@ -131,6 +158,8 @@ class FirmwarePatcher:
                 patch_content['networks']['ran']['ipam']['config'][0][
                     'subnet'] = f"{self._setup_cfg.core_5g.network}"
 
+                patch_content['services']['5gc']['image'] = self.replace_tag_and_image(patch_content['services']['5gc']['image'])
+
                 return patch_content
 
         except yaml.YAMLError as e:
@@ -153,7 +182,8 @@ class FirmwarePatcher:
 
     def _patch_gnb_docker(self, patch_content: dict):
         FolderManager.create_patch_folders(self._patch_file_path)
-        pass  # TODO implement patching!!
+        patch_content["services"]["gnb"].update({"image" : self.replace_tag_and_image(patch_content["services"]["gnb"]["image"])})
+       # TODO implement patching!!
 
     def _patch_ue_docker(self, patch_content: dict):
         FolderManager.create_patch_folders(self._patch_file_path)
@@ -161,6 +191,7 @@ class FirmwarePatcher:
             ue_dict = {
                 "services": {
                     f"{ue.name}": {
+                        "image": f"{self._setup_cfg.environment.docker_registry}/ue{self.get_tag_or_empty_string(":")}",
                         "build": "./srsRAN_4G",
                         "container_name": f"{ue.name}",
                         "platform": "linux/amd64",

@@ -8,22 +8,23 @@ networks:
         - subnet: 10.45.0.0/16  # Internal network subnet
 
 services:
-  gnb:
-    build: ./srsRAN_Project
-    container_name: srsran_gnb
-    privileged: true
-    platform: linux/amd64
-    networks:
-      ran:
-        ipv4_address: 10.53.1.3  # Pick an unused IP
-      ric_network:
-        ipv4_address: 10.0.2.3   # gNB IP on RIC network
-      internal_net:
-        ipv4_address: 10.45.1.1   # gNB IP on internal network
-    user: root
-    volumes:
-      - ./srsRAN_Project/configs:/app/configs
-    command: [ "./build/apps/gnb/gnb", "-c", "./configs/gnb_zmq.yaml" ]
-    stdin_open: true
-    tty: true
-    restart: unless-stopped
+    gnb:
+        build: ./srsRAN_Project
+        image: localhost:4000/gnb:selftag
+        container_name: srsran_gnb
+        privileged: true
+        platform: linux/amd64
+        networks:
+            ran:
+                ipv4_address: 10.53.1.3 # Pick an unused IP
+            ric_network:
+                ipv4_address: 10.0.2.3 # gNB IP on RIC network
+            internal_net:
+                ipv4_address: 10.45.1.1 # gNB IP on internal network
+        user: root
+        command: ["./build/apps/gnb/gnb", "-c", "./configs/gnb_zmq.yaml"]
+        # volumes:
+        #   - ./srsRAN_Project/configs:/app/configs
+        stdin_open: true
+        tty: true
+        restart: unless-stopped

@@ -1,6 +1,7 @@
 import logging
 import sys
 import pathlib
+from typing import List
 
 from controller.component_checkout_manager import ComponentCheckoutManager
 
@@ -32,10 +33,12 @@ def patch_firmware(setup_cfg: SetupConfiguration, dialog_config: DialogConfig):
         return False
 
     fw_patcher.copy_files_to_location()
-    return True
+    return True, fw_patcher.get_images_to_push()
 
 
-def build_firmware(setup_cfg: SetupConfiguration, dialog_config: DialogConfig) -> bool:
+
+
+def build_firmware(setup_cfg: SetupConfiguration, dialog_config: DialogConfig, images_to_push: list[str]) -> bool:
     """
     Build all software components required for the demo (RIC, 5G Core, gNB/UE).
     """
@@ -57,6 +60,9 @@ def build_firmware(setup_cfg: SetupConfiguration, dialog_config: DialogConfig) -
     if dialog_config.build_ue:
         if not build_runner.build_ues():
             return False
+
+    if not build_runner.push_images(images_to_push):
+        return False
 
     return True
 
@@ -102,13 +108,14 @@ if __name__ == "__main__":
     checkout_repositories(config)
 
     if cmd_line_cfg.generate_patch_files:
-        if not patch_firmware(config, dialog_cfg):
+        succsess, images_to_push = patch_firmware(config, dialog_cfg)
+        if not succsess:
             logging.error("Could not patch firmware! -> Exit program")
             exit(0)
 
     firmware_build_success = True
     if cmd_line_cfg.enable_build:
-        firmware_build_success = build_firmware(config, dialog_cfg)
+        firmware_build_success = build_firmware(config, dialog_cfg, images_to_push)
         if not firmware_build_success:
             logging.error("Exit Program!")
 
