@@ -92,7 +92,8 @@ class DemoRunner:
                 self._program_pool['ue'].append(Program(
                     working_dir=self._cfg.environment.build_dir,
                     name=f"UE-{ue.name}",
-                    command=["docker", "compose", "up", ue.name],
+                    # Do not remove --force-recreate, otherwise the PDU Session Establishment will not be successful.
+                    command=["docker", "compose", "up", "--force-recreate", ue.name],
                     setup_cfg=self._cfg,
                     program_type=ProgramType.UE,
                     enable_program_state_checker=True
