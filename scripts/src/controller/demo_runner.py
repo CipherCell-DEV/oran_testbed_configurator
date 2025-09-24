@@ -102,3 +102,7 @@ class DemoRunner:
                 raise KeyError(
                     f"Selected UE implementation '{ue.implementation}' is not supported"
                 )
+
+    @property
+    def cfg(self):
+        return self._cfg

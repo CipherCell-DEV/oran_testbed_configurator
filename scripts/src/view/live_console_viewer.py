@@ -1,4 +1,6 @@
 import logging
+import signal
+import subprocess
 import textwrap
 import threading
 import time
@@ -66,6 +68,7 @@ class ComponentThreadPool:
 class LiveConsoleViewer:
     def __init__(self, demo_runner: DemoRunner):
         self.thread_pool = ComponentThreadPool()
+        self.demo_runner = demo_runner
         programs = demo_runner.get_programs()
         logging.info(f"Add {len(programs)} to demo runner.")
 
@@ -73,6 +76,40 @@ class LiveConsoleViewer:
         self.thread_pool.add_program(programs['5g_core'])
         self.thread_pool.add_program(programs['gnb'])
         self.thread_pool.add_program(programs['ue'][0])  # TODO support multiple UEs
+
+        signal.signal(signal.SIGINT, self._signal_handler)
+        signal.signal(signal.SIGTERM, self._signal_handler)
+
+    def _signal_handler(self, signum, frame):
+        """Handle SIGINT (Ctrl+C) and SIGTERM to gracefully shutdown all containers."""
+        logging.info(f"Received signal {signum}. Stopping all containers...")
+        self._cleanup_containers()
+        exit(0)
+
+    def _cleanup_containers(self):
+        """Stop all Docker containers using docker compose down."""
+        working_dir = self.demo_runner.cfg.environment.build_dir
+
+        try:
+            logging.info("Stopping all Docker containers...")
+            result = subprocess.run(
+                ["docker", "compose", "down"],
+                cwd=working_dir,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            if result.returncode == 0:
+                logging.info("All containers stopped successfully.")
+            else:
+                logging.warning(f"Docker compose down returned non-zero exit code: {result.returncode}")
+                logging.warning(f"stderr: {result.stderr}")
+        except subprocess.TimeoutExpired:
+            logging.error("Timeout while stopping containers. Forcing container termination...")
+            subprocess.run(["docker", "compose", "kill"], cwd=working_dir, capture_output=True)
+        except Exception as e:
+            logging.error(f"Error stopping containers: {e}")
 
     def start_live_display_loop(self):
         logging.info("Starting live console viewer...")
@@ -85,49 +122,55 @@ class LiveConsoleViewer:
                 current_state = self.thread_pool.get_programs_dict()[identifier].get_current_state()
                 time.sleep(WAIT_BETWEEN_STATE_CHECKS_IN_S)
 
-        self.thread_pool.add_thread(program_identifier='RIC', live_view_buffers=buffers)
-        self.thread_pool.start_thread(program_identifier='RIC')
-        wait_until_component_is_up('RIC')
+        try:
+            self.thread_pool.add_thread(program_identifier='RIC', live_view_buffers=buffers)
+            self.thread_pool.start_thread(program_identifier='RIC')
+            wait_until_component_is_up('RIC')
 
-        self.thread_pool.add_thread(program_identifier='5G-core', live_view_buffers=buffers)
-        self.thread_pool.start_thread(program_identifier='5G-core')
-        wait_until_component_is_up('5G-core')
+            self.thread_pool.add_thread(program_identifier='5G-core', live_view_buffers=buffers)
+            self.thread_pool.start_thread(program_identifier='5G-core')
+            wait_until_component_is_up('5G-core')
 
-        self.thread_pool.add_thread(program_identifier='gNB', live_view_buffers=buffers)
-        self.thread_pool.start_thread(program_identifier='gNB')
-        wait_until_component_is_up('gNB')
+            self.thread_pool.add_thread(program_identifier='gNB', live_view_buffers=buffers)
+            self.thread_pool.start_thread(program_identifier='gNB')
+            wait_until_component_is_up('gNB')
 
-        # TODO allow multiple UEs
-        self.thread_pool.add_thread(program_identifier='UE-ue1', live_view_buffers=buffers)
-        self.thread_pool.start_thread(program_identifier='UE-ue1')
-        wait_until_component_is_up('UE-ue1')
+            # TODO allow multiple UEs
+            self.thread_pool.add_thread(program_identifier='UE-ue1', live_view_buffers=buffers)
+            self.thread_pool.start_thread(program_identifier='UE-ue1')
+            wait_until_component_is_up('UE-ue1')
 
-        def chunked(iterable, n, fillvalue=None):
-            args = [iter(iterable)] * n
-            return zip_longest(*args, fillvalue=fillvalue)
+            def chunked(iterable, n, fillvalue=None):
+                args = [iter(iterable)] * n
+                return zip_longest(*args, fillvalue=fillvalue)
 
-        programs_list = list(self.thread_pool.get_programs_dict().values())
+            programs_list = list(self.thread_pool.get_programs_dict().values())
 
-        with Live(refresh_per_second=4) as live:
-            while any(t.is_alive() for t in self.thread_pool.get_thread_list().values()):
+            with Live(refresh_per_second=4) as live:
+                while any(t.is_alive() for t in self.thread_pool.get_thread_list().values()):
+                    panels = [
+                        Panel("\n".join(buffers[program.get_process_name()]), title=program.get_process_name())
+                        for program in programs_list
+                    ]
+
+                    # Group panels into rows of 3
+                    rows = []
+                    for group in chunked(panels, 3, fillvalue=Panel("")):
+                        rows.extend(group)
+
+                    live.update(Columns(rows, equal=True))
+
+                # Final update before exit
                 panels = [
                     Panel("\n".join(buffers[program.get_process_name()]), title=program.get_process_name())
                     for program in programs_list
                 ]
-
-                # Group panels into rows of 3
                 rows = []
                 for group in chunked(panels, 3, fillvalue=Panel("")):
                     rows.extend(group)
-
                 live.update(Columns(rows, equal=True))
 
-            # Final update before exit
-            panels = [
-                Panel("\n".join(buffers[program.get_process_name()]), title=program.get_process_name())
-                for program in programs_list
-            ]
-            rows = []
-            for group in chunked(panels, 3, fillvalue=Panel("")):
-                rows.extend(group)
-            live.update(Columns(rows, equal=True))
+        finally:
+            # Always cleanup containers when exiting
+            logging.info("Live display loop ended. Cleaning up containers...")
+            self._cleanup_containers()

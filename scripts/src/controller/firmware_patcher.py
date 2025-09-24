@@ -55,7 +55,6 @@ class FirmwarePatcher:
             ue_gnb_config: Dict[str, Any] = self.patch_ue_gnb_docker()
 
             single_config: Dict[str, Any] = {
-                "version": ric_config.get("version", "3.9"),
                 "services": dict(ric_config.get("services", {})),
                 "networks": dict(ric_config.get("networks", {}))
             }
