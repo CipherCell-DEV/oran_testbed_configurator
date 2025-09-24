@@ -68,7 +68,7 @@ class ProgramStateMonitor:
                 ("Attaching to ue", ProgramState.INITIALIZING)
             ],
             (ProgramType.UE, ProgramState.INITIALIZING): [
-                ("RRC NR reconfiguration successful.", ProgramState.RUNNING)
+                ("PDU Session Establishment successful.", ProgramState.RUNNING)
             ],
         }
 
