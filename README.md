@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="doc/cipher_cell_configurator_logo.svg" alt="Logo" width="500"/>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./doc/cipher_cell_configurator_logo.svg">
+    <img alt="Ciphercell logo" src="./doc/cipher_cell_configurator_logo_black.svg" width="300">
+  </picture>
 </p>
 
 ## Overview
