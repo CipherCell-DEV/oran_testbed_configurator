@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import shutil
 import textwrap
 from typing import Dict, Any
@@ -38,6 +39,75 @@ class FirmwarePatcher:
 
     def get_images_to_push(self):
         return self._images_to_push
+
+    def _patch_env_near_rt_ric(self, env_dict: dict) -> dict:
+        # first patch Near RT RIC
+        if self._setup_cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC:
+            env_dict['SC_RIC_VERSION'] = f'{self._setup_cfg.near_rt_ric.release}-release'
+            env_dict['SYSTEM_NAME'] = f'oran_sc_ric'
+
+            # SET Near RT RIC IPs
+            env_dict['RIC_SUBNET'] = f'{self._setup_cfg.near_rt_ric.ip_config.subnet}'
+            env_dict['E2TERM_IP'] = f'{self._setup_cfg.near_rt_ric.ip_config.e2term_ip}'
+            env_dict['E2MGR_IP'] = f'{self._setup_cfg.near_rt_ric.ip_config.e2mgr_ip}'
+            env_dict['DBAAS_IP'] = f'{self._setup_cfg.near_rt_ric.ip_config.dbaas_ip}'
+            env_dict['SUBMGR_IP'] = f'{self._setup_cfg.near_rt_ric.ip_config.submgr_ip}'
+            env_dict['APPMGR_IP'] = f'{self._setup_cfg.near_rt_ric.ip_config.appmgr_ip}'
+            env_dict['RTMGR_SIM_IP'] = f'{self._setup_cfg.near_rt_ric.ip_config.rtmgr_sim_ip}'
+            env_dict['XAPP_PY_RUNNER_IP'] = f'{self._setup_cfg.near_rt_ric.ip_config.xapp_runner_ip}'
+        return env_dict
+
+    def _patch_env_5g_core(self, env_dict: dict) -> dict:
+        if not self._setup_cfg.ue:
+            raise ValueError("No UE defined!")
+
+        # super ugly hack. Cut off the last part of an IP and check if all UEs are in the same IP base.
+        base_ip = []
+        for i, ue in enumerate(self._setup_cfg.ue):
+            ip_parts = str(ue.ip).split('.')
+            if len(ip_parts) != 4:
+                raise ValueError(f"Invalid IP format: {ue.ip}")
+
+            if i == 0:
+                base_ip = ip_parts
+                env_dict['UE_IP_BASE'] = f"{base_ip[0]}.{base_ip[1]}.{base_ip[2]}"
+            else:
+                if ip_parts[0] != base_ip[0] or ip_parts[1] != base_ip[1] or ip_parts[2] != base_ip[2]:
+                    raise ValueError(
+                        f"UE IP {ue.ip} does not match base IP prefix "
+                        f"{base_ip[0]}.{base_ip[1]}.{base_ip[2]}"
+                    )
+
+        return env_dict
+
+    def patch_env_file(self):
+
+        FolderManager.create_patch_folders(self._patch_file_path)
+        """ Patch the ORAN SC RIC docker-compose.yml file with custom IP addresses and subnet. """
+        patch_file_path = os.path.join(self._patch_file_path, "templates", "config", ".env")
+
+        try:
+            with open(patch_file_path, "r") as patch_file:
+                env_dict = {}
+                for line in patch_file.readlines():
+                    # ^ (?!  # ) -> not start with comment
+                    # \s* → optional leading spaces
+                    # ([^=]+?) -> Capture everything until =
+                    # \s*=\s* -> allow optional spaces around =
+                    # (.*) capture everything after =
+                    matches = re.findall(r'^(?!#)\s*([^=]+?)\s*=\s*(.*)$', line.strip())
+                    env_dict.update(dict(matches))
+
+                env_dict = self._patch_env_near_rt_ric(self._patch_env_5g_core(env_dict))
+
+                output_env_file = os.path.join(self._patch_file_path, "patched", "config", ".env")
+                with open(output_env_file, 'w') as patched_env_file:
+                    for key, value in env_dict.items():
+                        patched_env_file.write(f'{key}={value}\n')
+
+        except yaml.YAMLError as e:
+            logging.error(f"Failed to parse YAML patch file: {e}")
+            raise
 
     def patch_single_docker_compose(self) -> bool:
         """
@@ -322,9 +392,9 @@ class FirmwarePatcher:
             with open(patch_file_path, "r") as patch_file:
                 patch_content = yaml.safe_load(patch_file)
 
+                self.patch_env_file()
                 self._patch_gnb_docker(patch_content)
                 self._patch_ue_docker(patch_content)
-
                 self._patch_ue_config()
                 self._patch_gnb_config()
 
@@ -392,7 +462,7 @@ class FirmwarePatcher:
                 os.path.join(self._setup_cfg.environment.build_dir, "srsRAN_Project", "Dockerfile"),
             ),
             (
-                os.path.join(self._patch_file_path, "templates", "config", ".env"),
+                os.path.join(self._patch_file_path, "patched", "config", ".env"),
                 os.path.join(self._setup_cfg.environment.build_dir, ".env"),
             )
         ]

@@ -17,6 +17,14 @@ class RICRelease(Enum):
     RELEASE_i = 0,
     RELEASE_l = 1
 
+    def __str__(self):
+        if self == RICRelease.RELEASE_i:
+            return 'i'
+        elif self == RICRelease.RELEASE_l:
+            return 'l'
+        return str(self.value)
+
+
 
 ORAN_SC_RIC_SERVICE_IP_MAP = {
     "dbaas": ("DBAAS_IP", "dbaas_ip"),
