@@ -65,4 +65,4 @@ All components run in a fully Dockerized environment, ready for immediate experi
 
 ### Documentation
 
-Full setup and usage instructions are available in the [CipherCell Wiki](https://florianfrank.github.io/CipherCellWiki/docs/category/ciphercell-configurator).
+Full setup and usage instructions are available in the [CipherCell Wiki](https://florianfrank.github.io/CipherCellWiki/docs/ciphercell_configurator/configurator-overview/).
