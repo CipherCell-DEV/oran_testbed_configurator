@@ -83,8 +83,8 @@ class BuildRunner:
         logging.info("Running RIC build process...")
         os.chdir(self.setup_cfg.environment.build_dir)
 
-        if self.setup_cfg.near_rt_ric.type == RICImplementation.ORAN_SC_RIC:
-            if self.setup_cfg.environment.build_type == BuildType.DOCKER:
+        if self.setup_cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC:
+            if self.setup_cfg.near_rt_ric.build_type == BuildType.DOCKER:
                 return self._build_docker_compose('oran-sc-ric', ["docker", "compose", "build",
                                                                   "dbaas", "rtmgr_sim", "submgr", "e2term", "appmgr",
                                                                   "e2mgr", "python_xapp_runner"])
@@ -100,7 +100,7 @@ class BuildRunner:
         logging.info("Running 5G Core Network build process...")
         os.chdir(self.setup_cfg.environment.build_dir)
         if self.setup_cfg.core_5g.implementation == CoreImplementation.SRS:
-            if self.setup_cfg.environment.build_type == BuildType.DOCKER:
+            if self.setup_cfg.core_5g.build_type == BuildType.DOCKER:
                 return self._build_docker_compose('5gc', ["docker", "compose", "build", '5gc'])
             else:
                 logging.error("Building 5GC natively... -> Currently not supported!")
@@ -143,7 +143,7 @@ class BuildRunner:
         return True
 
     def push_images(self, images_to_push: list[str]) -> bool:
-        if self.setup_cfg.environment.push_local_images != True:
+        if not self.setup_cfg.environment.push_local_images:
             return True
         for image in images_to_push:
             logging.info(f"Pushing {image}")

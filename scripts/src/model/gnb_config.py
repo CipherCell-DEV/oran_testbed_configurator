@@ -9,6 +9,9 @@ class GNBImplementation(Enum):
     SRS = 1
 
 
+ALLOWED_IMPLEMENTATION_LIST = {'srs': GNBImplementation.SRS}
+
+
 @dataclass
 class GNBIPConfig:
     e2: Optional[ipaddress.IPv4Address] = None
@@ -24,7 +27,7 @@ class GNBIPConfig:
 
 @dataclass
 class GNBCfg:
-    type: Optional[GNBImplementation] = None
+    implementation: Optional[GNBImplementation] = None
     build_type = BuildType = BuildType.DOCKER
     ip_config: Optional[GNBIPConfig] = None
     srate: Optional[float] = 11.52
@@ -46,7 +49,6 @@ class GnbFieldIdentifiers:
     GNB_TYPE = 'type'
     TX_GAIN = 'tx_gain'
     RX_GAIN = 'rx_gain'
-    BUILD_TYPE = 'build_type'
 
 
 class DefaultValuesGNB:

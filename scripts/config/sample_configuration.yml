@@ -1,5 +1,4 @@
 environment:
-  build_type: "docker"
   log_level: "INFO"
   log_dir: "logs"
   build_dir: "./repositories"
@@ -47,7 +46,7 @@ ue:
           ip_devname: tun_srsue
           ip_netmask: 255.255.255.0
 gnb:
-  type: "srs"
+  implementation: "srs"
   build_type: "docker"
   ip_addr:
       e2: 10.0.2.3

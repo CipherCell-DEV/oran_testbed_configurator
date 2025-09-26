@@ -19,26 +19,25 @@ class FirmwarePatcher:
     It supports patching for different components like RIC, 5G Core, gNB, and UE.
     """
 
-    def __init__(self, setup_configuration: SetupConfiguration, patch_file_path: str ):
+    def __init__(self, setup_configuration: SetupConfiguration, patch_file_path: str):
         self._setup_cfg = setup_configuration
         self._patch_file_path = patch_file_path
         self._images_to_push = list()
 
-    def get_tag_or_empty_string(self, prefix :str) -> str:
-        if (self._setup_cfg.environment.tag_appendix == None):
-            return  ""
+    def get_tag_or_empty_string(self, prefix: str) -> str:
+        if self._setup_cfg.environment.tag_appendix is None:
+            return ""
         else:
-            return  f"{prefix}{self._setup_cfg.environment.tag_appendix}"
+            return f"{prefix}{self._setup_cfg.environment.tag_appendix}"
 
     def replace_tag_and_image(self, string: str) -> str:
         string = string.replace("localhost:4000", self._setup_cfg.environment.docker_registry)
         string = string.replace("-selftag", self.get_tag_or_empty_string("-"))
-        string =  string.replace(":selftag", self.get_tag_or_empty_string(":"))
+        string = string.replace(":selftag", self.get_tag_or_empty_string(":"))
         return string
 
     def get_images_to_push(self):
         return self._images_to_push
-
 
     def patch_single_docker_compose(self) -> bool:
         """
@@ -113,7 +112,8 @@ class FirmwarePatcher:
 
             for service in patch_content["services"]:
                 if "image" in patch_content["services"][service]:
-                    patch_content["services"][service]["image"] =  self.replace_tag_and_image(patch_content["services"][service]["image"])
+                    patch_content["services"][service]["image"] = self.replace_tag_and_image(
+                        patch_content["services"][service]["image"])
 
             for service, (env_var, ip_attr) in ORAN_SC_RIC_SERVICE_IP_MAP.items():
                 ip_value = getattr(self._setup_cfg.near_rt_ric.ip_config, ip_attr)
@@ -157,7 +157,8 @@ class FirmwarePatcher:
                 patch_content['networks']['ran']['ipam']['config'][0][
                     'subnet'] = f"{self._setup_cfg.core_5g.network}"
 
-                patch_content['services']['5gc']['image'] = self.replace_tag_and_image(patch_content['services']['5gc']['image'])
+                patch_content['services']['5gc']['image'] = self.replace_tag_and_image(
+                    patch_content['services']['5gc']['image'])
 
                 return patch_content
 
@@ -173,16 +174,18 @@ class FirmwarePatcher:
 
     def _get_usim_algorithm(self):
         if self._setup_cfg.ue[0].usim.algo == USIMAlgo.XOR:
-            return "xor" # NOT TESTED
+            return "xor"  # NOT TESTED
         elif self._setup_cfg.ue[0].usim.algo == USIMAlgo.COMP:
-            return "comp" # NOT TESTED
+            return "comp"  # NOT TESTED
         elif self._setup_cfg.ue[0].usim.algo == USIMAlgo.MILENAGE:
             return "milenage"
 
     def _patch_gnb_docker(self, patch_content: dict):
         FolderManager.create_patch_folders(self._patch_file_path)
-        patch_content["services"]["gnb"].update({"image" : self.replace_tag_and_image(patch_content["services"]["gnb"]["image"])})
-       # TODO implement patching!!
+        patch_content["services"]["gnb"].update(
+            {"image": self.replace_tag_and_image(patch_content["services"]["gnb"]["image"])})
+
+    # TODO implement patching!!
 
     def _patch_ue_docker(self, patch_content: dict):
         FolderManager.create_patch_folders(self._patch_file_path)
@@ -339,27 +342,33 @@ class FirmwarePatcher:
         file_mappings = [
             (
                 os.path.join(self._patch_file_path, "templates", "docker", "dockerfile_appmgr"),
-                os.path.join(self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images" ,"appmgr", "Dockerfile"),
+                os.path.join(self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images", "appmgr",
+                             "Dockerfile"),
             ),
             (
                 os.path.join(self._patch_file_path, "templates", "docker", "dockerfile_submgr"),
-                os.path.join(self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images" ,"submgr", "Dockerfile"),
+                os.path.join(self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images", "submgr",
+                             "Dockerfile"),
             ),
             (
                 os.path.join(self._patch_file_path, "templates", "docker", "dockerfile_e2term"),
-                os.path.join(self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images" ,"e2term", "Dockerfile"),
+                os.path.join(self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images", "e2term",
+                             "Dockerfile"),
             ),
             (
                 os.path.join(self._patch_file_path, "templates", "docker", "dockerfile_rtmgr_sim"),
-                os.path.join(self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images" ,"rtmgr_sim", "Dockerfile"),
+                os.path.join(self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images", "rtmgr_sim",
+                             "Dockerfile"),
             ),
             (
                 os.path.join(self._patch_file_path, "templates", "docker", "dockerfile_e2mgr"),
-                os.path.join(self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images" ,"e2mgr", "Dockerfile"),
+                os.path.join(self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images", "e2mgr",
+                             "Dockerfile"),
             ),
             (
                 os.path.join(self._patch_file_path, "templates", "docker", "dockerfile_ric_plt_xapp_frame-py"),
-                os.path.join(self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images" ,"ric-plt-xapp-frame-py", "Dockerfile"),
+                os.path.join(self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images",
+                             "ric-plt-xapp-frame-py", "Dockerfile"),
             ),
 
             (
@@ -401,24 +410,24 @@ class FirmwarePatcher:
                 src = src.replace(f'{self._patch_file_path}' + '/', '')
                 dst = dst.replace(f'{self._setup_cfg.environment.build_dir}' + '/', '')
                 logging.info("Copied file from %s to %s", src, dst)
-            except FileNotFoundError as e:
+            except FileNotFoundError:
                 logging.error("Source file not found: %s", src)
                 raise
-            except PermissionError as e:
+            except PermissionError:
                 logging.error("Permission denied while copying %s to %s", src, dst)
                 raise
-            except Exception as e:
+            except Exception:
                 logging.exception("Unexpected error while copying %s to %s", src, dst)
                 raise
 
     def _patch_oran_sc(self):
-        if self._setup_cfg.environment.build_type == BuildType.DOCKER:
+        if self._setup_cfg.near_rt_ric.build_type == BuildType.DOCKER:
             return self._patch_oran_sc_docker_compose()
         else:
             logging.warning("Native build patching for ORAN SC RIC is not implemented yet.")
 
     def patch_5g_core(self):
-        if self._setup_cfg.environment.build_type == BuildType.DOCKER:
+        if self._setup_cfg.core_5g.build_type == BuildType.DOCKER:
             return self._patch_srs_ran_sc_docker_compose()
         else:
             logging.warning("Native build patching for srsRAN 5G core is not implemented yet.")
@@ -426,7 +435,7 @@ class FirmwarePatcher:
     def patch_ric_firmware(self):
         logging.info("Patching RIC firmware...")
         if os.path.exists(self._patch_file_path):
-            if self._setup_cfg.near_rt_ric.type == RICImplementation.ORAN_SC_RIC:
+            if self._setup_cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC:
                 return self._patch_oran_sc()
         else:
             raise FileNotFoundError(f"Patch-Datei nicht gefunden: {self._patch_file_path}")

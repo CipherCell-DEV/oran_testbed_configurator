@@ -37,10 +37,10 @@ class ComponentCheckoutManager:
             logging.info(f"{folder} already exists at {destination}, skipping clone.")
 
     def checkout_ric(self):
-        if self._setup_cfg.near_rt_ric.type == RICImplementation.ORAN_SC_RIC:
+        if self._setup_cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC:
             self._clone_repository(repo=ORAN_SC_RIC_REPO, name="ORAN SC RIC", folder='oran-sc-ric')
 
-        if self._setup_cfg.near_rt_ric.type == RICImplementation.FLEX_RIC:
+        if self._setup_cfg.near_rt_ric.implementation == RICImplementation.FLEX_RIC:
             logging.info(f"Flex-RIC currently not supported")
 
     def checkout_5g_core(self):
@@ -50,7 +50,7 @@ class ComponentCheckoutManager:
             logging.info(f"Other 5G Core implementations currently not supported")
 
     def checkout_gnb(self):
-        if self._setup_cfg.gnb.type == GNBImplementation.SRS:
+        if self._setup_cfg.gnb.implementation == GNBImplementation.SRS:
             self._clone_repository(repo=SRS_RAN_REPO, name="srsRAN Project", folder='srsRAN_Project')
         else:
             logging.info(f"Other gnB implementations currently not supported")

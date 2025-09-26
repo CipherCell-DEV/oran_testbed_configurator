@@ -2,11 +2,15 @@ import ipaddress
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
+from model.utils_config import BuildType
 
 
 class RICImplementation(Enum):
     ORAN_SC_RIC = 0
     FLEX_RIC = 1
+
+
+ALLOWED_IMPLEMENTATION_LIST = {'oran-sc-ric': RICImplementation.ORAN_SC_RIC, 'flex-ric': RICImplementation.FLEX_RIC}
 
 
 class RICRelease(Enum):
@@ -50,14 +54,16 @@ class NearRTRICNetworkConfig:
 
 @dataclass
 class NearRtRICCFG:
-    type: Optional[RICImplementation] = None
+    implementation: Optional[RICImplementation] = None
     release: Optional[RICRelease] = None
+    build_type = BuildType = BuildType.DOCKER
     ip_config: Optional[NearRTRICNetworkConfig] = None
 
     def __str__(self):
         return (f"NearRtRICCFG: \n"
-                f"    type={self.type}, \n"
+                f"    type={self.implementation}, \n"
                 f"    release={self.release}, \n"
+                f"    build_type={self.build_type}, \n"
                 f"{self.ip_config}")
 
 

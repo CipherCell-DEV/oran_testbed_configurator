@@ -11,6 +11,9 @@ class UEImplementation(Enum):
     SRS_4G = 0
 
 
+ALLOWED_IMPLEMENTATION_LIST = {'srs': UEImplementation.SRS_4G}
+
+
 class USIMMode(Enum):
     SOFT = 0
     HARD = 1
@@ -77,6 +80,7 @@ class UECfg:
 
     def __str__(self):
         return (f"UECfg: \n"
+                f"    implementation={self.implementation}, \n"
                 f"    name={self.name}, \n"
                 f"    build_type={self.build_type}, \n"
                 f"    ip={self.ip}, \n"
