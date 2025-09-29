@@ -1,6 +1,7 @@
 import os
 import re
 from dataclasses import dataclass
+from enum import Enum
 from typing import Optional
 
 import yaml
@@ -75,6 +76,7 @@ class PeriodicTrafficConfig(AtomicTrafficConfig):
             interval=parse_time(source.get('interval', '100ms'))
         )
 
+
 @dataclass
 class RandomTrafficConfig(AtomicTrafficConfig):
     min_size: int  # Bytes  TODO: Turn into kB
@@ -86,6 +88,26 @@ class RandomTrafficConfig(AtomicTrafficConfig):
             duration=parse_time(source.get('duration', '1s')),
             min_size=int(source.get('min_size', 1)),
             max_size=int(source.get('max_size', 1))
+        )
+
+
+class DistributionType(Enum):
+    normal = 'normal-distribution'
+    uniform = 'uniform-distribution'
+    exponential = 'exponential-distribution'
+
+
+@dataclass
+class DistributedTrafficConfig(AtomicTrafficConfig):
+    cumulative_size: int  # Bytes  TODO: Turn into kB
+    distribution: DistributionType
+
+    @classmethod
+    def from_dict(cls, source: dict):
+        return DistributedTrafficConfig(
+            duration=parse_time(source.get('duration', '1s')),
+            cumulative_size=int(source.get('cumulative_size', 1)),
+            distribution=DistributionType(source.get('type', 'normal-distribution'))
         )
 
 
@@ -112,9 +134,13 @@ def from_yaml(path: str) -> Optional['TrafficSequenceConfig']:
                     offset = parse_time(config['periodic']['offset'])
                     parsed_config = PeriodicTrafficConfig.from_dict(config['periodic'])
                     overlap_god.overlaps.append((offset, parsed_config))
-                if 'random' in config:
+                elif 'random' in config:
                     offset = parse_time(config['random']['offset'])
                     parsed_config = RandomTrafficConfig.from_dict(config['random'])
+                    overlap_god.overlaps.append((offset, parsed_config))
+                elif 'distribution' in config:
+                    offset = parse_time(config['distribution'].get('offset', '0ms'))
+                    parsed_config = DistributedTrafficConfig.from_dict(config['distribution'])
                     overlap_god.overlaps.append((offset, parsed_config))
             god.sequence.append(overlap_god)
         elif 'pause' in part:
@@ -123,4 +149,6 @@ def from_yaml(path: str) -> Optional['TrafficSequenceConfig']:
             god.sequence.append(PeriodicTrafficConfig.from_dict(part['periodic']))
         elif 'random' in part:
             god.sequence.append(RandomTrafficConfig.from_dict(part['random']))
+        elif 'distribution' in part:
+            god.sequence.append(DistributedTrafficConfig.from_dict(part['distribution']))
     return god

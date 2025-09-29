@@ -32,6 +32,22 @@ traffic:
   - random:
       duration: 3s
       min_size: 10000
-      max_size: 100000
+      max_size: 50000
   - pause:
       duration: 1s
+  - distribution:
+      duration: 3s
+      cumulative_size: 300000
+      type: 'normal-distribution'
+  - pause:
+      duration: 1s
+  - distribution:
+      duration: 3s
+      cumulative_size: 300000
+      type: 'uniform-distribution'
+  - pause:
+      duration: 1s
+  - distribution:
+      duration: 3s
+      cumulative_size: 300000
+      type: 'exponential-distribution'

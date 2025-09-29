@@ -10,7 +10,7 @@ from numpy import ndarray, dtype
 
 from UEContainer import UEContainer
 from model.traffic_config import PeriodicTrafficConfig, TrafficParameters, from_yaml, TrafficSequenceConfig, \
-    OverlapTrafficConfig, Pause, AtomicTrafficConfig, RandomTrafficConfig
+    OverlapTrafficConfig, Pause, AtomicTrafficConfig, RandomTrafficConfig, DistributedTrafficConfig, DistributionType
 
 
 class TrafficPlanGenerator:
@@ -47,6 +47,10 @@ class TrafficPlanGenerator:
             return self.generate_periodic_traffic(config)
         elif isinstance(config, RandomTrafficConfig):
             return self.generate_random_traffic(config)
+        elif isinstance(config, DistributedTrafficConfig):
+            return self.generate_distributed_traffic(config)
+        else:
+            return None
 
     def generate_periodic_traffic(self, config: PeriodicTrafficConfig) -> ndarray[tuple[int], dtype[Any]]:
         num_slots = int(config.duration / self.__granularity)
@@ -74,6 +78,71 @@ class TrafficPlanGenerator:
             if idx < num_slots:
                 generated_traffic[idx] += random.randint(config.min_size, config.max_size)
             current_time += self.__granularity
+
+        return generated_traffic
+
+    def generate_distributed_traffic(self, config) -> ndarray[tuple[int], dtype[Any]]:
+        """
+        Generates a traffic pattern that is distributed according to the type (e.g. normal distribution). The sum of the
+        individual bytes is equal to the cumulative size specified.
+        :param config: The DistributedTrafficConfig containing the configuration parameters for the distribution.
+        :return: A numpy array containing the traffic over time, distributed according to the specified distribution.
+        """
+        num_slots = int(config.duration / self.__granularity)
+        generated_traffic = np.zeros(num_slots, dtype=int)
+
+        if num_slots == 0:
+            return generated_traffic
+
+        if config.distribution == DistributionType.normal:
+            # Normal distribution centered around the middle of the time period
+            mean = num_slots / 2
+            std = num_slots / 6  # 99.7% of values within the time period (3-sigma rule)
+            raw_values = np.random.normal(mean, std, num_slots * 2)  # Generate more values to filter
+            valid_indices = np.where((raw_values >= 0) & (raw_values < num_slots))[0][:num_slots]
+            if len(valid_indices) < num_slots:
+                raw_values = np.random.uniform(0, num_slots, num_slots)
+            else:
+                raw_values = raw_values[valid_indices]
+
+        elif config.distribution == DistributionType.uniform:
+            # Uniform distribution across all time slots
+            raw_values = np.random.uniform(0, num_slots, num_slots)
+
+        elif config.distribution == DistributionType.exponential:
+            # Exponential distribution (more traffic at the beginning)
+            scale = num_slots / 3  # Scale parameter
+            raw_values = np.random.exponential(scale, num_slots * 2)
+            valid_indices = np.where(raw_values < num_slots)[0][:num_slots]
+            if len(valid_indices) < num_slots:
+                raw_values = np.random.uniform(0, num_slots, num_slots)
+            else:
+                raw_values = raw_values[valid_indices]
+
+        else:
+            raw_values = np.random.uniform(0, num_slots, num_slots)
+
+        if np.sum(raw_values) > 0:
+            normalized_weights = raw_values / np.sum(raw_values)
+        else:
+            normalized_weights = np.ones(num_slots) / num_slots
+
+        traffic_values = normalized_weights * config.cumulative_size
+        generated_traffic = traffic_values.astype(int)
+
+        # Correct for rounding errors by adding the remainder to random slots
+        remainder = config.cumulative_size - np.sum(generated_traffic)
+        if remainder > 0:
+            random_indices = np.random.choice(num_slots, size=min(remainder, num_slots), replace=False)
+            generated_traffic[random_indices] += 1
+        elif remainder < 0:
+            excess = -remainder
+            non_zero_indices = np.where(generated_traffic > 0)[0]
+            if len(non_zero_indices) > 0:
+                for _ in range(min(excess, len(non_zero_indices))):
+                    idx = np.random.choice(non_zero_indices)
+                    if generated_traffic[idx] > 0:
+                        generated_traffic[idx] -= 1
 
         return generated_traffic
 
