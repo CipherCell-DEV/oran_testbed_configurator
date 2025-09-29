@@ -8,8 +8,7 @@ import numpy as np
 
 from model.traffic_config import TrafficConfig
 
-DEFAULT_GRANULARITY = 0.1  # 100 ms
-traffic = 0
+DEFAULT_GRANULARITY = 100  # ms
 
 
 class UEContainer:
@@ -29,10 +28,14 @@ class UEContainer:
             cwd=self.workdir
         )
 
-    def run_ping(self, destination: str, packet_size: int, timeout: float = DEFAULT_GRANULARITY):
+    def run_ping(self, destination: str, packet_size: int, timeout: int = DEFAULT_GRANULARITY):
         """Run a ping command in the persistent session"""
         if not self.process:
             raise RuntimeError("No active session. Call start_session() first.")
+
+        if packet_size > 60000:
+            print('Packet size currently cannot be more than 60 kB! Reducing it to 60 kB.')
+            packet_size = 60000
 
         ping_cmd = f'ip netns exec ue1 ping -s {packet_size} -c 1 {destination}'
         cmd = f'{ping_cmd}; echo "EXIT_CODE:$?"'
@@ -40,22 +43,20 @@ class UEContainer:
         try:
             self.process.stdin.write(cmd + '\n')
             self.process.stdin.flush()
-            global traffic
-            traffic += packet_size
+            timeout_s = timeout / 1000 - 0.01
 
             start_time = time.time()
-            while time.time() - start_time < timeout:
+            while time.time() - start_time < timeout_s:
                 import select
-                ready, _, _ = select.select([self.process.stdout], [], [], timeout)
+                ready, _, _ = select.select([self.process.stdout], [], [], timeout_s)
                 if ready and (line := self.process.stdout.readline()):
                     line = line.strip()
                     if line.startswith("EXIT_CODE:"):
-                        exit_code = int(line.split(":")[1])
-                        return exit_code == 0
+                        return int(line.split(":")[1]) == 0
                 if self.process.poll() is not None:
                     print("Bash session terminated unexpectedly")
                     return False
-            print("Ping command timed out")
+            print("Ping timed out")
             return False
         except Exception as e:
             print(f"Ping failed: {e}")
@@ -75,19 +76,23 @@ class UEContainer:
                 print("Closed UE container session")
 
 
-def precalculate_traffic_array(interval, duration, packet_size, granularity=DEFAULT_GRANULARITY):
+def precalculate_periodic_traffic_array(interval, duration, packet_size, granularity=DEFAULT_GRANULARITY):
     """
-    Precalculate an array of instantaneous traffic (in MB) with the given granularity (in seconds).
+    Precalculate an array of instantaneous traffic (in B) with the given granularity (in seconds).
     Each entry is the traffic sent at that specific time slot.
     """
     num_slots = int(duration / granularity)
-    traffic_array = np.zeros(num_slots, dtype=float)
+    traffic_array = np.zeros(num_slots, dtype=int)
 
-    for i in range(num_slots):
-        t = i * granularity
-        if (np.isclose(t % interval, 0, atol=granularity / 2)
-                or np.isclose(t % interval, interval, atol=granularity / 2)):
-            traffic_array[i] = packet_size / (1024 * 1024)
+    current_time = 0.0
+    while current_time < duration:
+        idx = int(current_time / granularity)
+
+        if idx < num_slots:
+            traffic_array[idx] += packet_size
+
+        current_time += interval
+
     return traffic_array
 
 
@@ -99,7 +104,7 @@ def plot_traffic_pattern(traffic_array, duration, granularity=DEFAULT_GRANULARIT
     plt.figure(figsize=(12, 4))
     plt.step(time_axis, traffic_array, where='post')
     plt.xlabel('Time (s)')
-    plt.ylabel('Instantaneous Traffic (MB)')
+    plt.ylabel('Instantaneous Traffic (in B)')
     plt.title('Traffic Pattern Over Time')
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -115,21 +120,23 @@ def run_periodic_traffic(config_path: str, destination: str, workdir: str):
     duration = config.periodic.duration
     size = config.periodic.size
     granularity = DEFAULT_GRANULARITY
-    traffic_array = precalculate_traffic_array(interval, duration, size, granularity)
+    traffic_array = precalculate_periodic_traffic_array(interval, duration, size, granularity)
 
     plot_traffic_pattern(traffic_array, duration, granularity)
 
-    start_time = time.time()
-    next_event = 0.0
-    for i in range(len(traffic_array)):
-        t = i * granularity
-        if t >= next_event:
-            run_ping(destination, size, workdir)
-            next_event += interval
-        next_slot = (i + 1) * granularity
-        sleep_time = start_time + next_slot - time.time()
-        if sleep_time > 0:
-            time.sleep(sleep_time)
+    ue_container = UEContainer(workdir)
+    ue_container.start_session()
+
+    try:
+        for instant_traffic in traffic_array:
+            start_time = time.time()
+            if instant_traffic > 0 and not ue_container.run_ping(destination, instant_traffic, granularity):
+                print('Ping did not run successfully')
+            if (sleep_time := (start_time + (granularity / 1000)) - time.time()) > 0:
+                time.sleep(sleep_time)
+    finally:
+        ue_container.close_session()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Execute periodic traffic in the Docker Compose container.')
