@@ -27,6 +27,22 @@ class UEContainer:
             text=True,
             cwd=self.workdir
         )
+        self.initialize_shell()
+
+    def initialize_shell(self):
+        init_timeout = 2
+        self.process.stdin.write('echo READY\n')
+        self.process.stdin.flush()
+        start_time = time.time()
+        while time.time() - start_time < init_timeout:
+            import select
+            ready, _, _ = select.select([self.process.stdout], [], [], 0.1)
+            if ready:
+                line = self.process.stdout.readline()
+                if line and 'READY' in line:
+                    break
+        else:
+            print('Initializing shell timed out')
 
     def run_ping(self, destination: str, packet_size: int, timeout: int = DEFAULT_GRANULARITY):
         """Run a ping command in the persistent session"""
@@ -87,10 +103,8 @@ def precalculate_periodic_traffic_array(interval, duration, packet_size, granula
     current_time = 0.0
     while current_time < duration:
         idx = int(current_time / granularity)
-
         if idx < num_slots:
             traffic_array[idx] += packet_size
-
         current_time += interval
 
     return traffic_array
