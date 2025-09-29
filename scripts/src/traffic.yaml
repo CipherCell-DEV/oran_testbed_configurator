@@ -1,5 +1,11 @@
 traffic:
+  gnb-address: 10.45.1.1
+  ue-address: 10.45.1.2
+  workdir: ../../
+  granularity: 100ms
+
   periodic:
+    # 50 kB every 200 ms for 5 s
     size: 50000
-    interval: 100ms
+    interval: 200ms
     duration: 5s

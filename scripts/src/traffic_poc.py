@@ -1,123 +1,76 @@
 import argparse
 import os
-import subprocess
 import time
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy import ndarray, dtype
 
-from model.traffic_config import TrafficConfig
+from UEContainer import UEContainer
+from model.traffic_config import PeriodicTrafficConfig, BaseTrafficConfig
 
-DEFAULT_GRANULARITY = 100  # ms
+
+class TrafficPlanGenerator:
+
+    def __init__(self):
+        self.__traffic = np.zeros(0, dtype=int)
+        self.__granularity = 100  # TODO: Get from config
+
+    def append_traffic(self, traffic: ndarray[tuple[int], dtype[Any]]):
+        self.__traffic = np.append(self.__traffic, traffic)
+    
+    def overlap_traffic(self, traffic: ndarray[tuple[int], dtype[Any]], offset: int):
+        pass
+
+    @staticmethod
+    def generate_periodic_traffic(config: PeriodicTrafficConfig) -> ndarray[tuple[int], dtype[Any]]:
+        num_slots = int(config.duration / config.granularity)
+        generated_traffic = np.zeros(num_slots, dtype=int)
+
+        current_time = 0.0
+        while current_time < config.duration:
+            idx = int(current_time / config.granularity)
+            if idx < num_slots:
+                generated_traffic[idx] += config.packet_size
+            current_time += config.interval
+
+        return generated_traffic
+
+    def get_traffic_plan(self):
+        return self.__traffic
 
 
-class UEContainer:
-    def __init__(self, workdir: str):
-        self.workdir = workdir
-        self.process = None
+class TrafficExecutor:
 
-    def start_session(self):
-        """Start a persistent bash session in the UE container"""
-        cmd = ['docker', 'compose', 'exec', '-T', 'ue1', 'bash']
-        self.process = subprocess.Popen(
-            cmd,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            cwd=self.workdir
-        )
-        self.initialize_shell()
+    def __init__(self, traffic_plan: ndarray[tuple[int], dtype[Any]]):
+        self.traffic_plan: ndarray[tuple[int], dtype[Any]] = traffic_plan
 
-    def initialize_shell(self):
-        init_timeout = 2
-        self.process.stdin.write('echo READY\n')
-        self.process.stdin.flush()
-        start_time = time.time()
-        while time.time() - start_time < init_timeout:
-            import select
-            ready, _, _ = select.select([self.process.stdout], [], [], 0.1)
-            if ready:
-                line = self.process.stdout.readline()
-                if line and 'READY' in line:
-                    break
-        else:
-            print('Initializing shell timed out')
-
-    def run_ping(self, destination: str, packet_size: int, timeout: int = DEFAULT_GRANULARITY):
-        """Run a ping command in the persistent session"""
-        if not self.process:
-            raise RuntimeError("No active session. Call start_session() first.")
-
-        if packet_size > 60000:
-            print('Packet size currently cannot be more than 60 kB! Reducing it to 60 kB.')
-            packet_size = 60000
-
-        ping_cmd = f'ip netns exec ue1 ping -s {packet_size} -c 1 {destination}'
-        cmd = f'{ping_cmd}; echo "EXIT_CODE:$?"'
+    def execute(self, config: BaseTrafficConfig):
+        ue_container = UEContainer(config.workdir)
+        ue_container.start_session()
 
         try:
-            self.process.stdin.write(cmd + '\n')
-            self.process.stdin.flush()
-            timeout_s = timeout / 1000 - 0.01
-
-            start_time = time.time()
-            while time.time() - start_time < timeout_s:
-                import select
-                ready, _, _ = select.select([self.process.stdout], [], [], timeout_s)
-                if ready and (line := self.process.stdout.readline()):
-                    line = line.strip()
-                    if line.startswith("EXIT_CODE:"):
-                        return int(line.split(":")[1]) == 0
-                if self.process.poll() is not None:
-                    print("Bash session terminated unexpectedly")
-                    return False
-            print("Ping timed out")
-            return False
-        except Exception as e:
-            print(f"Ping failed: {e}")
-            return False
-
-    def close_session(self):
-        """Close the persistent session"""
-        if self.process:
-            try:
-                self.process.stdin.write('exit\n')
-                self.process.stdin.flush()
-                self.process.wait(timeout=2)
-            except:
-                self.process.terminate()
-            finally:
-                self.process = None
-                print("Closed UE container session")
+            for instant_traffic in self.traffic_plan:
+                start_time = time.time()
+                if (instant_traffic > 0
+                        and not ue_container.run_ping(config.gnb_address, instant_traffic, config.granularity)):
+                    print('Ping did not run successfully')
+                rest_duration = (start_time + (config.granularity / 1000)) - time.time()
+                if rest_duration > 0:
+                    time.sleep(rest_duration)
+        finally:
+            ue_container.close_session()
 
 
-def precalculate_periodic_traffic_array(interval, duration, packet_size, granularity=DEFAULT_GRANULARITY):
-    """
-    Precalculate an array of instantaneous traffic (in B) with the given granularity (in seconds).
-    Each entry is the traffic sent at that specific time slot.
-    """
-    num_slots = int(duration / granularity)
-    traffic_array = np.zeros(num_slots, dtype=int)
-
-    current_time = 0.0
-    while current_time < duration:
-        idx = int(current_time / granularity)
-        if idx < num_slots:
-            traffic_array[idx] += packet_size
-        current_time += interval
-
-    return traffic_array
-
-
-def plot_traffic_pattern(traffic_array, duration, granularity=DEFAULT_GRANULARITY):
+def plot_traffic_pattern(traffic_array, granularity=100):
     """
     Plot the traffic pattern over time.
     """
-    time_axis = np.arange(0, duration, granularity)[:len(traffic_array)]
+    time_axis = np.arange(0, traffic_array.size * granularity, granularity)[:len(traffic_array)]
     plt.figure(figsize=(12, 4))
     plt.step(time_axis, traffic_array, where='post')
-    plt.xlabel('Time (s)')
+    plt.xlabel('Time (ms)')
     plt.ylabel('Instantaneous Traffic (in B)')
     plt.title('Traffic Pattern Over Time')
     plt.grid(True, alpha=0.3)
@@ -125,42 +78,23 @@ def plot_traffic_pattern(traffic_array, duration, granularity=DEFAULT_GRANULARIT
     plt.show()
 
 
-def run_periodic_traffic(config_path: str, destination: str, workdir: str):
-    config = TrafficConfig.from_yaml(config_path)
-    if not config.periodic:
-        print("No periodic traffic configuration found in YAML.")
-        return
-    interval = config.periodic.interval
-    duration = config.periodic.duration
-    size = config.periodic.size
-    granularity = DEFAULT_GRANULARITY
-    traffic_array = precalculate_periodic_traffic_array(interval, duration, size, granularity)
-
-    plot_traffic_pattern(traffic_array, duration, granularity)
-
-    ue_container = UEContainer(workdir)
-    ue_container.start_session()
-
-    try:
-        for instant_traffic in traffic_array:
-            start_time = time.time()
-            if instant_traffic > 0 and not ue_container.run_ping(destination, instant_traffic, granularity):
-                print('Ping did not run successfully')
-            if (sleep_time := (start_time + (granularity / 1000)) - time.time()) > 0:
-                time.sleep(sleep_time)
-    finally:
-        ue_container.close_session()
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Execute periodic traffic in the Docker Compose container.')
     parser.add_argument('--gnb-address', type=str, default='10.45.1.1', help='Destination IP address')
     parser.add_argument('--ue-address', type=str, default='10.45.1.2', help='Destination IP address')
-    parser.add_argument('--packet-size', type=int, default=10008, help='Packet size in bytes (overridden by YAML)')
     parser.add_argument('--workdir', type=str,
                         default=os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')),
                         help='Working directory for the container')
     parser.add_argument('--config', type=str, default=os.path.join(os.path.dirname(__file__), 'traffic.yaml'),
                         help='Path to traffic.yaml config')
     args = parser.parse_args()
-    run_periodic_traffic(args.config, args.gnb_address, args.workdir)
+
+    base_config = BaseTrafficConfig.from_yaml(args.config)
+    generator = TrafficPlanGenerator()
+    generator.append_traffic(generator.generate_periodic_traffic(PeriodicTrafficConfig.from_yaml(args.config)))
+    traffic = generator.get_traffic_plan()
+
+    plot_traffic_pattern(traffic)
+
+    #executor = TrafficExecutor(traffic)
+    #executor.execute(base_config)
