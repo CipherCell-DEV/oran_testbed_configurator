@@ -8,7 +8,7 @@ import yaml
 
 
 def parse_time(timestr: str) -> int:
-    """Parse a time string like '10s', '2m', '1h', '1.5m', '10ms' into seconds (float)."""
+    """Parse a time string like '10s', '2m', '1h', '1.5m', '10ms' into milliseconds (int)."""
     match = re.match(r"(\d+(?:\.\d+)?)[ ]*(ms|s|m|h)", timestr.strip())
     if not match:
         raise ValueError(f"Invalid time format: {timestr}")
@@ -24,6 +24,25 @@ def parse_time(timestr: str) -> int:
         return value * 3600 * 1000
     else:
         raise ValueError(f"Unknown time unit: {unit}")
+
+
+def parse_bytes(timestr: str) -> int:
+    """Parse a byte size string like '10B', '2kB', '1MB', '1.5GB' into Bytes (int)."""
+    match = re.match(r"(\d+(?:\.\d+)?)[ ]*(B|kB|MB|GB)", timestr.strip())
+    if not match:
+        raise ValueError(f"Invalid size format: {timestr}")
+    value, unit = match.groups()
+    value = int(value)
+    if unit == 'B':
+        return value
+    elif unit == 'kB':
+        return value * 1_000
+    elif unit == 'MB':
+        return value * 1_000_000
+    elif unit == 'GB':
+        return value * 1_000_000_000
+    else:
+        raise ValueError(f"Unknown unit: {unit}")
 
 
 @dataclass
@@ -65,29 +84,29 @@ class OverlapTrafficConfig:
 
 @dataclass
 class PeriodicTrafficConfig(AtomicTrafficConfig):
-    packet_size: int  # Bytes  TODO: Turn into kB
+    packet_size: int  # Bytes
     interval: int  # ms
 
     @classmethod
     def from_dict(cls, source: dict):
         return PeriodicTrafficConfig(
             duration=parse_time(source.get('duration', '1s')),
-            packet_size=int(source.get('size', 1)),
+            packet_size=parse_bytes(source.get('size', '1kB')),
             interval=parse_time(source.get('interval', '100ms'))
         )
 
 
 @dataclass
 class RandomTrafficConfig(AtomicTrafficConfig):
-    min_size: int  # Bytes  TODO: Turn into kB
-    max_size: int  # Bytes  TODO: Turn into kB
+    min_size: int  # Bytes
+    max_size: int  # Bytes
 
     @classmethod
     def from_dict(cls, source: dict):
         return RandomTrafficConfig(
             duration=parse_time(source.get('duration', '1s')),
-            min_size=int(source.get('min_size', 1)),
-            max_size=int(source.get('max_size', 1))
+            min_size=parse_bytes(source.get('min_size', '1kB')),
+            max_size=parse_bytes(source.get('max_size', '1kB'))
         )
 
 
@@ -99,14 +118,14 @@ class DistributionType(Enum):
 
 @dataclass
 class DistributedTrafficConfig(AtomicTrafficConfig):
-    cumulative_size: int  # Bytes  TODO: Turn into kB
+    cumulative_size: int  # Bytes
     distribution: DistributionType
 
     @classmethod
     def from_dict(cls, source: dict):
         return DistributedTrafficConfig(
             duration=parse_time(source.get('duration', '1s')),
-            cumulative_size=int(source.get('cumulative_size', 1)),
+            cumulative_size=parse_bytes(source.get('cumulative_size', '1kB')),
             distribution=DistributionType(source.get('type', 'normal-distribution'))
         )
 
