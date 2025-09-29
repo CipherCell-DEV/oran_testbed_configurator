@@ -5,7 +5,7 @@ traffic:
   granularity: 100ms
 
   periodic:
-    # 50 kB every 200 ms for 5 s
+    # 50 kB every 100 ms for 5 s
     size: 50000
-    interval: 200ms
+    interval: 100ms
     duration: 5s

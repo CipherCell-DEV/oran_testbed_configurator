@@ -17,11 +17,13 @@ class TrafficPlanGenerator:
         self.__traffic = np.zeros(0, dtype=int)
         self.__granularity = 100  # TODO: Get from config
 
-    def append_traffic(self, traffic: ndarray[tuple[int], dtype[Any]]):
-        self.__traffic = np.append(self.__traffic, traffic)
-    
-    def overlap_traffic(self, traffic: ndarray[tuple[int], dtype[Any]], offset: int):
-        pass
+    def append_traffic(self, appended_traffic: ndarray[tuple[int], dtype[Any]]):
+        self.__traffic = np.append(self.__traffic, appended_traffic)
+
+    def overlap_traffic(self, overlapped_traffic: ndarray[tuple[int], dtype[Any]], offset: int):
+        new_size = max(self.__traffic.size, offset + overlapped_traffic.size)
+        self.__traffic = (np.pad(self.__traffic, (0, new_size - self.__traffic.size), mode='constant')
+                          + np.pad(overlapped_traffic, (offset, 0)))
 
     @staticmethod
     def generate_periodic_traffic(config: PeriodicTrafficConfig) -> ndarray[tuple[int], dtype[Any]]:
@@ -80,21 +82,23 @@ def plot_traffic_pattern(traffic_array, granularity=100):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Execute periodic traffic in the Docker Compose container.')
-    parser.add_argument('--gnb-address', type=str, default='10.45.1.1', help='Destination IP address')
-    parser.add_argument('--ue-address', type=str, default='10.45.1.2', help='Destination IP address')
-    parser.add_argument('--workdir', type=str,
-                        default=os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')),
-                        help='Working directory for the container')
     parser.add_argument('--config', type=str, default=os.path.join(os.path.dirname(__file__), 'traffic.yaml'),
                         help='Path to traffic.yaml config')
     args = parser.parse_args()
 
     base_config = BaseTrafficConfig.from_yaml(args.config)
     generator = TrafficPlanGenerator()
-    generator.append_traffic(generator.generate_periodic_traffic(PeriodicTrafficConfig.from_yaml(args.config)))
+
+    periodic_config = PeriodicTrafficConfig.from_yaml(args.config)
+    generator.append_traffic(generator.generate_periodic_traffic(periodic_config))
+    periodic_config.interval = 200
+    generator.overlap_traffic(generator.generate_periodic_traffic(periodic_config), 5)
+    periodic_config.interval = 300
+    generator.append_traffic(generator.generate_periodic_traffic(periodic_config))
+
     traffic = generator.get_traffic_plan()
 
     plot_traffic_pattern(traffic)
 
-    #executor = TrafficExecutor(traffic)
-    #executor.execute(base_config)
+    executor = TrafficExecutor(traffic)
+    executor.execute(base_config)
