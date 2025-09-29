@@ -1,11 +1,37 @@
-traffic:
+parameters:
   gnb-address: 10.45.1.1
   ue-address: 10.45.1.2
   workdir: ../../
   granularity: 100ms
 
-  periodic:
-    # 50 kB every 100 ms for 5 s
-    size: 50000
-    interval: 100ms
-    duration: 5s
+traffic:
+  - overlap:
+    - periodic:
+        offset: 0ms
+        size: 50000
+        interval: 100ms
+        duration: 6s
+    - periodic:
+        offset: 500ms
+        size: 30000
+        interval: 200ms
+        duration: 5s
+    - random:
+        offset: 2500ms
+        duration: 1s
+        min_size: 0
+        max_size: 100000
+  - pause:
+      duration: 1s
+  - periodic:
+      size: 100000
+      interval: 500ms
+      duration: 5s
+  - pause:
+      duration: 1s
+  - random:
+      duration: 3s
+      min_size: 10000
+      max_size: 100000
+  - pause:
+      duration: 1s
