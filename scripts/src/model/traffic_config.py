@@ -6,8 +6,8 @@ import re
 @dataclass
 class PeriodicTrafficConfig:
     size: int
-    interval: float  # seconds
-    duration: float  # seconds
+    interval: int # milliseconds
+    duration: int # milliseconds
 
 @dataclass
 class TrafficConfig:
@@ -22,13 +22,13 @@ class TrafficConfig:
         value, unit = match.groups()
         value = float(value)
         if unit == 'ms':
-            return value / 1000.0
-        elif unit == 's':
             return value
+        elif unit == 's':
+            return value * 1000
         elif unit == 'm':
-            return value * 60
+            return value * 60 * 1000
         elif unit == 'h':
-            return value * 3600
+            return value * 3600 * 1000
         else:
             raise ValueError(f"Unknown time unit: {unit}")
 
