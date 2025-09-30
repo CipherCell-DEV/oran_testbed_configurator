@@ -2,7 +2,7 @@ environment:
   build_type: "docker"
   log_level: "INFO"
   log_dir: "logs"
-  build_dir: "."
+  build_dir: "./repositories"
   docker_registry: "132.231.14.130:8080"
   tag_appendix: latest
   push_local_images: false

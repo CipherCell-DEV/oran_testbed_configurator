@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="doc/cipher_cell_configurator_logo.svg" alt="Logo" width="500"/>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./doc/cipher_cell_configurator_logo.svg">
+    <img alt="Ciphercell logo" src="./doc/cipher_cell_configurator_logo_black.svg" width="500">
+  </picture>
 </p>
 
 ## Overview
@@ -62,4 +65,4 @@ All components run in a fully Dockerized environment, ready for immediate experi
 
 ### Documentation
 
-Full setup and usage instructions are available in the [CipherCell Wiki](https://florianfrank.github.io/CipherCellWiki/docs/category/ciphercell-configurator).
+Full setup and usage instructions are available in the [CipherCell Wiki](https://florianfrank.github.io/CipherCellWiki/docs/ciphercell_configurator/configurator-overview/).
