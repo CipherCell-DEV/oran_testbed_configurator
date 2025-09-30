@@ -95,42 +95,32 @@ class TrafficPlanGenerator:
             return generated_traffic
 
         if config.distribution == DistributionType.normal:
-            # Normal distribution centered around the middle of the time period
             mean = num_slots / 2
-            std = num_slots / 6  # 99.7% of values within the time period (3-sigma rule)
-            raw_values = np.random.normal(mean, std, num_slots * 2)  # Generate more values to filter
-            valid_indices = np.where((raw_values >= 0) & (raw_values < num_slots))[0][:num_slots]
-            if len(valid_indices) < num_slots:
-                raw_values = np.random.uniform(0, num_slots, num_slots)
-            else:
-                raw_values = raw_values[valid_indices]
-
+            std = num_slots / 6
+            slot_indices = np.arange(num_slots)
+            weights = np.exp(-0.5 * ((slot_indices - mean) / std) ** 2)
+            weights /= (std * np.sqrt(2 * np.pi))
+            normalized_weights = weights / np.sum(weights)
+            traffic_values = normalized_weights * config.cumulative_size
+            generated_traffic = traffic_values.astype(int)
         elif config.distribution == DistributionType.uniform:
-            # Uniform distribution across all time slots
-            raw_values = np.random.uniform(0, num_slots, num_slots)
-
+            weights = np.ones(num_slots)
+            normalized_weights = weights / np.sum(weights)
+            traffic_values = normalized_weights * config.cumulative_size
+            generated_traffic = traffic_values.astype(int)
         elif config.distribution == DistributionType.exponential:
-            # Exponential distribution (more traffic at the beginning)
-            scale = num_slots / 3  # Scale parameter
-            raw_values = np.random.exponential(scale, num_slots * 2)
-            valid_indices = np.where(raw_values < num_slots)[0][:num_slots]
-            if len(valid_indices) < num_slots:
-                raw_values = np.random.uniform(0, num_slots, num_slots)
-            else:
-                raw_values = raw_values[valid_indices]
-
+            slot_indices = np.arange(num_slots)
+            scale = num_slots / 3
+            weights = np.exp(-slot_indices / scale)
+            normalized_weights = weights / np.sum(weights)
+            traffic_values = normalized_weights * config.cumulative_size
+            generated_traffic = traffic_values.astype(int)
         else:
-            raw_values = np.random.uniform(0, num_slots, num_slots)
+            weights = np.ones(num_slots)
+            normalized_weights = weights / np.sum(weights)
+            traffic_values = normalized_weights * config.cumulative_size
+            generated_traffic = traffic_values.astype(int)
 
-        if np.sum(raw_values) > 0:
-            normalized_weights = raw_values / np.sum(raw_values)
-        else:
-            normalized_weights = np.ones(num_slots) / num_slots
-
-        traffic_values = normalized_weights * config.cumulative_size
-        generated_traffic = traffic_values.astype(int)
-
-        # Correct for rounding errors by adding the remainder to random slots
         remainder = config.cumulative_size - np.sum(generated_traffic)
         if remainder > 0:
             random_indices = np.random.choice(num_slots, size=min(remainder, num_slots), replace=False)
@@ -190,8 +180,6 @@ if __name__ == '__main__':
                         help='Path to traffic.yaml config')
     args = parser.parse_args()
 
-    parameters = TrafficParameters.from_yaml(args.config)
-
     traffic_config = from_yaml(args.config)
 
     generator = TrafficPlanGenerator()
@@ -201,5 +189,6 @@ if __name__ == '__main__':
 
     plot_traffic_pattern(traffic)
 
-    # executor = TrafficExecutor(traffic)
-    # executor.execute(parameters)
+    parameters = TrafficParameters.from_yaml(args.config)
+    executor = TrafficExecutor(traffic)
+    executor.execute(parameters)
