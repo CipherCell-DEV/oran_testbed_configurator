@@ -9,52 +9,54 @@ import yaml
 
 def parse_time(timestr: str) -> int:
     """Parse a time string like '10s', '2m', '1h', '1.5m', '10ms' into milliseconds (int)."""
-    match = re.match(r"(\d+(?:\.\d+)?)[ ]*(ms|s|m|h)", timestr.strip())
+    match = re.match(r"(\d+(?:\.\d+)?) *(ms|s|m|h)", timestr.strip())
     if not match:
         raise ValueError(f"Invalid time format: {timestr}")
     value, unit = match.groups()
     value = int(value)
-    if unit == 'ms':
-        return value
-    elif unit == 's':
-        return value * 1000
-    elif unit == 'm':
-        return value * 60 * 1000
-    elif unit == 'h':
-        return value * 3600 * 1000
-    else:
-        raise ValueError(f"Unknown time unit: {unit}")
+    match unit:
+        case 'ms':
+            return value
+        case 's':
+            return value * 1000
+        case 'm':
+            return value * 60 * 1000
+        case 'h':
+            return value * 3600 * 1000
+        case _:
+            raise ValueError(f"Unknown time unit: {unit}")
 
 
-def parse_bytes(timestr: str) -> int:
+def _parse_bytes(timestr: str) -> int:
     """Parse a byte size string like '10B', '2kB', '1MB', '1.5GB' into Bytes (int)."""
-    match = re.match(r"(\d+(?:\.\d+)?)[ ]*(B|kB|MB|GB)", timestr.strip())
+    match = re.match(r"(\d+(?:\.\d+)?) *(B|kB|MB|GB)", timestr.strip())
     if not match:
         raise ValueError(f"Invalid size format: {timestr}")
     value, unit = match.groups()
     value = int(value)
-    if unit == 'B':
-        return value
-    elif unit == 'kB':
-        return value * 1_000
-    elif unit == 'MB':
-        return value * 1_000_000
-    elif unit == 'GB':
-        return value * 1_000_000_000
-    else:
-        raise ValueError(f"Unknown unit: {unit}")
+    match unit:
+        case 'B':
+            return value
+        case 'kB':
+            return value * 1_000
+        case 'MB':
+            return value * 1_000_000
+        case 'GB':
+            return value * 1_000_000_000
+        case _:
+            raise ValueError(f"Unknown unit: {unit}")
 
 
 @dataclass
 class TrafficParameters:
-    granularity: int  # milliseconds
+    granularity: int  # ms
     gnb_address: str  # IP Address
     ue_address: str  # IP Address
-    workdir: str  # Path to docker-compose.yaml
-    loop: bool
+    workdir: str  # Path to main docker-compose.yaml
+    loop: bool  # Loop traffic infinitely
 
     @classmethod
-    def from_yaml(cls, path: str) -> Optional['TrafficParameters']:
+    def load_yaml(cls, path: str) -> Optional['TrafficParameters']:
         with open(path, 'r') as f:
             data = yaml.safe_load(f)
         if 'parameters' in data:
@@ -71,22 +73,22 @@ class TrafficParameters:
 
 
 @dataclass
-class AtomicTrafficConfig:
+class BaseTrafficConfig:
     duration: int
 
 
 @dataclass
 class TrafficSequenceConfig:
-    sequence: list[AtomicTrafficConfig]
+    sequence: list[BaseTrafficConfig]
 
 
 @dataclass
 class OverlapTrafficConfig:
-    overlaps: list[tuple[int, AtomicTrafficConfig]]  # (Offset, Config)
+    overlaps: list[tuple[int, BaseTrafficConfig]]  # (Offset, Config)
 
 
 @dataclass
-class PeriodicTrafficConfig(AtomicTrafficConfig):
+class PeriodicTrafficConfig(BaseTrafficConfig):
     packet_size: int  # Bytes
     interval: int  # ms
 
@@ -94,13 +96,13 @@ class PeriodicTrafficConfig(AtomicTrafficConfig):
     def from_dict(cls, source: dict):
         return PeriodicTrafficConfig(
             duration=parse_time(source.get('duration', '1s')),
-            packet_size=parse_bytes(source.get('size', '1kB')),
+            packet_size=_parse_bytes(source.get('size', '1kB')),
             interval=parse_time(source.get('interval', '100ms'))
         )
 
 
 @dataclass
-class RandomTrafficConfig(AtomicTrafficConfig):
+class RandomTrafficConfig(BaseTrafficConfig):
     min_size: int  # Bytes
     max_size: int  # Bytes
 
@@ -108,8 +110,8 @@ class RandomTrafficConfig(AtomicTrafficConfig):
     def from_dict(cls, source: dict):
         return RandomTrafficConfig(
             duration=parse_time(source.get('duration', '1s')),
-            min_size=parse_bytes(source.get('min_size', '1kB')),
-            max_size=parse_bytes(source.get('max_size', '1kB'))
+            min_size=_parse_bytes(source.get('min_size', '1kB')),
+            max_size=_parse_bytes(source.get('max_size', '1kB'))
         )
 
 
@@ -120,7 +122,7 @@ class DistributionType(Enum):
 
 
 @dataclass
-class DistributedTrafficConfig(AtomicTrafficConfig):
+class DistributedTrafficConfig(BaseTrafficConfig):
     cumulative_size: int  # Bytes
     distribution: DistributionType
     # Normal distribution parameters
@@ -134,7 +136,7 @@ class DistributedTrafficConfig(AtomicTrafficConfig):
     def from_dict(cls, source: dict):
         return DistributedTrafficConfig(
             duration=parse_time(source.get('duration', '1s')),
-            cumulative_size=parse_bytes(source.get('cumulative_size', '1kB')),
+            cumulative_size=_parse_bytes(source.get('cumulative_size', '1kB')),
             distribution=DistributionType(source.get('type', 'normal-distribution')),
 
             mean=source.get('mean'),
@@ -146,60 +148,7 @@ class DistributedTrafficConfig(AtomicTrafficConfig):
 
 
 @dataclass
-class Pause(AtomicTrafficConfig):
+class Pause(BaseTrafficConfig):
     @classmethod
     def from_dict(cls, source):
         return Pause(duration=parse_time(source.get('duration', '0ms')))
-
-
-def from_dict(source: dict):
-    t_type = next(iter(source.keys()))
-
-    match t_type:
-        case 'overlap':
-            config = OverlapTrafficConfig([])
-            for item in source['overlap']:
-                if 'offset' in item:
-                    continue
-                key = next(k for k in ('periodic', 'random', 'distribution', 'loop', 'overlap', 'pause') if k in item)
-                offset = '0ms'
-                if key == 'overlap':
-                    for k in item[key]:
-                        if 'offset' in k:
-                            offset = k['offset']
-                else:
-                    offset = item[key].get('offset', '0s')
-                offset = parse_time(offset)
-
-                config.overlaps.append((offset, from_dict(item)))
-            return config
-        case 'pause':
-            return Pause.from_dict(source['pause'])
-        case 'periodic':
-            return PeriodicTrafficConfig.from_dict(source['periodic'])
-        case 'random':
-            return RandomTrafficConfig.from_dict(source['random'])
-        case 'distribution':
-            return DistributedTrafficConfig.from_dict(source['distribution'])
-        case 'loop':
-            source = source['loop']
-            god = TrafficSequenceConfig([])
-            for config in source['elements']:
-                god.sequence.append(from_dict(config))
-            god.sequence *= source['iterations']
-            return god
-        case _:
-            print(f'Unknown traffic type: {t_type}')
-            return None
-
-
-def from_yaml(path: str) -> Optional['TrafficSequenceConfig']:
-    with open(path, 'r') as f:
-        data = yaml.safe_load(f)
-    if 'traffic' not in data:
-        print('Config file needs to contain traffic config!')
-        return None
-    god = TrafficSequenceConfig([])
-    for part in data['traffic']:
-        god.sequence.append(from_dict(part))
-    return god
