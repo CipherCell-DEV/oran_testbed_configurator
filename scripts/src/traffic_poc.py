@@ -22,9 +22,10 @@ class TrafficPlanGenerator:
     def from_plan(self, sequence_config: TrafficSequenceConfig):
         for config in sequence_config.sequence:
             if isinstance(config, OverlapTrafficConfig):
+                tpg = TrafficPlanGenerator()
                 for (offset, tconfig) in config.overlaps:
-                    # TODO: Overlap seperately, so we can put multiple overlaps in sequence
-                    self.overlap_traffic(self.generate_traffic(tconfig), offset)
+                    tpg.overlap_traffic(tpg.generate_traffic(tconfig), offset)
+                self.append_traffic(tpg.get_traffic_plan())
             elif isinstance(config, Pause):
                 self.append_traffic(np.zeros(int(config.duration / self.__granularity), dtype=int))
             elif isinstance(config, AtomicTrafficConfig):
