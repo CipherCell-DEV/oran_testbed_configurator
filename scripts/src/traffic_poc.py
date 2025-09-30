@@ -35,7 +35,7 @@ class TrafficPlanGenerator:
         offset_slots = int(offset_ms / self.__granularity)
         new_size = max(self.__traffic.size, offset_slots + overlapped_traffic.size)
         old_traffic = np.pad(self.__traffic, (0, new_size - self.__traffic.size), mode='constant')
-        new_traffic = np.pad(overlapped_traffic,(offset_slots, new_size - offset_slots - overlapped_traffic.size))
+        new_traffic = np.pad(overlapped_traffic, (offset_slots, new_size - offset_slots - overlapped_traffic.size))
         self.__traffic = old_traffic + new_traffic
 
     @singledispatchmethod
@@ -157,7 +157,8 @@ class TrafficExecutor:
                 for instant_traffic in self.traffic_plan:
                     start_time = time.time()
                     if (instant_traffic > 0
-                            and not ue_container.run_ping(parameters.gnb_address, instant_traffic, parameters.granularity)):
+                            and not ue_container.run_ping(parameters.gnb_address, instant_traffic,
+                                                          parameters.granularity)):
                         print('Ping did not run successfully')
                     rest_duration = (start_time + (parameters.granularity / 1000)) - time.time()
                     if rest_duration > 0:
@@ -168,14 +169,11 @@ class TrafficExecutor:
 
 
 def plot_traffic_pattern(traffic_array, granularity=100):
-    """
-    Plot the traffic pattern over time.
-    """
     time_axis = np.arange(0, traffic_array.size * granularity, granularity)[:len(traffic_array)]
     plt.figure(figsize=(12, 4))
-    plt.step(time_axis, traffic_array, where='post')
+    plt.step(time_axis, list(map(lambda x: x / 1000, traffic_array)), where='post')
     plt.xlabel('Time (ms)')
-    plt.ylabel('Instantaneous Traffic (in B)')
+    plt.ylabel('Instantaneous Traffic (in kB)')
     plt.title('Traffic Over Time')
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -197,6 +195,6 @@ if __name__ == '__main__':
 
     plot_traffic_pattern(traffic)
 
-    parameters = TrafficParameters.from_yaml(args.config)
-    executor = TrafficExecutor(traffic)
-    executor.execute(parameters)
+    # parameters = TrafficParameters.from_yaml(args.config)
+    # executor = TrafficExecutor(traffic)
+    # executor.execute(parameters)

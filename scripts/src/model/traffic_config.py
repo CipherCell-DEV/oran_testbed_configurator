@@ -62,7 +62,8 @@ class TrafficParameters:
                 granularity=parse_time(data['parameters'].get('granularity', '100ms')),
                 gnb_address=data['parameters'].get('gnb-address', '10.45.1.1'),
                 ue_address=data['parameters'].get('ue-address', '10.45.1.2'),
-                workdir=os.path.abspath(os.path.join(os.path.dirname(path), data['parameters'].get('workdir', '../..'))),
+                workdir=os.path.abspath(
+                    os.path.join(os.path.dirname(path), data['parameters'].get('workdir', '../..'))),
                 loop=data['parameters'].get('loop', False)
             )
         else:
@@ -158,8 +159,18 @@ def from_dict(source: dict):
         case 'overlap':
             config = OverlapTrafficConfig([])
             for item in source['overlap']:
-                traffic_key = next(k for k in ('periodic', 'random', 'distribution', 'loop') if k in item)
-                offset = parse_time(item[traffic_key]['offset'])
+                if 'offset' in item:
+                    continue
+                key = next(k for k in ('periodic', 'random', 'distribution', 'loop', 'overlap', 'pause') if k in item)
+                offset = '0ms'
+                if key == 'overlap':
+                    for k in item[key]:
+                        if 'offset' in k:
+                            offset = k['offset']
+                else:
+                    offset = item[key].get('offset', '0s')
+                offset = parse_time(offset)
+
                 config.overlaps.append((offset, from_dict(item)))
             return config
         case 'pause':
