@@ -128,6 +128,13 @@ class TrafficPlanGenerator:
         return generated_traffic
 
     @__generate_traffic.register
+    def _(self, config: TrafficSequenceConfig) -> ndarray[tuple[int], dtype[Any]]:
+        tpg = TrafficPlanGenerator()
+        for tconfig in config.sequence:
+            tpg.__append_traffic(tpg.__generate_traffic(tconfig))
+        return tpg.traffic
+
+    @__generate_traffic.register
     def _(self, config: OverlapTrafficConfig) -> ndarray[tuple[int], dtype[Any]]:
         tpg = TrafficPlanGenerator()
         for (offset, tconfig) in config.overlaps:
@@ -191,6 +198,6 @@ if __name__ == '__main__':
 
     plot_traffic_pattern(traffic)
 
-    # parameters = TrafficParameters.from_yaml(args.config)
-    # executor = TrafficExecutor(traffic)
-    # executor.execute(parameters)
+    parameters = TrafficParameters.from_yaml(args.config)
+    executor = TrafficExecutor(traffic)
+    executor.execute(parameters)

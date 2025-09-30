@@ -138,24 +138,34 @@ class Pause(AtomicTrafficConfig):
 
 
 def from_dict(source: dict):
-    if 'overlap' in source:
-        god = OverlapTrafficConfig([])
-        for config in source['overlap']:
-            for key in ('periodic', 'random', 'distribution'):
-                if key in config:
-                    god.overlaps.append((parse_time(config[key]['offset']), from_dict(config)))
-        return god
-    elif 'pause' in source:
-        return Pause.from_dict(source['pause'])
-    elif 'periodic' in source:
-        return PeriodicTrafficConfig.from_dict(source['periodic'])
-    elif 'random' in source:
-        return RandomTrafficConfig.from_dict(source['random'])
-    elif 'distribution' in source:
-        return DistributedTrafficConfig.from_dict(source['distribution'])
-    else:
-        print('Unknown traffic type')
-        return None
+    t_type = next(iter(source.keys()))
+
+    match t_type:
+        case 'overlap':
+            config = OverlapTrafficConfig([])
+            for item in source['overlap']:
+                traffic_key = next(k for k in ('periodic', 'random', 'distribution', 'loop') if k in item)
+                offset = parse_time(item[traffic_key]['offset'])
+                config.overlaps.append((offset, from_dict(item)))
+            return config
+        case 'pause':
+            return Pause.from_dict(source['pause'])
+        case 'periodic':
+            return PeriodicTrafficConfig.from_dict(source['periodic'])
+        case 'random':
+            return RandomTrafficConfig.from_dict(source['random'])
+        case 'distribution':
+            return DistributedTrafficConfig.from_dict(source['distribution'])
+        case 'loop':
+            source = source['loop']
+            god = TrafficSequenceConfig([])
+            for config in source['elements']:
+                god.sequence.append(from_dict(config))
+            god.sequence *= source['iterations']
+            return god
+        case _:
+            print(f'Unknown traffic type: {t_type}')
+            return None
 
 
 def from_yaml(path: str) -> Optional['TrafficSequenceConfig']:
