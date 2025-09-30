@@ -51,6 +51,7 @@ class TrafficParameters:
     gnb_address: str  # IP Address
     ue_address: str  # IP Address
     workdir: str  # Path to docker-compose.yaml
+    loop: bool
 
     @classmethod
     def from_yaml(cls, path: str) -> Optional['TrafficParameters']:
@@ -61,7 +62,8 @@ class TrafficParameters:
                 granularity=parse_time(data['parameters'].get('granularity', '100ms')),
                 gnb_address=data['parameters'].get('gnb-address', '10.45.1.1'),
                 ue_address=data['parameters'].get('ue-address', '10.45.1.2'),
-                workdir=os.path.abspath(os.path.join(os.path.dirname(path), data['parameters'].get('workdir', '../..')))
+                workdir=os.path.abspath(os.path.join(os.path.dirname(path), data['parameters'].get('workdir', '../..'))),
+                loop=data['parameters'].get('loop', False)
             )
         else:
             return None

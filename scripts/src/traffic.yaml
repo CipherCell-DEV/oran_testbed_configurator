@@ -3,6 +3,7 @@ parameters:
   ue-address: 10.45.1.2
   workdir: ../../
   granularity: 100ms
+  loop: false
 
 traffic:
   - loop:
