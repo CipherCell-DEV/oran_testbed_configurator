@@ -127,6 +127,16 @@ services:
         networks:
             ric_network:
                 ipv4_address: ${E2MGR_IP:-10.0.2.11}
+    xapp_sniffer:
+      container_name: xapp_network_sniffer
+      image: nicolaka/netshoot
+      depends_on: 
+        - python_xapp_runner
+      command: tcpdump -i eth0 -w /data/nginx.pcap
+      network_mode: service:python_xapp_runner
+      volumes:
+        - $PWD/data:/data
+
     python_xapp_runner:
         container_name: python_xapp_runner
         hostname: python_xapp_runner

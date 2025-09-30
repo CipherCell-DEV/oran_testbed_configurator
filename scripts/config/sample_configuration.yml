@@ -3,8 +3,8 @@ environment:
   log_dir: "logs"
   build_dir: "./repositories"
   docker_registry: "132.231.14.130:8080"
-  tag_appendix: latest
-  push_local_images: false
+  tag_appendix: erikVM1 
+  push_local_images: true 
 
 near_rt_ric:
   implementation: "oran-sc-ric"
