@@ -2,6 +2,7 @@ import argparse
 import os
 import random
 import time
+from functools import singledispatchmethod
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -10,7 +11,7 @@ from numpy import ndarray, dtype
 
 from UEContainer import UEContainer
 from model.traffic_config import PeriodicTrafficConfig, TrafficParameters, from_yaml, TrafficSequenceConfig, \
-    OverlapTrafficConfig, Pause, AtomicTrafficConfig, RandomTrafficConfig, DistributedTrafficConfig, DistributionType
+    OverlapTrafficConfig, Pause, RandomTrafficConfig, DistributedTrafficConfig, DistributionType
 
 
 class TrafficPlanGenerator:
@@ -21,39 +22,29 @@ class TrafficPlanGenerator:
 
     def from_plan(self, sequence_config: TrafficSequenceConfig):
         for config in sequence_config.sequence:
-            if isinstance(config, OverlapTrafficConfig):
-                tpg = TrafficPlanGenerator()
-                for (offset, tconfig) in config.overlaps:
-                    tpg.overlap_traffic(tpg.generate_traffic(tconfig), offset)
-                self.append_traffic(tpg.get_traffic_plan())
-            elif isinstance(config, Pause):
-                self.append_traffic(np.zeros(int(config.duration / self.__granularity), dtype=int))
-            elif isinstance(config, AtomicTrafficConfig):
-                self.append_traffic(self.generate_traffic(config))
+            self.__append_traffic(self.__generate_traffic(config))
 
-    def append_traffic(self, appended_traffic: ndarray[tuple[int], dtype[Any]]):
+    @property
+    def traffic(self):
+        return self.__traffic.copy()
+
+    def __append_traffic(self, appended_traffic: ndarray[tuple[int], dtype[Any]]):
         self.__traffic = np.append(self.__traffic, appended_traffic)
 
-    def overlap_traffic(self, overlapped_traffic: ndarray[tuple[int], dtype[Any]], offset_ms: int):
+    def __overlap_traffic(self, overlapped_traffic: ndarray[tuple[int], dtype[Any]], offset_ms: int):
         offset_slots = int(offset_ms / self.__granularity)
         new_size = max(self.__traffic.size, offset_slots + overlapped_traffic.size)
-        t1 = np.pad(self.__traffic, (0, new_size - self.__traffic.size), mode='constant')
-        t2 = np.pad(overlapped_traffic, (offset_slots, new_size - offset_slots - overlapped_traffic.size))
-        self.__traffic = t1 + t2
-        # self.__traffic = (np.pad(self.__traffic, (0, new_size - self.__traffic.size), mode='constant')
-        #                   + np.pad(overlapped_traffic, (offset_slots, 0)))
+        old_traffic = np.pad(self.__traffic, (0, new_size - self.__traffic.size), mode='constant')
+        new_traffic = np.pad(overlapped_traffic,(offset_slots, new_size - offset_slots - overlapped_traffic.size))
+        self.__traffic = old_traffic + new_traffic
 
-    def generate_traffic(self, config: AtomicTrafficConfig):
-        if isinstance(config, PeriodicTrafficConfig):
-            return self.generate_periodic_traffic(config)
-        elif isinstance(config, RandomTrafficConfig):
-            return self.generate_random_traffic(config)
-        elif isinstance(config, DistributedTrafficConfig):
-            return self.generate_distributed_traffic(config)
-        else:
-            return None
+    @singledispatchmethod
+    def __generate_traffic(self, config) -> ndarray[tuple[int], dtype[Any]]:
+        print('Unknown traffic config')
+        return np.zeros(0, dtype=int)
 
-    def generate_periodic_traffic(self, config: PeriodicTrafficConfig) -> ndarray[tuple[int], dtype[Any]]:
+    @__generate_traffic.register
+    def _(self, config: PeriodicTrafficConfig) -> ndarray[tuple[int], dtype[Any]]:
         num_slots = int(config.duration / self.__granularity)
         generated_traffic = np.zeros(num_slots, dtype=int)
 
@@ -66,10 +57,8 @@ class TrafficPlanGenerator:
 
         return generated_traffic
 
-    def get_traffic_plan(self):
-        return self.__traffic
-
-    def generate_random_traffic(self, config):
+    @__generate_traffic.register
+    def _(self, config: RandomTrafficConfig) -> ndarray[tuple[int], dtype[Any]]:
         num_slots = int(config.duration / self.__granularity)
         generated_traffic = np.zeros(num_slots, dtype=int)
 
@@ -82,7 +71,8 @@ class TrafficPlanGenerator:
 
         return generated_traffic
 
-    def generate_distributed_traffic(self, config) -> ndarray[tuple[int], dtype[Any]]:
+    @__generate_traffic.register
+    def _(self, config: DistributedTrafficConfig) -> ndarray[tuple[int], dtype[Any]]:
         """
         Generates a traffic pattern that is distributed according to the type (e.g. normal distribution). The sum of the
         individual bytes is equal to the cumulative size specified.
@@ -137,6 +127,17 @@ class TrafficPlanGenerator:
 
         return generated_traffic
 
+    @__generate_traffic.register
+    def _(self, config: OverlapTrafficConfig) -> ndarray[tuple[int], dtype[Any]]:
+        tpg = TrafficPlanGenerator()
+        for (offset, tconfig) in config.overlaps:
+            tpg.__overlap_traffic(tpg.__generate_traffic(tconfig), offset)
+        return tpg.traffic
+
+    @__generate_traffic.register
+    def _(self, config: Pause) -> ndarray[tuple[int], dtype[Any]]:
+        return np.zeros(int(config.duration / self.__granularity), dtype=int)
+
 
 class TrafficExecutor:
 
@@ -186,10 +187,10 @@ if __name__ == '__main__':
     generator = TrafficPlanGenerator()
     generator.from_plan(traffic_config)
 
-    traffic = generator.get_traffic_plan()
+    traffic = generator.traffic
 
     plot_traffic_pattern(traffic)
 
-    parameters = TrafficParameters.from_yaml(args.config)
-    executor = TrafficExecutor(traffic)
-    executor.execute(parameters)
+    # parameters = TrafficParameters.from_yaml(args.config)
+    # executor = TrafficExecutor(traffic)
+    # executor.execute(parameters)
