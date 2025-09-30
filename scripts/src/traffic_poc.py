@@ -92,25 +92,21 @@ class TrafficPlanGenerator:
             weights = np.exp(-0.5 * ((slot_indices - mean) / std) ** 2)
             weights /= (std * np.sqrt(2 * np.pi))
             normalized_weights = weights / np.sum(weights)
-            traffic_values = normalized_weights * config.cumulative_size
-            generated_traffic = traffic_values.astype(int)
+            generated_traffic = (normalized_weights * config.cumulative_size).astype(int)
         elif config.distribution == DistributionType.uniform:
             weights = np.ones(num_slots)
             normalized_weights = weights / np.sum(weights)
-            traffic_values = normalized_weights * config.cumulative_size
-            generated_traffic = traffic_values.astype(int)
+            generated_traffic = (normalized_weights * config.cumulative_size).astype(int)
         elif config.distribution == DistributionType.exponential:
             slot_indices = np.arange(num_slots)
-            scale = num_slots / 3
-            weights = np.exp(-slot_indices / scale)
+            lambda_ = 3.0 / num_slots if config.lambda_ is None else config.lambda_
+            multiplier = num_slots - 1 - slot_indices if config.reverse else slot_indices
+            weights = np.exp(-lambda_ * multiplier)
             normalized_weights = weights / np.sum(weights)
-            traffic_values = normalized_weights * config.cumulative_size
-            generated_traffic = traffic_values.astype(int)
+            generated_traffic = (normalized_weights * config.cumulative_size).astype(int)
         else:
-            weights = np.ones(num_slots)
-            normalized_weights = weights / np.sum(weights)
-            traffic_values = normalized_weights * config.cumulative_size
-            generated_traffic = traffic_values.astype(int)
+            print('Unknown distribution type')
+            return np.zeros(0, dtype=int)
 
         remainder = config.cumulative_size - np.sum(generated_traffic)
         if remainder > 0:

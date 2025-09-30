@@ -54,12 +54,20 @@ traffic:
         - pause:
             duration: 1s
         - distribution:
+            type: 'uniform-distribution'
             duration: 3s
             cumulative_size: 300kB
-            type: 'uniform-distribution'
         - pause:
             duration: 1s
         - distribution:
+            type: 'exponential-distribution'
             duration: 3s
             cumulative_size: 300kB
+        - pause:
+            duration: 1s
+        - distribution:
             type: 'exponential-distribution'
+            duration: 3s
+            cumulative_size: 300kB
+            lambda: 0.2
+            reverse: true
