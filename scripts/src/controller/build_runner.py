@@ -99,7 +99,7 @@ class BuildRunner:
         """
         logging.info("Running 5G Core Network build process...")
         os.chdir(self.setup_cfg.environment.build_dir)
-        if self.setup_cfg.core_5g.implementation == CoreImplementation.SRS:
+        if self.setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
             if self.setup_cfg.core_5g.build_type == BuildType.DOCKER:
                 return self._build_docker_compose('5gc', ["docker", "compose", "build", '5gc'])
             else:

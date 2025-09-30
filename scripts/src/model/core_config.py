@@ -6,23 +6,26 @@ from model.utils_config import BuildType
 
 
 class CoreImplementation(Enum):
-    SRS = 0
+    OPEN5GS = 0
 
 
-ALLOWED_IMPLEMENTATION_LIST = {'srs': CoreImplementation.SRS}
+ALLOWED_IMPLEMENTATION_LIST = {'Open5GS': CoreImplementation.OPEN5GS}
 
 
 @dataclass
 class Core5GCfg:
+    implementation: Optional[CoreImplementation] = None
+    build_type: BuildType = BuildType.DOCKER
+    commit: str = "latest"
     ip: Optional[ipaddress.IPv4Address] = None
     network: Optional[ipaddress.IPv4Network] = None
-    implementation: Optional[CoreImplementation] = None
-    build_type = BuildType = BuildType.DOCKER
 
     def __str__(self):
         return (f"Core5GCfg: \n"
-                f"    build_type={self.build_type}"
-                f"    ip={self.ip}, \n"
+                f"    build_type={self.implementation},\n"
+                f"    commit={self.commit},\n"
+                f"    build_type={self.build_type},\n"
+                f"    ip={self.ip},\n"
                 f"    network={self.network}")
 
 

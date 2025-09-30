@@ -7,8 +7,9 @@ environment:
   push_local_images: false
 
 near_rt_ric:
-  build_type: "docker"
   implementation: "oran-sc-ric"
+  commit: "e44a7ce239b3c908e842163f1d57cbb4ba43fd0a"
+  build_type: "docker"
   release: 'i'
   network:
       subnet: 10.0.2.0/24
@@ -21,14 +22,16 @@ near_rt_ric:
       xapp_runner_ip: 10.0.2.20
 
 5gc:
+    implementation: "Open5GS"
+    commit: "11c9bbabb69873752500d676f55e0034f6caa5c5"
     build_type: "docker"
-    implementation: "srs"
     ip_addr: 10.53.1.2
     subnet: 10.53.1.0/24
 
 ue:
     - ue:
       implementation: "srs"
+      commit: "ec29b0c1ff79cebcbe66caa6d6b90778261c42b8"
       name: "ue1"
       build_type: "docker"
       ue_type: "srsUE"
@@ -47,6 +50,7 @@ ue:
           ip_netmask: 255.255.255.0
 gnb:
   implementation: "srs"
+  commit: "11c9bbabb69873752500d676f55e0034f6caa5c5"
   build_type: "docker"
   ip_addr:
       e2: 10.0.2.3

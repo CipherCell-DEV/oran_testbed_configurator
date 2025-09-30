@@ -14,6 +14,7 @@ class GNBConfigParser:
 
         cfg.build_type = ParsingUtils.parse_build_type(params, 'gNB')
         cfg.implementation = ParsingUtils.parse_implementation(params, ALLOWED_IMPLEMENTATION_LIST, 'gNB')
+        cfg.commit = ParsingUtils.parse_commit(params, 'gNB')
 
         if GnbFieldIdentifiers.IP_ADDR in params:
             cfg.ip_config = GNBConfigParser._parse_gnb_ip_config(params[GnbFieldIdentifiers.IP_ADDR])
