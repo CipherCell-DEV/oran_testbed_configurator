@@ -122,13 +122,17 @@ class DistributionType(Enum):
 class DistributedTrafficConfig(AtomicTrafficConfig):
     cumulative_size: int  # Bytes
     distribution: DistributionType
+    mean: Optional[float] = None
+    variance: Optional[float] = None
 
     @classmethod
     def from_dict(cls, source: dict):
         return DistributedTrafficConfig(
             duration=parse_time(source.get('duration', '1s')),
             cumulative_size=parse_bytes(source.get('cumulative_size', '1kB')),
-            distribution=DistributionType(source.get('type', 'normal-distribution'))
+            distribution=DistributionType(source.get('type', 'normal-distribution')),
+            mean=source.get('mean'),
+            variance=source.get('variance')
         )
 
 

@@ -40,9 +40,17 @@ traffic:
         - pause:
             duration: 1s
         - distribution:
+            type: 'normal-distribution'
             duration: 3s
             cumulative_size: 300kB
+            mean: 0.5
+            variance: 50
+        - pause:
+            duration: 1s
+        - distribution:
             type: 'normal-distribution'
+            duration: 3s
+            cumulative_size: 300kB
         - pause:
             duration: 1s
         - distribution:
