@@ -49,7 +49,7 @@ class ComponentCheckoutManager:
             exit(0)
 
     def checkout_5g_core(self):
-        if self._setup_cfg.core_5g.implementation == CoreImplementation.SRS:
+        if self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
             self._clone_repository(repo=SRS_RAN_REPO, name="srsRAN Project", folder='srsRAN_Project',
                                    commit = self._setup_cfg.core_5g.commit)
         else:

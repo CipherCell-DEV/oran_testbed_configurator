@@ -6,10 +6,10 @@ from model.utils_config import BuildType
 
 
 class CoreImplementation(Enum):
-    SRS = 0
+    OPEN5GS = 0
 
 
-ALLOWED_IMPLEMENTATION_LIST = {'srs': CoreImplementation.SRS}
+ALLOWED_IMPLEMENTATION_LIST = {'Open5GS': CoreImplementation.OPEN5GS}
 
 
 @dataclass

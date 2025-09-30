@@ -128,7 +128,7 @@ class FirmwarePatcher:
                 "networks": dict(ric_config.get("networks", {}))
             }
 
-            if self._setup_cfg.core_5g.implementation == CoreImplementation.SRS:
+            if self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
                 if "volumes" in core_config:
                     single_config["volumes"] = dict(core_config["volumes"])
             else:

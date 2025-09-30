@@ -55,7 +55,7 @@ class DemoRunner:
 
     def _create_core(self):
         """Create the 5G Core program."""
-        if self._cfg.core_5g.implementation == CoreImplementation.SRS:
+        if self._cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
             self._program_pool.update({'5g_core': Program(working_dir=self._cfg.environment.build_dir,
                                                           name="5G-core",
                                                           command=["docker", "compose", "up", "5gc"],
