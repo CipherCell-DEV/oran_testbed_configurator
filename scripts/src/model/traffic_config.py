@@ -137,37 +137,34 @@ class Pause(AtomicTrafficConfig):
         return Pause(duration=parse_time(source.get('duration', '0ms')))
 
 
+def from_dict(source: dict):
+    if 'overlap' in source:
+        god = OverlapTrafficConfig([])
+        for config in source['overlap']:
+            for key in ('periodic', 'random', 'distribution'):
+                if key in config:
+                    god.overlaps.append((parse_time(config[key]['offset']), from_dict(config)))
+        return god
+    elif 'pause' in source:
+        return Pause.from_dict(source['pause'])
+    elif 'periodic' in source:
+        return PeriodicTrafficConfig.from_dict(source['periodic'])
+    elif 'random' in source:
+        return RandomTrafficConfig.from_dict(source['random'])
+    elif 'distribution' in source:
+        return DistributedTrafficConfig.from_dict(source['distribution'])
+    else:
+        print('Unknown traffic type')
+        return None
+
+
 def from_yaml(path: str) -> Optional['TrafficSequenceConfig']:
     with open(path, 'r') as f:
         data = yaml.safe_load(f)
     if 'traffic' not in data:
         print('Config file needs to contain traffic config!')
-        return
-    data = data['traffic']
+        return None
     god = TrafficSequenceConfig([])
-    for part in data:
-        if 'overlap' in part:
-            overlap_god = OverlapTrafficConfig([])
-            for config in part['overlap']:
-                if 'periodic' in config:
-                    offset = parse_time(config['periodic']['offset'])
-                    parsed_config = PeriodicTrafficConfig.from_dict(config['periodic'])
-                    overlap_god.overlaps.append((offset, parsed_config))
-                elif 'random' in config:
-                    offset = parse_time(config['random']['offset'])
-                    parsed_config = RandomTrafficConfig.from_dict(config['random'])
-                    overlap_god.overlaps.append((offset, parsed_config))
-                elif 'distribution' in config:
-                    offset = parse_time(config['distribution'].get('offset', '0ms'))
-                    parsed_config = DistributedTrafficConfig.from_dict(config['distribution'])
-                    overlap_god.overlaps.append((offset, parsed_config))
-            god.sequence.append(overlap_god)
-        elif 'pause' in part:
-            god.sequence.append(Pause.from_dict(part['pause']))
-        elif 'periodic' in part:
-            god.sequence.append(PeriodicTrafficConfig.from_dict(part['periodic']))
-        elif 'random' in part:
-            god.sequence.append(RandomTrafficConfig.from_dict(part['random']))
-        elif 'distribution' in part:
-            god.sequence.append(DistributedTrafficConfig.from_dict(part['distribution']))
+    for part in data['traffic']:
+        god.sequence.append(from_dict(part))
     return god
