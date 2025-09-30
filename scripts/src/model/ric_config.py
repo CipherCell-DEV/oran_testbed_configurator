@@ -63,13 +63,15 @@ class NearRTRICNetworkConfig:
 @dataclass
 class NearRtRICCFG:
     implementation: Optional[RICImplementation] = None
+    commit: str = "latest"
     release: Optional[RICRelease] = None
     build_type = BuildType = BuildType.DOCKER
     ip_config: Optional[NearRTRICNetworkConfig] = None
 
     def __str__(self):
         return (f"NearRtRICCFG: \n"
-                f"    type={self.implementation}, \n"
+                f"    implementation={self.implementation}, \n"
+                f"    commit={self.commit}, \n" 
                 f"    release={self.release}, \n"
                 f"    build_type={self.build_type}, \n"
                 f"{self.ip_config}")

@@ -19,6 +19,7 @@ class ComponentIdentifiers:
 class GeneralIdentifiers:
     BUILD_TYPE = 'build_type'
     IMPLEMENTATION = 'implementation'
+    COMMIT = 'commit'
 
 
 class EnvironmentCfg:

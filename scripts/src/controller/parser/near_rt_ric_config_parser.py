@@ -15,6 +15,7 @@ class NearRTRICConfigParser:
 
         cfg.build_type = ParsingUtils.parse_build_type(params, 'Near-RT RIC')
         cfg.implementation = ParsingUtils.parse_implementation(params, ALLOWED_IMPLEMENTATION_LIST, 'Near-RT RIC')
+        cfg.commit = ParsingUtils.parse_commit(params, 'Near-RT RIC')
 
         if RICFieldIdentifiers.RELEASE in params:
             if params[RICFieldIdentifiers.RELEASE] == 'i':

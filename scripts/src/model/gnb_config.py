@@ -28,6 +28,7 @@ class GNBIPConfig:
 @dataclass
 class GNBCfg:
     implementation: Optional[GNBImplementation] = None
+    commit: str = "latest"
     build_type = BuildType = BuildType.DOCKER
     ip_config: Optional[GNBIPConfig] = None
     srate: Optional[float] = 11.52
@@ -36,8 +37,9 @@ class GNBCfg:
 
     def __str__(self):
         return (f"GNBCfg: \n"
-                f"    type={self.type}, \n"
-                f"{self.ip_config}, \n"
+                f"    implementation={self.implementation}, \n"
+                f"    commit={self.commit}, \n"
+                f"    ip={self.ip_config}, \n"
                 f"    srate={self.srate}, \n"
                 f"    tx_gain={self.tx_gain}, \n"
                 f"    rx_gain={self.rx_gain}")

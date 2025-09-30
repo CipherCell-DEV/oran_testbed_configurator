@@ -1,3 +1,5 @@
+import logging
+
 from model.setup_configuration import GeneralIdentifiers
 from model.utils_config import BuildType
 
@@ -26,3 +28,13 @@ class ParsingUtils:
         else:
             raise KeyError(
                 "Missing required parameter for {component_name} config: '{CoreFieldIdentifiers.IMPLEMENTATION}'")
+
+    @staticmethod
+    def parse_commit(params: dict, component_name: str):
+        if GeneralIdentifiers.COMMIT in params:
+            commit = params[GeneralIdentifiers.COMMIT]
+            logging.info(f"Identified Commit {commit} for {component_name}")
+            return commit
+        else:
+            logging.info(f"{GeneralIdentifiers.COMMIT} not specified -> use latest for {component_name}")
+            return "latest"

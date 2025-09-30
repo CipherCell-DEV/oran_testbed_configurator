@@ -17,6 +17,7 @@ class UEConfigParser:
 
             cfg.build_type = ParsingUtils.parse_build_type(params, 'UE')
             cfg.implementation = ParsingUtils.parse_implementation(params, ALLOWED_IMPLEMENTATION_LIST, 'UE')
+            cfg.commit = ParsingUtils.parse_commit(params, 'UE')
 
             if UEFieldIdentifiers.NAME in params:
                 cfg.name = params[UEFieldIdentifiers.NAME]

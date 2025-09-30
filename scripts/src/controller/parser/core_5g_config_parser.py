@@ -15,6 +15,7 @@ class Core5GConfigParser:
 
         cfg.build_type = ParsingUtils.parse_build_type(params, '5g Core')
         cfg.implementation = ParsingUtils.parse_implementation(params, ALLOWED_IMPLEMENTATION_LIST, '5g Core')
+        cfg.commit = ParsingUtils.parse_commit(params, '5g Core')
 
         if CoreFieldIdentifiers.IP_ADDR in params:
             cfg.ip = ipaddress.IPv4Address(params[CoreFieldIdentifiers.IP_ADDR])
