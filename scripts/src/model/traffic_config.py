@@ -27,11 +27,11 @@ def parse_time(timestr: str) -> int:
             raise ValueError(f"Unknown time unit: {unit}")
 
 
-def _parse_bytes(timestr: str) -> int:
+def _parse_bytes(bytestr: str) -> int:
     """Parse a byte size string like '10B', '2kB', '1MB', '1.5GB' into Bytes (int)."""
-    match = re.match(r"(\d+(?:\.\d+)?) *(B|kB|MB|GB)", timestr.strip())
+    match = re.match(r"(-?\d+(?:\.\d+)?) *(B|kB|MB|GB)", bytestr.strip())
     if not match:
-        raise ValueError(f"Invalid size format: {timestr}")
+        raise ValueError(f"Invalid size format: {bytestr}")
     value, unit = match.groups()
     value = int(value)
     match unit:
@@ -150,5 +150,5 @@ class DistributedTrafficConfig(BaseTrafficConfig):
 @dataclass
 class Pause(BaseTrafficConfig):
     @classmethod
-    def from_dict(cls, source):
-        return Pause(duration=parse_time(source.get('duration', '0ms')))
+    def from_duration(cls, duration):
+        return Pause(duration=parse_time(duration))

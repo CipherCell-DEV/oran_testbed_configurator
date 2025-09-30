@@ -40,7 +40,7 @@ class TrafficConfigParser:
                     config.overlaps.append((parse_time(offset), TrafficConfigParser.__parse_dict(item)))
                 return config
             case 'pause':
-                return Pause.from_dict(source['pause'])
+                return Pause.from_duration(source['pause'])
             case 'periodic':
                 return PeriodicTrafficConfig.from_dict(source['periodic'])
             case 'random':
