@@ -182,6 +182,7 @@ class FirmwarePatcher:
     def _patch_gnb_docker(self, patch_content: dict):
         FolderManager.create_patch_folders(self._patch_file_path)
         patch_content["services"]["gnb"].update({"image" : self.replace_tag_and_image(patch_content["services"]["gnb"]["image"])})
+
        # TODO implement patching!!
 
     def _patch_ue_docker(self, patch_content: dict):
@@ -190,7 +191,7 @@ class FirmwarePatcher:
             ue_dict = {
                 "services": {
                     f"{ue.name}": {
-                        "image": f"{self._setup_cfg.environment.docker_registry}/ue{self.get_tag_or_empty_string(":")}",
+                        "image": f"{self._setup_cfg.environment.docker_registry}/ue{self.get_tag_or_empty_string(':')}",
                         "build": "./srsRAN_4G",
                         "container_name": f"{ue.name}",
                         "platform": "linux/amd64",
