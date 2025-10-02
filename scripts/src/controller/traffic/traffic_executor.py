@@ -1,5 +1,5 @@
 import time
-from typing import Any
+from typing import Any, Type
 
 from numpy import ndarray, dtype
 
@@ -13,13 +13,17 @@ class TrafficExecutor:
     def __init__(self, traffic_plan: ndarray[tuple[int], dtype[Any]]):
         self.traffic_plan: ndarray[tuple[int], dtype[Any]] = traffic_plan
 
-    def execute(self, parameters: TrafficParameters):
+    def execute(self,
+                parameters: TrafficParameters,
+                server_class: Type[TrafficServer] = NetcatServer,
+                client_class: Type[TrafficClient] = NetcatClient):
         server_service = parameters.ue_service if parameters.direction == Direction.coreToUE else parameters.core_service
         client_service = parameters.core_service if parameters.direction == Direction.coreToUE else parameters.ue_service
         server_address = parameters.ue_address if parameters.direction == Direction.coreToUE else parameters.core_address
+        # TODO: Implement bidirectional traffic using two netcat listeners
 
-        server: TrafficServer = NetcatServer(parameters.workdir, server_service, server_address)
-        client: TrafficClient = NetcatClient(parameters.workdir, client_service, server_address)
+        server: TrafficServer = server_class(parameters.workdir, server_service, server_address)
+        client: TrafficClient = client_class(parameters.workdir, client_service, server_address)
 
         server.start_session()
         client.start_session()

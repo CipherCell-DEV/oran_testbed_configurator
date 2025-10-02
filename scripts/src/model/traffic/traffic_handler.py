@@ -14,7 +14,6 @@ class TrafficHandler(ABC):
         self.process = None
 
     def _execute_cmd(self, cmd: str) -> None:
-        print(self.__service_name, "->", cmd)
         if not cmd.endswith('\n'):
             cmd += '\n'
         self.process.stdin.write(cmd)
@@ -29,7 +28,6 @@ class TrafficHandler(ABC):
             raise FileNotFoundError(f"No docker-compose file found in {self.__workdir}")
 
         cmd = ['docker', 'compose', 'exec', '-T', self.__service_name, 'bash']
-        print(' '.join(cmd))
         self.process = subprocess.Popen(
             cmd,
             stdin=subprocess.PIPE,
