@@ -119,14 +119,12 @@ class NetcatClient(TrafficClient):
             raise RuntimeError("No active session. Call start_session() first.")
 
         netcat_cmd = (f'{self._cmd_prefix} dd if=/dev/urandom bs={packet_size} count=1 | '
-                     f'nc -u -w 1 {self._server_address} {self._server_port}')
+                     f'nc -u -q 0 {self._server_address} {self._server_port}')
         cmd = f'{netcat_cmd}; echo "EXIT_CODE:$?"'
 
         try:
-            print(f"Sending {packet_size} bytes to {self._server_address}:{self._server_port}")
             self._execute_cmd(cmd)
 
-            timeout = 2000
             timeout_s = timeout / 1000.0
             start_time = time.time()
 
@@ -140,9 +138,7 @@ class NetcatClient(TrafficClient):
                         if line.startswith("EXIT_CODE:"):
                             exit_code = int(line.split(":")[1])
                             success = exit_code == 0
-                            if success:
-                                print(f"Successfully sent {packet_size} bytes")
-                            else:
+                            if not success:
                                 print(f"Netcat failed with exit code {exit_code}")
                             return success
 
