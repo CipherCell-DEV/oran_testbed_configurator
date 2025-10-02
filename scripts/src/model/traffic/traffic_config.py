@@ -48,9 +48,9 @@ def _parse_bytes(bytestr: str) -> int:
 
 
 class Direction(Enum):
-    ueToCore = 'ue->core'
-    coreToUE = 'core->ue'
-    bidirectional = 'ue<->core'
+    ueToCore = 'UL'
+    coreToUE = 'DL'
+    bidirectional = 'BI'
 
 
 @dataclass
