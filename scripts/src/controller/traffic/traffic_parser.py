@@ -2,7 +2,7 @@ from typing import Optional
 
 import yaml
 
-from model.traffic_config import TrafficSequenceConfig, OverlapTrafficConfig, Pause, PeriodicTrafficConfig, \
+from model.traffic.traffic_config import TrafficSequenceConfig, OverlapTrafficConfig, Pause, PeriodicTrafficConfig, \
     RandomTrafficConfig, DistributedTrafficConfig, parse_time
 
 

@@ -6,8 +6,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 from numpy import dtype, ndarray
 
-from model.traffic_config import Pause, TrafficParameters, OverlapTrafficConfig, TrafficSequenceConfig, \
-    DistributedTrafficConfig, RandomTrafficConfig, PeriodicTrafficConfig, DistributionType
+from model.traffic.traffic_config import Pause, TrafficParameters, OverlapTrafficConfig, TrafficSequenceConfig, \
+    DistributedTrafficConfig, RandomTrafficConfig, PeriodicTrafficConfig, DistributionType, Direction
 
 
 class TrafficPlanGenerator:
@@ -122,7 +122,7 @@ class TrafficPlanGenerator:
 
     @__generate_traffic.register
     def _(self, config: TrafficSequenceConfig) -> ndarray[tuple[int], dtype[Any]]:
-        params = TrafficParameters(100, '', '', '', False)
+        params = TrafficParameters(100, '', '', '', '', Direction.coreToUE, '', False)
         tpg = TrafficPlanGenerator(params)
         for tconfig in config.sequence:
             tpg.__append_traffic(tpg.__generate_traffic(tconfig))
@@ -130,7 +130,7 @@ class TrafficPlanGenerator:
 
     @__generate_traffic.register
     def _(self, config: OverlapTrafficConfig) -> ndarray[tuple[int], dtype[Any]]:
-        params = TrafficParameters(100, '', '', '', False)
+        params = TrafficParameters(100, '', '', '', '', Direction.coreToUE, '', False)
         tpg = TrafficPlanGenerator(params)
         for (offset, tconfig) in config.overlaps:
             tpg.__overlap_traffic(tpg.__generate_traffic(tconfig), offset)

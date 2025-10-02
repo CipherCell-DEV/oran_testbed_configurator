@@ -4,7 +4,7 @@ import os
 from controller.traffic.traffic_executor import TrafficExecutor
 from controller.traffic.traffic_parser import TrafficConfigParser
 from controller.traffic.traffic_plan_generator import TrafficPlanGenerator
-from model.traffic_config import TrafficParameters
+from model.traffic.traffic_config import TrafficParameters
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Execute periodic traffic in the Docker Compose container.')
