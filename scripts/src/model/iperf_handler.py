@@ -30,8 +30,7 @@ class IPerfClient(TrafficClient):
         cmd = f'{ping_cmd}; echo "EXIT_CODE:$?"'
 
         try:
-            self.process.stdin.write(cmd + '\n')
-            self.process.stdin.flush()
+            self._execute_cmd(cmd)
             timeout_s = timeout / 1000 - 0.01
 
             start_time = time.time()

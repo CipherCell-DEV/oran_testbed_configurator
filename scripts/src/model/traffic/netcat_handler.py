@@ -1,11 +1,12 @@
 import time
+from asyncio import timeout
 from typing import override
 
 from model.traffic.traffic_handler import TrafficServer, TrafficClient
 
 
 class NetcatServer(TrafficServer):
-    """Netcat UDP server that listens for incoming traffic and displays it with hexdump"""
+    """Netcat UDP server that listens for incoming traffic"""
 
     def __init__(self, workdir: str, service_name: str, server_address: str, server_port: int = 5201):
         super().__init__(workdir, service_name, server_address, server_port)
@@ -25,20 +26,18 @@ class NetcatServer(TrafficServer):
         if self.process.poll() is not None:
             raise RuntimeError("Shell process has died, cannot start server")
 
-        server_cmd = f'{self._cmd_prefix} nc -u -k -l -p {self._server_port} | hexdump -C'
+        server_cmd = f'{self._cmd_prefix} nc -u -k -l -p {self._server_port}'
 
         try:
             print(f"Starting netcat server on port {self._server_port}")
-            self.process.stdin.write(f'{server_cmd} &\n')
-            self.process.stdin.flush()
+            self._execute_cmd(f'{server_cmd} &')
 
             # Wait for server to start
             time.sleep(0.5)
 
             # Verify server is running by checking if port is listening
             verify_cmd = f'{self._cmd_prefix} ss -ulnp | grep ":{self._server_port} "'
-            self.process.stdin.write(f'{verify_cmd}; echo "VERIFY_DONE:$?"\n')
-            self.process.stdin.flush()
+            self._execute_cmd(f'{verify_cmd}; echo "VERIFY_DONE:$?"')
 
             start_time = time.time()
             server_verified = False
@@ -86,8 +85,7 @@ class NetcatServer(TrafficServer):
 
         try:
             kill_cmd = f'{self._cmd_prefix} pkill -f "nc.*-l.*{self._server_port}"'
-            self.process.stdin.write(f'{kill_cmd}; echo "KILL_DONE"\n')
-            self.process.stdin.flush()
+            self._execute_cmd(f'{kill_cmd}; echo "KILL_DONE"')
 
             start_time = time.time()
             while time.time() - start_time < 2:
@@ -120,15 +118,15 @@ class NetcatClient(TrafficClient):
         if not self.process:
             raise RuntimeError("No active session. Call start_session() first.")
 
-        netcat_cmd = (f'{self._cmd_prefix} dd if=/dev/urandom bs={packet_size} count=1 2>/dev/null | '
+        netcat_cmd = (f'{self._cmd_prefix} dd if=/dev/urandom bs={packet_size} count=1 | '
                      f'nc -u -w 1 {self._server_address} {self._server_port}')
         cmd = f'{netcat_cmd}; echo "EXIT_CODE:$?"'
 
         try:
             print(f"Sending {packet_size} bytes to {self._server_address}:{self._server_port}")
-            self.process.stdin.write(cmd + '\n')
-            self.process.stdin.flush()
+            self._execute_cmd(cmd)
 
+            timeout = 2000
             timeout_s = timeout / 1000.0
             start_time = time.time()
 
@@ -166,8 +164,7 @@ class NetcatClient(TrafficClient):
             try:
                 # Kill any remaining netcat processes before closing
                 cleanup_cmd = f'{self._cmd_prefix} pkill -f "nc.*{self._server_address}.*{self._server_port}"'
-                self.process.stdin.write(f'{cleanup_cmd}\n')
-                self.process.stdin.flush()
+                self._execute_cmd(cleanup_cmd)
                 time.sleep(0.1)
             except:
                 pass

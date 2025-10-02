@@ -13,15 +13,23 @@ class TrafficHandler(ABC):
         self._server_port = server_port
         self.process = None
 
+    def _execute_cmd(self, cmd: str) -> None:
+        print(self.__service_name, "->", cmd)
+        if not cmd.endswith('\n'):
+            cmd += '\n'
+        self.process.stdin.write(cmd)
+        self.process.stdin.flush()
+
     def start_session(self) -> None:
         """Start a persistent bash session in the UE container"""
-        cmd = ['docker', 'compose', 'exec', '-T', self.__service_name, 'bash']
 
         compose_files = ['docker-compose.yml', 'docker-compose.yaml', 'compose.yml', 'compose.yaml']
         compose_file_exists = any(os.path.isfile(os.path.join(self.__workdir, f)) for f in compose_files)
         if not compose_file_exists:
             raise FileNotFoundError(f"No docker-compose file found in {self.__workdir}")
 
+        cmd = ['docker', 'compose', 'exec', '-T', self.__service_name, 'bash']
+        print(' '.join(cmd))
         self.process = subprocess.Popen(
             cmd,
             stdin=subprocess.PIPE,
@@ -34,8 +42,7 @@ class TrafficHandler(ABC):
 
     def initialize_shell(self):
         init_timeout = 2
-        self.process.stdin.write('echo READY\n')
-        self.process.stdin.flush()
+        self._execute_cmd('echo READY')
         start_time = time.time()
         while time.time() - start_time < init_timeout:
             import select
@@ -51,8 +58,7 @@ class TrafficHandler(ABC):
         """Close the persistent session"""
         if self.process:
             try:
-                self.process.stdin.write('exit\n')
-                self.process.stdin.flush()
+                self._execute_cmd('exit')
                 self.process.wait(timeout=2)
             except:
                 self.process.terminate()
