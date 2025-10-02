@@ -47,11 +47,20 @@ def _parse_bytes(bytestr: str) -> int:
             raise ValueError(f"Unknown unit: {unit}")
 
 
+class Direction(Enum):
+    ueToCore = 'ue->core'
+    coreToUE = 'core->ue'
+    bidirectional = 'ue<->core'
+
+
 @dataclass
 class TrafficParameters:
     granularity: int  # ms
-    gnb_address: str  # IP Address
+    core_service: str
+    core_address: str  # IP Address
+    ue_service: str
     ue_address: str  # IP Address
+    direction: Direction
     workdir: str  # Path to main docker-compose.yaml
     loop: bool  # Loop traffic infinitely
 
@@ -62,8 +71,11 @@ class TrafficParameters:
         if 'parameters' in data:
             return TrafficParameters(
                 granularity=parse_time(data['parameters'].get('granularity', '100ms')),
-                gnb_address=data['parameters'].get('gnb-address', '10.45.1.1'),
-                ue_address=data['parameters'].get('ue-address', '10.45.1.2'),
+                core_service=data['parameters']['core'].get('service', '5gc'),
+                core_address=data['parameters']['core'].get('address', '10.45.1.1'),
+                ue_service=data['parameters']['ue'].get('service', 'ue1'),
+                ue_address=data['parameters']['ue'].get('address', '10.45.1.2'),
+                direction=Direction(data['parameters'].get('direction', 'core->ue')),
                 workdir=os.path.abspath(
                     os.path.join(os.path.dirname(path), data['parameters'].get('workdir', '../..'))),
                 loop=data['parameters'].get('loop', False)

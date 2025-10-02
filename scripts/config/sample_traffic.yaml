@@ -1,8 +1,13 @@
 parameters:
-  gnb-address: 10.45.1.1
-  ue-address: 10.45.1.2
-  workdir: ../../  # The directory of the main docker-compose file.
-  granularity: 100ms  # The granularity of time intervals, i.e. the timespan of one slot in the traffic array.
+  core:
+    service: 5gc
+    address: 10.45.1.1
+  ue:
+    service: ue1
+    address: 10.45.1.2
+  direction: ue->core  # Direction of traffic. Either ue->core, core->ue or (currently not supported) ue<-> core
+  workdir: ../../repositories/  # The directory of the main docker-compose file.
+  granularity: 200ms  # The granularity of time intervals, i.e. the timespan of one slot in the traffic array.
                       # Anything under 100 ms is probably less than the RTT between UE and gNB and thus not sensible.
   loop: false  # Whether to repeat the pattern forever.
 
