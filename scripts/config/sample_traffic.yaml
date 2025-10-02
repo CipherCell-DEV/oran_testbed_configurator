@@ -1,7 +1,12 @@
 parameters:
-  gnb-address: 10.45.1.1
-  ue-address: 10.45.1.2
-  workdir: ../../  # The directory of the main docker-compose file.
+  core:
+    service: 5gc  # Name of the 5G Core docker service
+    address: 10.45.1.1
+  ue:
+    service: ue1  # Name of the UE docker service
+    address: 10.45.1.2
+  direction: DL  # Direction of traffic. Either DL (Download), UL (Upload) or BI (Bidirectional) (currently not supported)
+  workdir: ../../repositories/  # The directory of the main docker-compose file.
   granularity: 100ms  # The granularity of time intervals, i.e. the timespan of one slot in the traffic array.
                       # Anything under 100 ms is probably less than the RTT between UE and gNB and thus not sensible.
   loop: false  # Whether to repeat the pattern forever.
