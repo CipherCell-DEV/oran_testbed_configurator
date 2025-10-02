@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y \
     iputils-ping \
     nano \
     sudo \
+    iperf3 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
