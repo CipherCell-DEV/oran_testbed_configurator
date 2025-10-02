@@ -1,9 +1,9 @@
 parameters:
   core:
-    service: 5gc
+    service: 5gc  # Name of the 5G Core docker service
     address: 10.45.1.1
   ue:
-    service: ue1
+    service: ue1  # Name of the UE docker service
     address: 10.45.1.2
   direction: DL  # Direction of traffic. Either DL (Download), UL (Upload) or BI (Bidirectional) (currently not supported)
   workdir: ../../repositories/  # The directory of the main docker-compose file.
