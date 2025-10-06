@@ -45,8 +45,7 @@ class UEPatcher(SinglePatcherBase):
             ue_dict = {
                 "services": {
                     f"{ue.name}": {
-                        "image": f"{self._setup_cfg.environment.docker_registry}/ue{
-                        self._patcher_utils.get_tag_or_empty_string(":")}",
+                        "image": f"{self._setup_cfg.environment.docker_registry}/ue{self._patcher_utils.get_tag_or_empty_string(":")}",
                         "build": "./srsRAN_4G",
                         "container_name": f"{ue.name}",
                         "platform": "linux/amd64",
