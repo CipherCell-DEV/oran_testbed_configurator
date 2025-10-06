@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import override, Optional
+from typing import Optional
 
 import yaml
 
