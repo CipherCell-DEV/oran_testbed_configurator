@@ -81,7 +81,6 @@ class NearRTRICPatcher(SinglePatcherBase):
         else:
             logging.warning("Native build patching for ORAN SC RIC is not implemented yet.")
 
-    @override
     def patch_env_file(self, env_dict: dict) -> dict:
 
         patch_file_path = os.path.join(self._patch_file_path, "templates", "config", "oran_sc_ric_env")

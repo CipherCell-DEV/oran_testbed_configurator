@@ -71,7 +71,6 @@ class GnbPatcher(SinglePatcherBase):
             logging.error(f"Failed to parse YAML patch file: {e}")
             raise
 
-
     def copy_config_files(self):
         src_dirs = [[self._patch_file_path, "patched", "config"],
                     [self._patch_file_path, "templates", "docker"]]

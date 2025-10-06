@@ -23,14 +23,12 @@ class Core5GPatcher(SinglePatcherBase):
     def __init__(self, patch_file_path: str, setup_cfg: SetupConfiguration, patcher_utils: PatcherUtils):
         super().__init__(patch_file_path, setup_cfg, patcher_utils)
 
-    @override
     def patch(self):
         if self._setup_cfg.core_5g.build_type == BuildType.DOCKER:
             return self.patch_docker_compose()
         else:
             logging.error("Native build patching for srsRAN 5G core is not implemented yet.")
 
-    @override
     def patch_docker_compose(self):
         if self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
             return self._open5gs_5gc_patch_docker_compose()
@@ -38,7 +36,6 @@ class Core5GPatcher(SinglePatcherBase):
             logging.error("Unsupported 5G core implementation for docker patching.")
             return {}
 
-    @override
     def patch_env_file(self, env_dict: dict) -> dict:
         if self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
             return self._open5gs_5gc_patch_env_file(env_dict)
