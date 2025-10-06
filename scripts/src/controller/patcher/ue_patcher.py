@@ -82,12 +82,12 @@ class UEPatcher(SinglePatcherBase):
         ]
         paths_dst = config_dst + template_dst
 
-        # File Names
         config_files = [f"{ue.name}_zmq.conf" for ue in self._setup_cfg.ue]
         template_files = ["dockerfile_ue", "ue_entrypoint.sh"]
-        file_names = config_files + template_files
+        file_names_src = config_files + template_files
+        file_names_dst = config_files + ["Dockerfile", "ue_entrypoint.sh"]
 
-        super().copy_helper(paths_src, file_names, paths_dst, file_names)
+        super().copy_helper(paths_src, file_names_src, paths_dst, file_names_dst)
 
     def _get_usim_mode(self):
         if self._setup_cfg.ue[0].usim.mode == USIMMode.HARD:
