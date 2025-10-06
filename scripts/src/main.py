@@ -11,7 +11,7 @@ import os
 
 from model.dialog_cfg import DialogConfig
 from model.setup_configuration import SetupConfiguration
-from model.utils_config import FILE_DIR, DEFAULT_CFG_FILE
+from model.utils_config import FILE_DIR, DEFAULT_CFG_FILE, DEFAULT_DEMO_CFG_FILE
 
 from controller.build_runner import BuildRunner
 from controller.parser.config_parser import ConfigParser
@@ -102,6 +102,10 @@ if __name__ == "__main__":
     else:
         dialog_cfg = run_dialog()
         config = ConfigParser.parse_config_file(DEFAULT_CFG_FILE)
+
+    if cmd_line_cfg.run_demo:
+        demo_config = ConfigParser.parse_demo_setup_config(DEFAULT_DEMO_CFG_FILE, config.environment.build_dir)
+        config.demo_cfg = demo_config
 
     checkout_repositories(config)
 

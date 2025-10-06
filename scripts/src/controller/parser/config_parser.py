@@ -3,10 +3,12 @@ import os
 
 import yaml
 
+from controller.parser.demo_config_parser import DemoConfigParser
 from controller.parser.core_5g_config_parser import Core5GConfigParser
 from controller.parser.gnb_config_parser import GNBConfigParser
 from controller.parser.near_rt_ric_config_parser import NearRTRICConfigParser
 from controller.parser.ue_config_parser import UEConfigParser
+from demo_config import DemoCfg
 from model.setup_configuration import EnvironmentCfg, SetupConfiguration, \
     ComponentIdentifiers
 from model.utils_config import FILE_DIR
@@ -76,3 +78,9 @@ class ConfigParser:
                     raise KeyError(f"Unknown configuration section: '{config_entry}'")
 
         return setup_config
+
+    @staticmethod
+    def parse_demo_setup_config(file_path: str, env_build_path: str) -> DemoCfg:
+        with open(file_path, "r") as f:
+            parsed_config = yaml.safe_load(f)
+            return DemoConfigParser.parse_demo_cfg(parsed_config, env_build_path)

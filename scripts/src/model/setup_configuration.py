@@ -6,6 +6,7 @@ from model.gnb_config import GNBCfg
 from model.ric_config import NearRtRICCFG
 from model.ue_config import UECfg
 from model.utils_config import LogLevel
+from model.demo_config import DemoCfg
 
 
 class ComponentIdentifiers:
@@ -44,6 +45,7 @@ class SetupConfiguration:
     near_rt_ric: Optional[NearRtRICCFG] = None
     core_5g: Optional[Core5GCfg] = None
     gnb: Optional[GNBCfg] = None
+    demo: Optional[DemoCfg] = None
     ue: List[UECfg] = []
 
     def __str__(self):
