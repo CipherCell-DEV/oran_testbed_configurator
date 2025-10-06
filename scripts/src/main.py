@@ -115,7 +115,7 @@ if __name__ == "__main__":
     if cmd_line_cfg.enable_build:
         firmware_build_success = build_firmware(config, dialog_cfg, images_to_push)
         if not firmware_build_success:
-            logging.error("Exit Program!")
+            logging.error("Failed to build firmware! -> Exit Program!")
 
     if firmware_build_success and cmd_line_cfg.run_demo:
         run_demo(config)
