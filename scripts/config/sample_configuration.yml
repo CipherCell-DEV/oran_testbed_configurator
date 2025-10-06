@@ -22,7 +22,7 @@ near_rt_ric:
       xapp_runner_ip: 10.0.2.20
 
 5gc:
-    implementation: "Open5GS"
+    implementation: "Open5GS_SRS"
     commit: "11c9bbabb69873752500d676f55e0034f6caa5c5"
     build_type: "docker"
     ip_addr: 10.53.1.2
