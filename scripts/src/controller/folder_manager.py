@@ -7,7 +7,7 @@ from model.setup_configuration import SetupConfiguration
 from model.ue_config import UEImplementation
 
 
-class FolderManager():
+class FolderManager:
 
     @staticmethod
     def create_patch_folders(path_file_path: str):
@@ -29,11 +29,11 @@ class FolderManager():
     @staticmethod
     def create_project_config_folders(setup_cfg: SetupConfiguration):
 
-        if setup_cfg.core_5g.implementation == CoreImplementation.SRS:
+        if setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
             srs_core_path = os.path.join(setup_cfg.environment.build_dir, "srsRAN_Project", "configs")
             FolderManager.create_folder(srs_core_path, "srsRAN_Project")
 
-        if setup_cfg.gnb.type == GNBImplementation.SRS:
+        if setup_cfg.gnb.implementation == GNBImplementation.SRS:
             srs_gnb_path = os.path.join(setup_cfg.environment.build_dir, "srsRAN_Project", "configs")
             FolderManager.create_folder(srs_gnb_path, "srsRAN_Project (gNB)")
 
@@ -42,15 +42,12 @@ class FolderManager():
                 srs_ue_path = os.path.join(setup_cfg.environment.build_dir, "srsRAN_4G", "configs")
                 FolderManager.create_folder(srs_ue_path, "srsRAN_4G")
 
-
-
     @staticmethod
     def create_project_build_folders(setup_cfg: SetupConfiguration):
-        oran_sc_ric_images = ["appmgr","submgr","e2term","rtmgr_sim","e2mgr","ric_plt_frame_py"]
+        oran_sc_ric_images = ["appmgr", "submgr", "e2term", "rtmgr_sim", "e2mgr", "ric_plt_frame_py"]
         for folder in oran_sc_ric_images:
-            sc_ric_path = os.path.join(setup_cfg.environment.build_dir,"oran-sc-ric", "ric", "images", folder)
-            FolderManager.create_folder(sc_ric_path,folder)
-
+            sc_ric_path = os.path.join(setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images", folder)
+            FolderManager.create_folder(sc_ric_path, folder)
 
     @staticmethod
     def create_log_dir(setup_cfg: SetupConfiguration):

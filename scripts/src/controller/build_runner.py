@@ -6,6 +6,7 @@ from typing import List
 from tqdm import tqdm
 
 from controller.folder_manager import FolderManager
+from controller.utils import _check_docker_compose_daemon_is_running
 from model.setup_configuration import SetupConfiguration
 
 from model.core_config import CoreImplementation
@@ -22,15 +23,6 @@ class BuildRunner:
     def __init__(self, setup_configuration: SetupConfiguration):
         self.setup_cfg = setup_configuration
 
-    @staticmethod
-    def _check_docker_compose_daemon_is_running() -> bool:
-        try:
-            subprocess.run(["docker", "info"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-            return True
-        except subprocess.CalledProcessError:
-            logging.error("Docker does not appear to be running. Please start Docker before building components.")
-            return False
-
     def _build_docker_compose(self, component_name: str, command: List[str]):
         """
         /**
@@ -43,7 +35,7 @@ class BuildRunner:
          * @param command Docker Compose command as a list of strings.
          */
         """
-        if not BuildRunner._check_docker_compose_daemon_is_running():
+        if not _check_docker_compose_daemon_is_running():
             logging.error("Quit current build")
             return False
 
@@ -83,8 +75,8 @@ class BuildRunner:
         logging.info("Running RIC build process...")
         os.chdir(self.setup_cfg.environment.build_dir)
 
-        if self.setup_cfg.near_rt_ric.type == RICImplementation.ORAN_SC_RIC:
-            if self.setup_cfg.environment.build_type == BuildType.DOCKER:
+        if self.setup_cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC:
+            if self.setup_cfg.near_rt_ric.build_type == BuildType.DOCKER:
                 return self._build_docker_compose('oran-sc-ric', ["docker", "compose", "build",
                                                                   "dbaas", "rtmgr_sim", "submgr", "e2term", "appmgr",
                                                                   "e2mgr", "python_xapp_runner"])
@@ -99,8 +91,8 @@ class BuildRunner:
         """
         logging.info("Running 5G Core Network build process...")
         os.chdir(self.setup_cfg.environment.build_dir)
-        if self.setup_cfg.core_5g.implementation == CoreImplementation.SRS:
-            if self.setup_cfg.environment.build_type == BuildType.DOCKER:
+        if self.setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
+            if self.setup_cfg.core_5g.build_type == BuildType.DOCKER:
                 return self._build_docker_compose('5gc', ["docker", "compose", "build", '5gc'])
             else:
                 logging.error("Building 5GC natively... -> Currently not supported!")
@@ -143,7 +135,7 @@ class BuildRunner:
         return True
 
     def push_images(self, images_to_push: list[str]) -> bool:
-        if self.setup_cfg.environment.push_local_images != True:
+        if not self.setup_cfg.environment.push_local_images:
             return True
         for image in images_to_push:
             logging.info(f"Pushing {image}")

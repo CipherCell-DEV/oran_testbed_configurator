@@ -1,8 +1,6 @@
 paches/patched*
 
-oran-sc-ric/
-srsRAN_4G/
-srsRAN_Project/
+repositories/
 .env
 
 .idea/

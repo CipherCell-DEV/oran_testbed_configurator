@@ -11,6 +11,9 @@ class UEImplementation(Enum):
     SRS_4G = 0
 
 
+ALLOWED_IMPLEMENTATION_LIST = {'srs': UEImplementation.SRS_4G}
+
+
 class USIMMode(Enum):
     SOFT = 0
     HARD = 1
@@ -68,6 +71,7 @@ class USIMCfg:
 @dataclass
 class UECfg:
     implementation: Optional[UEImplementation] = None
+    commit: str = "latest"
     name: Optional[str] = None
     build_type = BuildType = BuildType.DOCKER
     ip: Optional[ipaddress.IPv4Address] = None
@@ -77,6 +81,8 @@ class UECfg:
 
     def __str__(self):
         return (f"UECfg: \n"
+                f"    implementation={self.implementation}, \n"
+                f"    commit={self.commit}, \n"
                 f"    name={self.name}, \n"
                 f"    build_type={self.build_type}, \n"
                 f"    ip={self.ip}, \n"
