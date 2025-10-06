@@ -38,7 +38,7 @@ class DemoRunner:
 
     def _create_ric(self):
         """Create the Near-RT RIC program."""
-        if self._cfg.near_rt_ric.type == RICImplementation.ORAN_SC_RIC:
+        if self._cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC:
             self._program_pool.update({'ric': Program(
                 working_dir=self._cfg.environment.build_dir,
                 name="RIC",
@@ -50,12 +50,12 @@ class DemoRunner:
             )})
         else:
             raise KeyError(
-                f"Selected Near-RT RIC implementation '{self._cfg.near_rt_ric.type}' is not supported"
+                f"Selected Near-RT RIC implementation '{self._cfg.near_rt_ric.implementation}' is not supported"
             )
 
     def _create_core(self):
         """Create the 5G Core program."""
-        if self._cfg.core_5g.implementation == CoreImplementation.SRS:
+        if self._cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
             self._program_pool.update({'5g_core': Program(working_dir=self._cfg.environment.build_dir,
                                                           name="5G-core",
                                                           command=["docker", "compose", "up", "5gc"],
@@ -69,7 +69,7 @@ class DemoRunner:
 
     def _create_gnb(self):
         """Create the gNB program."""
-        if self._cfg.gnb.type == GNBImplementation.SRS:
+        if self._cfg.gnb.implementation == GNBImplementation.SRS:
             self._program_pool.update({'gnb': Program(
                 working_dir=self._cfg.environment.build_dir,
                 name="gNB",
@@ -80,7 +80,7 @@ class DemoRunner:
             )
         else:
             raise KeyError(
-                f"Selected gNB implementation '{self._cfg.gnb.type}' is not supported"
+                f"Selected gNB implementation '{self._cfg.gnb.implementation}' is not supported"
             )
 
     def _create_ues(self):

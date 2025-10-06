@@ -14,9 +14,9 @@ from model.setup_configuration import SetupConfiguration
 from model.utils_config import FILE_DIR, DEFAULT_CFG_FILE
 
 from controller.build_runner import BuildRunner
-from controller.config_parser import ConfigParser
+from controller.parser.config_parser import ConfigParser
 from controller.demo_runner import DemoRunner
-from controller.firmware_patcher import FirmwarePatcher
+from controller.patcher.firmware_patcher import FirmwarePatcher
 from view.dialog import setup_logging, print_start_dialog, run_dialog, parse_command_line_arguments
 from view.live_console_viewer import LiveConsoleViewer
 
@@ -34,8 +34,6 @@ def patch_firmware(setup_cfg: SetupConfiguration, dialog_config: DialogConfig):
 
     fw_patcher.copy_files_to_location()
     return True, fw_patcher.get_images_to_push()
-
-
 
 
 def build_firmware(setup_cfg: SetupConfiguration, dialog_config: DialogConfig, images_to_push: list[str]) -> bool:
@@ -108,8 +106,8 @@ if __name__ == "__main__":
     checkout_repositories(config)
 
     if cmd_line_cfg.generate_patch_files:
-        succsess, images_to_push = patch_firmware(config, dialog_cfg)
-        if not succsess:
+        success, images_to_push = patch_firmware(config, dialog_cfg)
+        if not success:
             logging.error("Could not patch firmware! -> Exit program")
             exit(0)
 
