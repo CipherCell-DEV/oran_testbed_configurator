@@ -6,6 +6,7 @@ from typing import List
 from tqdm import tqdm
 
 from controller.folder_manager import FolderManager
+from controller.utils import _check_docker_compose_daemon_is_running
 from model.setup_configuration import SetupConfiguration
 
 from model.core_config import CoreImplementation
@@ -22,15 +23,6 @@ class BuildRunner:
     def __init__(self, setup_configuration: SetupConfiguration):
         self.setup_cfg = setup_configuration
 
-    @staticmethod
-    def _check_docker_compose_daemon_is_running() -> bool:
-        try:
-            subprocess.run(["docker", "info"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-            return True
-        except subprocess.CalledProcessError:
-            logging.error("Docker does not appear to be running. Please start Docker before building components.")
-            return False
-
     def _build_docker_compose(self, component_name: str, command: List[str]):
         """
         /**
@@ -43,7 +35,7 @@ class BuildRunner:
          * @param command Docker Compose command as a list of strings.
          */
         """
-        if not BuildRunner._check_docker_compose_daemon_is_running():
+        if not _check_docker_compose_daemon_is_running():
             logging.error("Quit current build")
             return False
 
@@ -99,7 +91,7 @@ class BuildRunner:
         """
         logging.info("Running 5G Core Network build process...")
         os.chdir(self.setup_cfg.environment.build_dir)
-        if self.setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
+        if self.setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
             if self.setup_cfg.core_5g.build_type == BuildType.DOCKER:
                 return self._build_docker_compose('5gc', ["docker", "compose", "build", '5gc'])
             else:

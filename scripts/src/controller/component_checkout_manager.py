@@ -3,7 +3,7 @@ import os.path
 
 from model.core_config import CoreImplementation
 from model.gnb_config import GNBImplementation
-from model.component_repositories import ORAN_SC_RIC_REPO, SRS_RAN_REPO, SRS_RAN_4G_REPO
+from model.component_repositories import ORAN_SC_RIC_REPO, SRS_RAN_REPO, SRS_RAN_4G_REPO, OPEN5GS_REPO
 from model.ric_config import RICImplementation
 from model.setup_configuration import SetupConfiguration
 
@@ -49,9 +49,12 @@ class ComponentCheckoutManager:
             exit(0)
 
     def checkout_5g_core(self):
-        if self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
+        if self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
             self._clone_repository(repo=SRS_RAN_REPO, name="srsRAN Project", folder='srsRAN_Project',
-                                   commit = self._setup_cfg.core_5g.commit)
+                                   commit=self._setup_cfg.core_5g.commit)
+        elif self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
+            self._clone_repository(repo=OPEN5GS_REPO, name="open5gs", folder='open5gs',
+                                   commit=self._setup_cfg.core_5g.commit)
         else:
             logging.error(f"Other 5G Core implementations currently not supported")
             exit(0)

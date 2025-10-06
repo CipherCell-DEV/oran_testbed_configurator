@@ -16,7 +16,7 @@ from model.utils_config import FILE_DIR, DEFAULT_CFG_FILE
 from controller.build_runner import BuildRunner
 from controller.parser.config_parser import ConfigParser
 from controller.demo_runner import DemoRunner
-from controller.firmware_patcher import FirmwarePatcher
+from controller.patcher.firmware_patcher import FirmwarePatcher
 from view.dialog import setup_logging, print_start_dialog, run_dialog, parse_command_line_arguments
 from view.live_console_viewer import LiveConsoleViewer
 
@@ -106,8 +106,8 @@ if __name__ == "__main__":
     checkout_repositories(config)
 
     if cmd_line_cfg.generate_patch_files:
-        succsess, images_to_push = patch_firmware(config, dialog_cfg)
-        if not succsess:
+        success, images_to_push = patch_firmware(config, dialog_cfg)
+        if not success:
             logging.error("Could not patch firmware! -> Exit program")
             exit(0)
 
