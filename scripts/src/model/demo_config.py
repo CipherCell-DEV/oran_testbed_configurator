@@ -22,8 +22,8 @@ class ProgramGroupIdentifier(Enum):
     CORE="run_core"
     RIC="run_ric"
     GNB="run_gnb"
-    GNB_UE="run_ue"
-    GNB_MISC="run_misc"
+    UE= "run_ue"
+    MISC= "run_misc"
 
 
 class ProgramGroupAttributeIdentifier(Enum):
@@ -33,11 +33,11 @@ class ProgramGroupAttributeIdentifier(Enum):
 
 
 class ProgramAttributeIdentifier(Enum):
-    name="name"
-    starting_order="starting_order"
-    command="command"
-    working_directory="working_directory"
-    success_indication="success_indication"
+    NAME="name"
+    STARTING_ORDER="starting_order"
+    COMMAND="command"
+    WORKING_DIRECTORY="working_directory"
+    SUCCESS_INDICATION="success_indication"
 
 
 ##### Dataclass definitions
@@ -64,6 +64,7 @@ class DemoProgramGroup:
     The programs within each set share common attributes.
     A demo setup may consist of several such program group instances.
     """
+    group_type: Optional[ProgramGroupIdentifier] = None
     group_name: Optional[str] = None
     restart_timeout: Optional[int] = None
     restart_max_num: Optional[int] = None
