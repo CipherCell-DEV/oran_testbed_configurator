@@ -26,6 +26,7 @@ class UENativeBuilder(NativeBuilderBase):
         ue_ret = self.build_helper(working_dir, self._ue.name, build_commands)
         if not ue_ret:
             return False
+        return True
 
     def get_implementation_specific_config(self) -> Tuple[List[List[str]], List[str], List[str]]:
         if self._ue.implementation == UEImplementation.SRS_4G:
