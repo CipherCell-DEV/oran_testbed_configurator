@@ -129,6 +129,43 @@ class DemoCfg:
             logging.error(f"{self.config_file_name}: All program starting orders must be larger than 0!")
             exit(1)
 
+
     def check_validity(self):
         self._check_program_name()
         self._check_sequence()
+
+
+    def _get_programs_of_group(self, group_id : ProgramGroupIdentifier) -> List[DemoProgram]:
+        ret : List[DemoProgram] = []
+        for group in self.program_groups:
+            if group.group_type == group_id:
+                for program in group.programs:
+                    ret.append(program)
+        return ret
+
+
+    def get_ric_programs(self) -> List[DemoProgram]:
+        ret = self._get_programs_of_group(ProgramGroupIdentifier.RIC)
+        if len(ret) > 1:
+            logging.warning(f"{self.config_file_name}: More than one ric program defined!")
+        return ret
+
+
+    def get_core_programs(self) -> List[DemoProgram]:
+        ret = self._get_programs_of_group(ProgramGroupIdentifier.CORE)
+        if len(ret) > 1:
+            logging.warning(f"{self.config_file_name}: More than one core program defined!")
+        return ret
+
+
+    def get_gnb_programs(self) -> List[DemoProgram]:
+        ret = self._get_programs_of_group(ProgramGroupIdentifier.GNB)
+        if len(ret) > 1:
+            logging.warning(f"{self.config_file_name}: More than one gnb program defined!")
+        return ret
+
+
+    def get_ue_programs(self) -> List[DemoProgram]:
+        ret = self._get_programs_of_group(ProgramGroupIdentifier.UE)
+        return ret
+

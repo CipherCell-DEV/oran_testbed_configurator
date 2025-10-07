@@ -23,10 +23,6 @@ programs:
         command: ["docker", "compose", "up", "5gc"]
         # working_directory: "./repositories"
         success_indication: ["UDR initialize...done"]
-      - name: "extra"
-        starting_order: 50
-        command: ['cat']
-        success_indication: null        
   run_ric:
     restart_timeout_s: 30
     max_num_restart: 3
@@ -60,9 +56,9 @@ programs:
     program_list:
       - name: "monitor_e2"
         starting_order: 5
-        command: []
+        command: cat
         # working_directory: "./repository"
-        success_indication: []
+        success_indication: null
     
         
         

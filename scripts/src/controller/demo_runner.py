@@ -1,3 +1,5 @@
+import logging
+
 from controller.program import Program, ProgramType
 from model.core_config import CoreImplementation
 from model.gnb_config import GNBImplementation
@@ -39,6 +41,13 @@ class DemoRunner:
     def _create_ric(self):
         """Create the Near-RT RIC program."""
         if self._cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC:
+            rics = self._cfg.demo.get_ric_programs()
+            # TODO: Hardcode hard limit of 1? Are there scenarios, in which we want several RICs simulated?
+            # TODO: allow partial deployment (0 RICs)? Might come in handy is future hardware integration tests ...
+            if len(rics) == 0:
+                logging.warning("No RIC will be started.")
+            if len(rics) > 1:
+                logging.warning(f"Only one RIC is currently supported. Will only start program {rics[0].name}.")
             self._program_pool.update({'ric': Program(
                 working_dir=self._cfg.environment.build_dir,
                 name="RIC",
