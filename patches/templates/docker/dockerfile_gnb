@@ -33,4 +33,4 @@ RUN rm -rf build_docker && mkdir build_docker && cd build_docker && cmake .. \
     && make -j"$(nproc)"
 
 # Default command to start gNB
-CMD ["./build/apps/gnb/gnb", "-c", "./configs/gnb_zmq.yaml"]
+CMD ["./build_docker/apps/gnb/gnb", "-c", "./configs/gnb_zmq.yaml"]
