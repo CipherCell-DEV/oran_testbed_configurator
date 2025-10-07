@@ -22,16 +22,6 @@ class LogLevel(Enum):
 MAX_DISPLAY_LINE_LENGTH = 120
 
 
-class ProgramType(Enum):
-    RIC = 0
-    CORE = 1
-    GNB = 2
-    UE = 3
-
-    def __str__(self):
-        return self.name
-
-
 class ProgramState(Enum):
     STOPPED = 0
     INITIALIZING = 1

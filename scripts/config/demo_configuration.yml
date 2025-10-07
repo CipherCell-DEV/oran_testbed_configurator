@@ -1,12 +1,14 @@
 # This file lists all programs called by the run_all.sh script
 
 # Each program has the following parameters
-#   <name>: a name to reference the programs by in a readable way
+#   <name>: a name to reference the programs by in a readable way. Must be unique.
 #   <starting_order>: positive integers starting from 1, increasing by 1 each. No duplicates allowed. The programs are started in this order.
-#   <command>: command to executed, including parameters 
-#   <working_dir>: [Optional] the directory, in which the command is to be started. If this is missing, the project build directory is used instead
-#   <success_indication>: may be null or an empty string. This string is used to find out if the associated command has successfully started.
-#       This is used to implement the following behaviour: If success string is not null or empty, start the next command in line only if the success string has been printed by the current command. 
+#   <command>: command to executed, including parameters (array of strings)
+#   <working_dir>: [Optional] the directory, in which the command is to be started. If this is missing, the environment build directory is used instead
+#   <state_transition_indication>: [Optional] A program has the states 'stopped', 'initializing' and 'running'. The transition from one stage into the other may be
+#                                  indicated by an expected output string.
+#                                  This field is optional, but if it is given, then it must have the sub fields 
+#                                  stop_to_init: "str" and init_to_running: "str"
 #       
 
 
@@ -22,7 +24,9 @@ programs:
         starting_order: 1
         command: ["docker", "compose", "up", "5gc"]
         # working_directory: "./repositories"
-        success_indication: ["UDR initialize...done"]
+        state_transition_indication:
+          stop_to_init: "open5gs_5gc"
+          init_to_running: "UDR initialize...done"
   run_ric:
     restart_timeout_s: 30
     max_num_restart: 3
@@ -31,7 +35,9 @@ programs:
         starting_order: 2
         command: ["docker", "compose", "up", "dbaas", "rtmgr_sim", "submgr", "e2term", "appmgr", "e2mgr", "python_xapp_runner"]
         # working_directory: "./repositories"
-        success_indication: ["RMR is ready now ..."]
+        state_transition_indication:
+          stop_to_init: "Running"
+          init_to_running: "RMR is ready now ..."
   run_gnb:
     restart_timeout_s: 30
     max_num_restart: 3
@@ -40,7 +46,9 @@ programs:
         starting_order: 3
         command: ["docker", "compose", "up", "gnb"]
         # working_directory: "./repositories"
-        success_indication: ["==== gNB started ==="]
+        state_transition_indication:
+          stop_to_init: "--== srsRAN"
+          init_to_running: "==== gNB started ==="
   run_ue:
     restart_timeout_s: 30
     max_num_restart: 3
@@ -49,7 +57,9 @@ programs:
         starting_order: 4
         command: ["docker", "compose", "up", "--force-recreate", "ue1"]
         # working_directory: "./repositories"
-        success_indication: ["PDU Session Establishment successful."]
+        state_transition_indication:
+          stop_to_init: "Attaching to ue"
+          init_to_running: "PDU Session Establishment successful."
   run_misc:
     restart_timeout_s: 30
     max_num_restart: 0
@@ -57,8 +67,8 @@ programs:
       - name: "monitor_e2"
         starting_order: 5
         command: cat
-        # working_directory: "./repository"
-        success_indication: null
+        
+        
     
         
         

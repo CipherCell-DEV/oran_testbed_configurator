@@ -37,7 +37,9 @@ class ProgramAttributeIdentifier(Enum):
     STARTING_ORDER="starting_order"
     COMMAND="command"
     WORKING_DIRECTORY="working_directory"
-    SUCCESS_INDICATION="success_indication"
+    STATE_TRANSITIONS="state_transition_indication"
+    TRANSITION_STOP_INIT="stop_to_init"
+    TRANSITION_INIT_RUN="init_to_running"
 
 
 ##### Dataclass definitions
@@ -54,7 +56,18 @@ class DemoProgram:
     starting_order: Optional[int] = None
     command: Optional[List[str]] = field(default_factory=list)
     working_directory: Optional[str] = None
-    success_indication: Optional[List[str]] = field(default_factory=list)
+    transition_stop_to_init: Optional[str] = None
+    transition_init_run: Optional[str] = None
+
+
+    def __str__(self) -> str:
+        retstr = f"name={self.name}\n"
+        retstr += f"    starting_order={self.starting_order}\n"
+        retstr += f"    command={self.command}\n"
+        retstr += f"    working_directory={self.working_directory}\n"
+        retstr += f"    transition_stop_to_init={self.transition_stop_to_init}\n"
+        retstr += f"    transition_init_run={self.transition_init_run}\n"
+        return retstr
 
 
 @dataclass
@@ -71,6 +84,17 @@ class DemoProgramGroup:
     programs: Optional[List[DemoProgram]] = field(default_factory=list)
 
 
+    def __str__(self) -> str:
+        retstr = f"group_type={self.group_type}\n"
+        retstr += f"group_name={self.group_name}\n"
+        retstr += f"restart_interval={self.restart_timeout}\n"
+        retstr += f"restart_max_num={self.restart_max_num}\n"
+        retstr += f"program_list:\n"
+        for program in self.programs:
+            retstr += program.__str__()
+        return retstr
+
+
 @dataclass
 class DemoCfg:
     """
@@ -82,21 +106,12 @@ class DemoCfg:
     output_mode: Optional[OutputMode] = None
     program_groups: Optional[List[DemoProgramGroup]] = field(default_factory=list)
 
-    def __str__(self):
+    def __str__(self) -> str:
         retstr = (f"DemoConfig:\n"
-                  f"    output_mode={self.output_mode.value}\n"
-                  f"    programs:\n")
+                  f"output_mode={self.output_mode.value}\n"
+                  f"programs:\n")
         for group in self.program_groups:
-            retstr += f"        group={group.name}\n"
-            retstr += f"            restart_interval={group.restart_timeout}\n"
-            retstr += f"            restart_max_num={group.restart_max_num}\n"
-            retstr += f"            program_list:\n"
-            for program in group.programs:
-                retstr += f"                name={program.name}\n"
-                retstr += f"                    starting_order={program.starting_order}\n"
-                retstr += f"                    command={program.command}\n"
-                retstr += f"                    working_directory={program.working_directory}\n"
-                retstr += f"                    success_indication={program.success_indication}\n"
+            retstr += group.__str__()
         return retstr
 
 
@@ -167,5 +182,10 @@ class DemoCfg:
 
     def get_ue_programs(self) -> List[DemoProgram]:
         ret = self._get_programs_of_group(ProgramGroupIdentifier.UE)
+        return ret
+
+
+    def get_misc_programs(self) -> List[DemoProgram]:
+        ret = self._get_programs_of_group(ProgramGroupIdentifier.MISC)
         return ret
 

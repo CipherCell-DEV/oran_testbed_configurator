@@ -81,8 +81,13 @@ class ConfigParser:
 
     @staticmethod
     def parse_demo_setup_config(file_path: str, env_build_path: str) -> DemoCfg:
+        """Parses the yaml demo file, which lists a set of programs to be executed.
+        Each program may have a specified working directory.
+        In case the working directory is not specified, the environment build path is used instead.
+        """
         with open(file_path, "r") as f:
             parsed_config = yaml.safe_load(f)
             demo_config = DemoConfigParser.parse_demo_cfg(parsed_config, env_build_path)
             demo_config.config_file_name = os.path.basename(file_path)
+            demo_config.check_validity()
             return demo_config

@@ -43,8 +43,12 @@ class DemoConfigParser:
             else:
                 logging.error(f"Program {demo_p.name} has no associated command!")
                 exit(1)
-            if config_entry[ProgramAttributeIdentifier.SUCCESS_INDICATION.value] is not None:
-                demo_p.success_indication.extend(config_entry[ProgramAttributeIdentifier.SUCCESS_INDICATION.value])
+            if config_entry[ProgramAttributeIdentifier.STATE_TRANSITIONS.value] is not None:
+                demo_p.transition_stop_to_init = config_entry[ProgramAttributeIdentifier.STATE_TRANSITIONS.value][ProgramAttributeIdentifier.TRANSITION_STOP_INIT.value]
+                demo_p.transition_init_run = config_entry[ProgramAttributeIdentifier.STATE_TRANSITIONS.value][ProgramAttributeIdentifier.TRANSITION_INIT_RUN.value]
+                if demo_p.transition_stop_to_init is None or demo_p.transition_init_run is None:
+                    logging.error(f"Program {demo_p.name} has missing state transmission fields!")
+                    exit(1)
 
             group.programs.append(demo_p)
 
@@ -83,6 +87,5 @@ class DemoConfigParser:
         demo_cfg = DemoCfg()
         DemoConfigParser._parse_demo_output_mode(params, demo_cfg)
         DemoConfigParser._parse_demo_program_group(params, demo_cfg, default_working_dir)
-        demo_cfg.check_validity()
         return demo_cfg
 

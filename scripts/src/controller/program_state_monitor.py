@@ -3,12 +3,14 @@ import threading
 import time
 from typing import Dict, Tuple, List
 
+from demo_config import DemoProgramGroup, ProgramGroupIdentifier
 from model.utils_config import ProgramState
 from model.setup_configuration import SetupConfiguration
-from model.utils_config import ProgramType
+from model.demo_config import DemoProgram
 
 WATCHDOG_JOIN_TIMEOUT_IN_S = 5
 DEFAULT_RESTART_TIMEOUT_IN_S = 10
+DEFAULT_MAX_NUM_RESTARTS = 1
 # Wait within the watchdog loop to avoid busy waiting
 DEFAULT_WATCHDOG_TIME_SLICE_IN_S = 1
 
@@ -22,12 +24,15 @@ class ProgramStateMonitor:
     program stays too long in a specific state (e.g., INITIALIZING).
     """
 
-    def __init__(self, program_type: ProgramType, setup_config: SetupConfiguration,
+    def __init__(self, program_group : DemoProgramGroup,
+                 program_data : DemoProgram,
                  restart_timeout_in_s: int = DEFAULT_RESTART_TIMEOUT_IN_S,
+                 max_num_restarts : int = DEFAULT_MAX_NUM_RESTARTS,
                  watchdog_slice: int = DEFAULT_WATCHDOG_TIME_SLICE_IN_S):
-        self._program_type = program_type
-        self._setup_config = setup_config
+        self._program_group = program_group
+        self._program_data = program_data
         self._restart_timeout_s = restart_timeout_in_s
+        self._max_num_restarts = max_num_restarts
         self._watchdog_slice = watchdog_slice
 
         self._current_state: ProgramState = ProgramState.STOPPED
@@ -38,12 +43,12 @@ class ProgramStateMonitor:
         self._watchdog_thread_running = False
         self._lock = threading.Lock()
 
-        self._triggers: Dict[Tuple[ProgramType, ProgramState], List[Tuple[str, ProgramState]]] = {
+        self._triggers: Dict[Tuple[ProgramGroupIdentifier, ProgramState], List[Tuple[str, ProgramState]]] = {
             # RIC
-            (ProgramType.RIC, ProgramState.STOPPED): [
+            (ProgramGroupIdentifier.RIC, ProgramState.STOPPED): [
                 ("Running", ProgramState.INITIALIZING)
             ],
-            (ProgramType.RIC, ProgramState.INITIALIZING): [
+            (ProgramGroupIdentifier.RIC, ProgramState.INITIALIZING): [
                 ("RMR is ready now ...", ProgramState.RUNNING)
             ],
 

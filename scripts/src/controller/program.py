@@ -2,14 +2,7 @@ import subprocess
 from typing import List, Optional
 
 from controller.program_state_monitor import ProgramStateMonitor, ProgramState
-from model.setup_configuration import SetupConfiguration
-from model.utils_config import ProgramType
-
-RESTART_TIMEOUT_RIC_IN_S = 30
-RESTART_TIMEOUT_CORE_IN_S = 30
-RESTART_TIMEOUT_GNB_IN_S = 30
-RESTART_TIMEOUT_UE_IN_S = 30
-
+from model.demo_config import DemoProgram
 
 class Program:
     """
@@ -18,37 +11,26 @@ class Program:
     single external command with its own working directory.
     """
 
-    def __init__(self, name: str, command: List[str], working_dir: str, program_type: ProgramType,
-                 setup_cfg: SetupConfiguration,
+    def __init__(self, program : DemoProgram, restart_timeout : int, num_restarts : int,
                  enable_program_state_checker: Optional[bool] = False):
         """
         Initialize a Program instance.
 
-        @param name        A human-readable identifier for the program.
-        @param command     The command to execute, as a list of arguments
-                           (e.g., ["python3", "app.py"]).
-        @param working_dir The directory in which the command will be run.
+        @param program     Dataclass containing data such as program name, command and parameters or starting priority
+        @param restart_timeout      In seconds: If the program does not indicate success
+                                    (conditions defined in program dataclass) within this timeframe, restart
+        @param num_restarts         Number of times a restart is attempted
+        @param enable_program_state_checker TODO!
         """
         self._reader_thread = None
         self._reader_running = None
-        self.name = name
-        self.command = command
+        self.name = program.name
+        self.command = program.command
         self.process: subprocess.Popen | None = None
-        self.working_dir: str = working_dir
-
-        restart_timeout = 0
-        if program_type == ProgramType.RIC:
-            restart_timeout = RESTART_TIMEOUT_RIC_IN_S
-        elif program_type == ProgramType.CORE:
-            restart_timeout = RESTART_TIMEOUT_CORE_IN_S
-        elif program_type == ProgramType.GNB:
-            restart_timeout = RESTART_TIMEOUT_GNB_IN_S
-        elif program_type == ProgramType.UE:
-            restart_timeout = RESTART_TIMEOUT_UE_IN_S
+        self.working_dir: str = program.working_directory
 
         self._program_state_checker: ProgramStateMonitor = \
-            (ProgramStateMonitor(program_type=program_type,
-                                 setup_config=setup_cfg,
+            (ProgramStateMonitor(setup_config=setup_cfg,
                                  restart_timeout_in_s=restart_timeout) if enable_program_state_checker else None)
 
     def get_current_state(self) -> ProgramState:
