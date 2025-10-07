@@ -10,7 +10,7 @@ class ParsingUtils:
         if GeneralIdentifiers.BUILD_TYPE in params:
             if params[GeneralIdentifiers.BUILD_TYPE] == 'docker':
                 return BuildType.DOCKER
-            elif params[GeneralIdentifiers.BUILD_TYPE] == 'local':
+            elif params[GeneralIdentifiers.BUILD_TYPE] == 'native':
                 return BuildType.NATIVE
             else:
                 raise ValueError(f"Unsupported build type: {params[GeneralIdentifiers.BUILD_TYPE]}")

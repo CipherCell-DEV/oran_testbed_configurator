@@ -57,3 +57,7 @@ class FolderManager:
             logging.info(f"Log directory created at {setup_cfg.environment.log_dir}")
         else:
             logging.warning("Log directory not specified in configuration.")
+
+    @staticmethod
+    def create_native_build_folder(build_dir: str, project_folder: str):
+        os.makedirs(os.path.join(build_dir, project_folder, 'build'), exist_ok=True)

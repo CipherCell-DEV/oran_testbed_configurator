@@ -75,11 +75,12 @@ class NearRTRICPatcher(SinglePatcherBase):
         super().copy_helper([[self._patch_file_path, "templates", "docker"] for _ in docker_files], docker_files,
                             dst_file_paths, ["Dockerfile" for _ in docker_files])
 
-    def _patch_oran_sc(self):
+    def _patch_oran_sc(self) -> dict:
         if self._setup_cfg.near_rt_ric.build_type == BuildType.DOCKER:
             return self.patch_docker_compose()
         else:
-            logging.warning("Native build patching for ORAN SC RIC is not implemented yet.")
+            logging.error("Native build patching for ORAN SC RIC is not implemented yet.")
+            exit(0)
 
     def patch_env_file(self, env_dict: dict) -> dict:
 

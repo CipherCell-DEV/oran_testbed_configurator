@@ -24,7 +24,7 @@ WORKDIR /app
 COPY . .
 
 # Build gNB
-RUN rm -rf build && mkdir build && cd build && cmake .. \
+RUN rm -rf build_docker && mkdir build_docker && cd build_docker && cmake .. \
     -DENABLE_UHD=OFF \
     -DENABLE_ARMPL=OFF \
     -DENABLE_EXPORT=ON \
@@ -33,4 +33,4 @@ RUN rm -rf build && mkdir build && cd build && cmake .. \
     && make -j"$(nproc)"
 
 # Default command to start gNB
-CMD ["./build/apps/gnb/gnb", "-c", "./configs/gnb_zmq.yaml"]
+CMD ["./build_docker/apps/gnb/gnb", "-c", "./configs/gnb_zmq.yaml"]

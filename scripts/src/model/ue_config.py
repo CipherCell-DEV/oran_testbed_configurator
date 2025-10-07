@@ -121,3 +121,8 @@ class DefaultValuesUE:
     DEFAULT_UE_NETNS = "ue1"
     DEFAULT_UE_GW_DEVNAME = "tun_srsue"
     DEFAULT_SRATE = DefaultValuesGNB.DEFAULT_SRATE
+
+
+SRSRAN_4G_UE_DEPENDENCIES_LINUX = ['build-essential', 'cmake', 'pkg-config', 'libfftw3-dev',
+                                   'libzmq3-dev', 'libmbedtls-dev', 'libsoapysdr-dev', 'soapysdr-tools',
+                                   'libboost-all-dev', 'libsctp-dev', 'lksctp-tools', 'libconfig++-dev', 'iproute2']

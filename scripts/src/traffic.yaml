@@ -1,5 +1,0 @@
-traffic:
-  periodic:
-    size: 50000
-    interval: 100ms
-    duration: 5s
