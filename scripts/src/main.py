@@ -13,7 +13,7 @@ from model.dialog_cfg import DialogConfig
 from model.setup_configuration import SetupConfiguration
 from model.utils_config import FILE_DIR, DEFAULT_CFG_FILE
 
-from controller.build_runner import BuildRunner
+from controller.builder.build_runner import BuildRunner
 from controller.parser.config_parser import ConfigParser
 from controller.demo_runner import DemoRunner
 from controller.patcher.firmware_patcher import FirmwarePatcher
@@ -109,13 +109,13 @@ if __name__ == "__main__":
         success, images_to_push = patch_firmware(config, dialog_cfg)
         if not success:
             logging.error("Could not patch firmware! -> Exit program")
-            exit(0)
+            exit(1)
 
-    firmware_build_success = True
-    if cmd_line_cfg.enable_build:
-        firmware_build_success = build_firmware(config, dialog_cfg, images_to_push)
-        if not firmware_build_success:
-            logging.error("Exit Program!")
+        firmware_build_success = True
+        if cmd_line_cfg.enable_build:
+            firmware_build_success = build_firmware(config, dialog_cfg, images_to_push)
+            if not firmware_build_success:
+                logging.error("Failed to build firmware! -> Exit Program!")
 
-    if firmware_build_success and cmd_line_cfg.run_demo:
-        run_demo(config)
+        if firmware_build_success and cmd_line_cfg.run_demo:
+            run_demo(config)

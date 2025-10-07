@@ -46,7 +46,7 @@ class ComponentCheckoutManager:
 
         if self._setup_cfg.near_rt_ric.implementation == RICImplementation.FLEX_RIC:
             logging.error(f"Flex-RIC currently not supported")
-            exit(0)
+            exit(1)
 
     def checkout_5g_core(self):
         if self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
@@ -57,7 +57,7 @@ class ComponentCheckoutManager:
                                    commit=self._setup_cfg.core_5g.commit)
         else:
             logging.error(f"Other 5G Core implementations currently not supported")
-            exit(0)
+            exit(1)
 
     def checkout_gnb(self):
         if self._setup_cfg.gnb.implementation == GNBImplementation.SRS:
@@ -65,7 +65,7 @@ class ComponentCheckoutManager:
                                    commit=self._setup_cfg.gnb.commit)
         else:
             logging.error(f"Other gnB implementations currently not supported")
-            exit(0)
+            exit(1)
 
     def checkout_ue(self):
         for ue in self._setup_cfg.ue:
@@ -74,4 +74,4 @@ class ComponentCheckoutManager:
                                        commit=ue.commit)
             else:
                 logging.error(f"Other UE implementations currently not supported")
-                exit(0)
+                exit(1)

@@ -57,3 +57,8 @@ class DefaultValuesGNB:
     DEFAULT_SRATE = 11.52e6
     TX_GAIN = 75
     RX_GAIN = 75
+
+
+SRSRAN_GNB_DEPENDENCIES_LINUX = ['build-essential', 'cmake', 'libdw-dev', 'binutils-dev', 'libdwarf-dev', 'libelf-dev',
+                                 'pkg-config', 'libfftw3-dev', 'libyaml-cpp-dev', 'libmbedtls-dev', 'libsctp-dev',
+                                 'libzmq3-dev', 'libzmq5']
