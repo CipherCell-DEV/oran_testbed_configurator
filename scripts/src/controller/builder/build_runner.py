@@ -184,8 +184,8 @@ class BuildRunner:
                 logging.error("UE cannot be natively built on Windows. Please select Docker as build type!")
                 return False
 
+            logging.warning(f"Install dependencies globally: {dependencies}")
             for command in commands:
-                logging.warning(f"Install dependencies globally: {dependencies}")
                 if not BuildRunner._command_helper(self.setup_cfg.environment.build_dir, "srsUE dependencies",
                                                    command, log_file, log_path):
                     logging.error(f"srsUE dependencies installation failed. See %s for details.", log_path)

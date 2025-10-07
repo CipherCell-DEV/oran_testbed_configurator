@@ -24,7 +24,7 @@ WORKDIR /app
 COPY . .
 
 # Build gNB
-RUN rm -rf build && mkdir build && cd build && cmake .. \
+RUN rm -rf build_docker && mkdir build_docker && cd build_docker && cmake .. \
     -DENABLE_UHD=OFF \
     -DENABLE_ARMPL=OFF \
     -DENABLE_EXPORT=ON \
