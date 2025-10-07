@@ -109,7 +109,7 @@ if __name__ == "__main__":
         success, images_to_push = patch_firmware(config, dialog_cfg)
         if not success:
             logging.error("Could not patch firmware! -> Exit program")
-            exit(0)
+            exit(1)
 
         firmware_build_success = True
         if cmd_line_cfg.enable_build:

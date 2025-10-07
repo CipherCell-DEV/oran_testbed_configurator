@@ -27,14 +27,14 @@ class Core5GPatcher(SinglePatcherBase):
             return self.patch_docker_compose()
         else:
             logging.error("Native build patching for srsRAN 5G core is not implemented yet. -> Exit Program")
-            exit(0)
+            exit(1)
 
     def patch_docker_compose(self):
         if self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
             return self._open5gs_5gc_patch_docker_compose()
         else:
             logging.error("Unsupported 5G core implementation for docker patching.")
-            exit(0)
+            exit(1)
 
     def patch_env_file(self, env_dict: dict) -> dict:
         if self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:

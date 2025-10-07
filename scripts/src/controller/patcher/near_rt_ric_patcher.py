@@ -80,7 +80,7 @@ class NearRTRICPatcher(SinglePatcherBase):
             return self.patch_docker_compose()
         else:
             logging.error("Native build patching for ORAN SC RIC is not implemented yet.")
-            exit(0)
+            exit(1)
 
     def patch_env_file(self, env_dict: dict) -> dict:
 
