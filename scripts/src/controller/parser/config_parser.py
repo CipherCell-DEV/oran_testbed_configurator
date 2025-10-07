@@ -8,7 +8,7 @@ from controller.parser.core_5g_config_parser import Core5GConfigParser
 from controller.parser.gnb_config_parser import GNBConfigParser
 from controller.parser.near_rt_ric_config_parser import NearRTRICConfigParser
 from controller.parser.ue_config_parser import UEConfigParser
-from demo_config import DemoCfg
+from model.demo_config import DemoCfg
 from model.setup_configuration import EnvironmentCfg, SetupConfiguration, \
     ComponentIdentifiers
 from model.utils_config import FILE_DIR

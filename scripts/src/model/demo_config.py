@@ -100,12 +100,6 @@ class DemoCfg:
         return retstr
 
 
-    def _check_file_name(self):
-        if self.config_file_name is None:
-            logging.error("DemoConfig: file_name is None")
-            exit(1)
-
-
     def _check_program_name(self):
         all_program_names = [str]
         for group in self.program_groups:
@@ -120,7 +114,7 @@ class DemoCfg:
 
 
     def _check_sequence(self):
-        all_program_start_numbers = [int]
+        all_program_start_numbers = []
         for group in self.program_groups:
             for program in group.programs:
                 if program.starting_order is None:
@@ -136,6 +130,5 @@ class DemoCfg:
             exit(1)
 
     def check_validity(self):
-        self._check_file_name()
         self._check_program_name()
         self._check_sequence()

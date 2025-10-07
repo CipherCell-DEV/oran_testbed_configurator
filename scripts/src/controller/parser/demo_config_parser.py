@@ -1,9 +1,7 @@
 import logging
 
-import program
-from demo_config import DemoAttributeIdentifier, OutputMode, DemoProgramGroup, ProgramGroupIdentifier, \
-    ProgramAttributeIdentifier, ProgramGroupAttributeIdentifier, DemoProgram
-from model.demo_config import DemoCfg
+from model.demo_config import DemoAttributeIdentifier, OutputMode, DemoProgramGroup, ProgramGroupIdentifier, \
+    ProgramAttributeIdentifier, ProgramGroupAttributeIdentifier, DemoProgram, DemoCfg
 
 
 class DemoConfigParser:
@@ -45,7 +43,9 @@ class DemoConfigParser:
             else:
                 logging.error(f"Program {demo_p.name} has no associated command!")
                 exit(1)
-            demo_p.success_indication.extend(config_entry[ProgramAttributeIdentifier.SUCCESS_INDICATION.value])
+            if config_entry[ProgramAttributeIdentifier.SUCCESS_INDICATION.value] is not None:
+                demo_p.success_indication.extend(config_entry[ProgramAttributeIdentifier.SUCCESS_INDICATION.value])
+
             group.programs.append(demo_p)
 
 
@@ -83,6 +83,6 @@ class DemoConfigParser:
         demo_cfg = DemoCfg()
         DemoConfigParser._parse_demo_output_mode(params, demo_cfg)
         DemoConfigParser._parse_demo_program_group(params, demo_cfg, default_working_dir)
-
+        demo_cfg.check_validity()
         return demo_cfg
 

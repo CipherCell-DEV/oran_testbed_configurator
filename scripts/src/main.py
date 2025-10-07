@@ -1,7 +1,6 @@
 import logging
 import sys
 import pathlib
-from typing import List
 
 from controller.component_checkout_manager import ComponentCheckoutManager
 
