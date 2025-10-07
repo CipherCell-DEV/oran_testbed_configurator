@@ -15,7 +15,7 @@ class UENativeBuilder(NativeBuilderBase):
         super().__init__(setup_cfg)
         self._ue = ue
 
-    def build(self):
+    def build(self) -> bool:
         logging.info(f"Building UE ({self._ue.name}) native...")
         build_commands, working_dir, dependencies = self.get_implementation_specific_config()
         if not build_commands:

@@ -14,7 +14,7 @@ class GNBNativeBuildRunner(NativeBuilderBase):
     def __init__(self, setup_cfg: SetupConfiguration):
         super().__init__(setup_cfg)
 
-    def build(self):
+    def build(self) -> bool:
         logging.info(f"Building gNB native...")
         build_commands, working_dir, dependencies = self.get_implementation_specific_config()
         if not build_commands:

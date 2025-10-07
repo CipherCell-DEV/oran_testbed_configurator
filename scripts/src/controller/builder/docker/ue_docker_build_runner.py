@@ -11,7 +11,7 @@ class UEDockerBuildRunner(DockerBuilderBase):
         super().__init__(setup_cfg)
         self._ue = ue
 
-    def build(self):
+    def build(self) -> bool:
         logging.info("Building UE using Docker...")
         os.chdir(self.setup_cfg.environment.build_dir)
         return self.docker_compose_build_helper('ue', ["docker", "compose", "build", self._ue.name])

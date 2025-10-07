@@ -10,7 +10,7 @@ class NearRTRICNativeBuildRunner(NativeBuilderBase):
     def __init__(self, setup_cfg: SetupConfiguration):
         super().__init__(setup_cfg)
 
-    def build(self):
+    def build(self) -> bool:
         logging.error("Building Near-RT RIC natively is not supported at the moment.")
         return False
 

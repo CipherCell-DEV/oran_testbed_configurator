@@ -12,7 +12,7 @@ class DockerBuilderBase(BuilderBase, metaclass=ABCMeta):
         super().__init__(setup_cfg)
 
     @abstractmethod
-    def build(self):
+    def build(self) -> bool:
         pass
 
     def docker_compose_build_helper(self, component_name: str, command: List[str]):
