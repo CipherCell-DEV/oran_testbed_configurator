@@ -1,32 +1,40 @@
 FROM ubuntu:latest as base
 
-# Prevent interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 
-# Install dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Python dependencies
     python3-pip \
     python3-setuptools \
     python3-wheel \
+    python3-pymongo \
+    python3-click \
+    python3-iptables \
+    python3-pyroute2 \
+    # Build tools
     ninja-build \
     build-essential \
     cmake \
     meson \
     flex \
     bison \
+    # VCS tools
     git \
     mercurial \
+    # System utilities
     curl \
     gettext \
     gdb \
     sudo \
+    # Network tools
     iproute2 \
     iptables \
     iputils-ping \
     netcat-openbsd \
     iperf \
     iperf3 \
+    # Development libraries
     libsctp-dev \
     libgnutls28-dev \
     libgcrypt-dev \
@@ -42,30 +50,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libtalloc-dev \
     libpq-dev \
     libmysqlclient-dev \
-    python3-pymongo \
-    python3-click \
-    python3-iptables \
-    python3-pyroute2 \
-    && rm -rf /var/lib/apt/lists/*
-
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ENV PYTHONPATH=/app
-
-
-# Set working directory
 WORKDIR /app
-
-# Copy source code
 COPY . .
 
-# Build application
+# Build Open5GS 5gc
 RUN mkdir -p build \
     && meson build --prefix=$(pwd)/install \
     && ninja -C build \
     && ninja -C build install
 
-# Install freediameter
-
+# Install implementation of the diameter protocol
 RUN git clone https://github.com/open5gs/freeDiameter.git && \
     mkdir -p fDbuild && \
     cd fDbuild && \
@@ -78,9 +76,6 @@ FROM base AS open5gs
 
 WORKDIR /open5gs
 COPY config/open5gs-5gc.yml open5gs-5gc.yml.in
-# The wildcard for the subscriber_db.csv tries to copy "subscriber_db.csv" but will not fail if the file doesn't exist
 COPY config/open5gs_entrypoint.sh config/add_users.py config/setup_tun.py subscriber_db.cs[v] ./
-
-ENV PATH="${PATH}:/open5gs/build/tests/app/"
 
 ENTRYPOINT [ "./open5gs_entrypoint.sh" ]
