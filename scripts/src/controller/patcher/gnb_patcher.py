@@ -23,19 +23,20 @@ class GnbPatcher(SinglePatcherBase):
     def patch_config_file(self):
         patch_file_path = os.path.join(self._patch_file_path, "templates", "config", "gnb",
                                        str(self._setup_cfg.gnb.implementation.value), "gnb_zmq.yaml")
-        new_file_path = os.path.join(self._patch_file_path, "patched", "config", "gnb_zmq.yaml")
-
+        new_file_path = os.path.join(FolderManager.add_config_folder(self._patch_file_path, "gnb",
+                                                                     str(self._setup_cfg.gnb.implementation.value)),
+                                     "gnb_zmq.yaml")
         try:
             with open(patch_file_path, "r") as patch_file:
                 patch_content = yaml.safe_load(patch_file)
 
-                patch_content['cu_cp']['amf']['addr'] = f"{self._setup_cfg.core_5g.ip}"
+                patch_content['cu_cp']['amf']['addr'] = f"{self._setup_cfg.core_5g.network.ip}"
 
                 patch_content['cu_cp']['amf']['bind_addr'] = f"{self._setup_cfg.gnb.ip_config.cu_cp}"
 
                 patch_content['ru_sdr']['device_args'] = (
                     f"tx_port=tcp://0.0.0.0:2000,"
-                    f"rx_port=tcp://{self._setup_cfg.ue[0].ip}:2001,"  # TODO Allow multiple UEs
+                    f"rx_port=tcp://{self._setup_cfg.ue.ues[0].ip}:2001,"  # TODO Allow multiple UEs
                     f"base_srate={self._setup_cfg.gnb.srate}"
                 )
 
@@ -74,7 +75,7 @@ class GnbPatcher(SinglePatcherBase):
             raise
 
     def copy_config_files(self):
-        src_dirs = [[self._patch_file_path, "patched", "config"],
+        src_dirs = [[self._patch_file_path, "patched", "config", "gnb", self._setup_cfg.gnb.implementation.value],
                     [self._patch_file_path, "templates", "docker", "gnb", self._setup_cfg.gnb.implementation.value]]
         dest_dirs = [[self._setup_cfg.environment.build_dir, "srsRAN_Project", "configs"],
                      [self._setup_cfg.environment.build_dir, "srsRAN_Project", ]]

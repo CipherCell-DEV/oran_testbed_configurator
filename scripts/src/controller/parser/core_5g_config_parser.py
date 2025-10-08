@@ -2,10 +2,33 @@ import ipaddress
 import logging
 
 from controller.parser.parser_utils import ParsingUtils
-from model.core_config import Core5GCfg, CoreFieldIdentifiers, ALLOWED_IMPLEMENTATION_LIST
+from model.core_config import Core5GCfg, CoreFieldIdentifiers, ALLOWED_IMPLEMENTATION_LIST, Core5GNetworkCfg
 
 
 class Core5GConfigParser:
+
+    @staticmethod
+    def _parse_5g_network_config(params: dict) -> Core5GNetworkCfg:
+        if CoreFieldIdentifiers.NETWORK not in params:
+            raise KeyError(f"Missing required parameter for 5GC config: '{CoreFieldIdentifiers.NETWORK}'")
+
+        network_cfg = params[CoreFieldIdentifiers.NETWORK]
+        core_network = Core5GNetworkCfg()
+
+        field_map = {
+            "ip": (CoreFieldIdentifiers.CORE_IP, ipaddress.IPv4Address, "No IP address specified for 5G core"),
+            "subnet": (CoreFieldIdentifiers.SUBNET, ipaddress.IPv4Network, "No subnet specified for 5G core"),
+            "mongodb_ip": (CoreFieldIdentifiers.MONGO_DB_IP, ipaddress.IPv4Address,
+                           "No IP address specified for 5G core MongoDB")
+        }
+
+        for attr, (key, cast, err_msg) in field_map.items():
+            if key in network_cfg:
+                setattr(core_network, attr, cast(network_cfg[key]))
+            else:
+                raise KeyError(err_msg)
+
+        return core_network
 
     @staticmethod
     def parse_5g_cfg(params: dict) -> Core5GCfg:
@@ -17,19 +40,6 @@ class Core5GConfigParser:
         cfg.implementation = ParsingUtils.parse_implementation(params, ALLOWED_IMPLEMENTATION_LIST, '5g Core')
         cfg.commit = ParsingUtils.parse_commit(params, '5g Core')
 
-        if CoreFieldIdentifiers.IP_ADDR in params:
-            cfg.ip = ipaddress.IPv4Address(params[CoreFieldIdentifiers.IP_ADDR])
-        else:
-            raise KeyError(f"Missing required parameter for 5GC config: '{CoreFieldIdentifiers.IP_ADDR}'")
-
-        if CoreFieldIdentifiers.SUBNET in params:
-            cfg.network = ipaddress.IPv4Network(params[CoreFieldIdentifiers.SUBNET])
-        else:
-            raise KeyError(f"Missing required parameter for 5GC config: '{CoreFieldIdentifiers.SUBNET}'")
-
-        if cfg.ip not in cfg.network:
-            raise ValueError(
-                f"Configured IP '{cfg.ip}' is not inside the subnet '{cfg.network}'"
-            )
+        cfg.network = Core5GConfigParser._parse_5g_network_config(params)
 
         return cfg

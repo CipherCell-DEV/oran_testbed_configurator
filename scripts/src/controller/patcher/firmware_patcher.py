@@ -86,7 +86,7 @@ class FirmwarePatcher:
                     single_config["volumes"] = dict(core_config["volumes"])
 
             elif self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
-                logging.warning("Currently not supported")
+                logging.info("Patching standalone open5gs")
             else:
                 logging.error(
                     "Currently only SRS RAN is supported for 5G Core implementation."

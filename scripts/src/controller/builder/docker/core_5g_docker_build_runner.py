@@ -13,6 +13,8 @@ class Core5GDockerBuildRunner(DockerBuilderBase):
         os.chdir(self.setup_cfg.environment.build_dir)  # TODO is this necessary?
         if self.setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
             return self.docker_compose_build_helper('5gc', ["docker", "compose", "build", '5gc'])
+        if self.setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
+            return self.docker_compose_build_helper('5gc', ["docker", "compose", "build", '5gc', 'mongodb'])
         else:
             logging.error(
                 "The selected 5G Core implementation is not supported. Currently, only SRS 5G Core is supported.")

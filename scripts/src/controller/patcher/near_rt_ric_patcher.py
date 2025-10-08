@@ -75,11 +75,12 @@ class NearRTRICPatcher(SinglePatcherBase):
                 file in docker_files]
 
             super().copy_helper(
-                [[self._patch_file_path, "templates", "docker", "ric", str(self._setup_cfg.near_rt_ric.implementation.value)]
+                [[self._patch_file_path, "templates", "docker", "ric",
+                  str(self._setup_cfg.near_rt_ric.implementation.value)]
                  for _ in docker_files], docker_files,
                 dst_file_paths, ["Dockerfile" for _ in docker_files])
         else:
-            logging.error("{str(self._setup_cfg.near_rt_ric.implementation.value)} is not implemented yet.")
+            logging.error(f"{str(self._setup_cfg.near_rt_ric.implementation.value)} is not implemented yet.")
             exit(1)
 
     def _patch_oran_sc(self) -> dict:
