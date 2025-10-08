@@ -1,7 +1,7 @@
 import ipaddress
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
+from typing import Optional, List
 
 from model.gnb_config import DefaultValuesGNB
 from model.utils_config import BuildType
@@ -70,7 +70,7 @@ class USIMCfg:
 
 
 @dataclass
-class UECfg:
+class UEInstCfg:
     implementation: Optional[UEImplementation] = None
     commit: str = "latest"
     name: Optional[str] = None
@@ -89,6 +89,22 @@ class UECfg:
                 f"    ip={self.ip}, \n"
                 f"    srate={self.srate}, \n"
                 f"{self.usim}")
+
+
+@dataclass
+class UECfg:
+    ip_range: Optional[ipaddress.IPv4Address] = None
+    gateway: Optional[ipaddress.IPv4Network] = None
+    ues: List[UEInstCfg] = field(default_factory=list)
+
+    def __str__(self):
+        ues_str = "\n".join(f"  {ue}" for ue in self.ues) if self.ues else "  None"
+        return (
+            f"UECfg:\n"
+            f"    ip_range={self.ip_range}\n"
+            f"    gateway={self.gateway}\n"
+            f"    ues:\n{ues_str}"
+        )
 
 
 class USIMFieldIdentifiers:
@@ -116,6 +132,7 @@ class UEFieldIdentifiers:
     USIM = 'usim'
     USIM_FIELD_IDENTIFIERS = USIMFieldIdentifiers()
     GATEWAY_IDENTIFIERS = GatewayFieldIdentifiers()
+    IP_RANGE = 'ip_range'
 
 
 class DefaultValuesUE:

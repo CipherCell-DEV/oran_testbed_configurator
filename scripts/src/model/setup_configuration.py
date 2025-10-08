@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 from pprint import pformat
 from typing import List, Optional
 
@@ -39,12 +40,13 @@ class EnvironmentCfg:
                 f"    tag_appendix={self.tag_appendix}")
 
 
+@dataclass
 class SetupConfiguration:
     environment: Optional[EnvironmentCfg] = None
     near_rt_ric: Optional[NearRtRICCFG] = None
     core_5g: Optional[Core5GCfg] = None
     gnb: Optional[GNBCfg] = None
-    ue: List[UECfg] = []
+    ue: UECfg = field(default_factory=lambda: None)
 
     def __str__(self):
         return (f"SetupConfiguration: \n"
