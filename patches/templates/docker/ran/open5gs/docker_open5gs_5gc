@@ -1,0 +1,86 @@
+FROM ubuntu:latest as base
+
+# Prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+
+# Install dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-pip \
+    python3-setuptools \
+    python3-wheel \
+    ninja-build \
+    build-essential \
+    cmake \
+    meson \
+    flex \
+    bison \
+    git \
+    mercurial \
+    curl \
+    gettext \
+    gdb \
+    sudo \
+    iproute2 \
+    iptables \
+    iputils-ping \
+    netcat-openbsd \
+    iperf \
+    iperf3 \
+    libsctp-dev \
+    libgnutls28-dev \
+    libgcrypt-dev \
+    libssl-dev \
+    libidn11-dev \
+    libmongoc-dev \
+    libbson-dev \
+    libyaml-dev \
+    libnghttp2-dev \
+    libmicrohttpd-dev \
+    libcurl4-gnutls-dev \
+    libtins-dev \
+    libtalloc-dev \
+    libpq-dev \
+    libmysqlclient-dev \
+    python3-pymongo \
+    python3-click \
+    python3-iptables \
+    python3-pyroute2 \
+    && rm -rf /var/lib/apt/lists/*
+
+
+ENV PYTHONPATH=/app
+
+
+# Set working directory
+WORKDIR /app
+
+# Copy source code
+COPY . .
+
+# Build application
+RUN mkdir -p build \
+    && meson build --prefix=$(pwd)/install \
+    && ninja -C build \
+    && ninja -C build install
+
+# Install freediameter
+
+RUN git clone https://github.com/open5gs/freeDiameter.git && \
+    mkdir -p fDbuild && \
+    cd fDbuild && \
+    cmake ../freeDiameter && \
+    make -j"$(nproc)" && \
+    make install
+
+
+FROM base AS open5gs
+
+WORKDIR /open5gs
+COPY config/open5gs-5gc.yml open5gs-5gc.yml.in
+# The wildcard for the subscriber_db.csv tries to copy "subscriber_db.csv" but will not fail if the file doesn't exist
+COPY config/open5gs_entrypoint.sh config/add_users.py config/setup_tun.py subscriber_db.cs[v] ./
+
+ENV PATH="${PATH}:/open5gs/build/tests/app/"
+
+ENTRYPOINT [ "./open5gs_entrypoint.sh" ]
