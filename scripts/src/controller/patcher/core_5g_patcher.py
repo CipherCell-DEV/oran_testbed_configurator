@@ -188,8 +188,8 @@ class Core5GPatcher(SinglePatcherBase):
             dict: Merged dictionary with original env_dict and 5GC-specific variables.
         """
 
-        patch_file_path = os.path.join(FolderManager.add_config_folder(self._patch_file_path, "ran",
-                                                                       str(self._setup_cfg.core_5g.implementation.value)),
+        patch_file_path = os.path.join(self._patch_file_path, "templates", "config", "ran",
+                                       str(self._setup_cfg.core_5g.implementation.value),
                                        "5gc_srsran_env")
         env_dict_5gc = PatcherUtils.load_env_file_helper(patch_file_path)
 
