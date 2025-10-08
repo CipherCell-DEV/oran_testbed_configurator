@@ -21,7 +21,8 @@ class GnbPatcher(SinglePatcherBase):
         pass
 
     def patch_config_file(self):
-        patch_file_path = os.path.join(self._patch_file_path, "templates", "config", "gnb_zmq.yaml")
+        patch_file_path = os.path.join(self._patch_file_path, "templates", "config", "gnb",
+                                       str(self._setup_cfg.gnb.implementation.value), "gnb_zmq.yaml")
         new_file_path = os.path.join(self._patch_file_path, "patched", "config", "gnb_zmq.yaml")
 
         try:
@@ -60,7 +61,8 @@ class GnbPatcher(SinglePatcherBase):
     def patch_docker_compose(self) -> Optional[dict]:
         FolderManager.create_patch_folders(self._patch_file_path)
 
-        patch_file_path = os.path.join(self._patch_file_path, "templates", "docker", "docker_compose_gnb.yml")
+        patch_file_path = os.path.join(self._patch_file_path, "templates", "docker", "gnb",
+                                       str(self._setup_cfg.gnb.implementation.value), "docker_compose.yml")
         try:
             with open(patch_file_path, "r") as patch_file:
                 patch_content = yaml.safe_load(patch_file)
@@ -73,7 +75,7 @@ class GnbPatcher(SinglePatcherBase):
 
     def copy_config_files(self):
         src_dirs = [[self._patch_file_path, "patched", "config"],
-                    [self._patch_file_path, "templates", "docker"]]
+                    [self._patch_file_path, "templates", "docker", "gnb", self._setup_cfg.gnb.implementation.value]]
         dest_dirs = [[self._setup_cfg.environment.build_dir, "srsRAN_Project", "configs"],
                      [self._setup_cfg.environment.build_dir, "srsRAN_Project", ]]
         src_filenames = ["gnb_zmq.yaml", "dockerfile_gnb"]

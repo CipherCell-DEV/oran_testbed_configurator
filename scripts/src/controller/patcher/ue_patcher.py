@@ -22,7 +22,9 @@ class UEPatcher(SinglePatcherBase):
         pass
 
     def patch_config_file(self):
-        template_path = os.path.join(self._patch_file_path, "templates", "config")
+        # TODO support multiple UE implementations
+        template_path = os.path.join(self._patch_file_path, "templates", "config", "ue",
+                                     str(self._setup_cfg.ue[0].implementation.value))
         env = Environment(loader=FileSystemLoader(template_path))
         template = env.get_template("ue_config.ini.j2")
 
@@ -67,9 +69,11 @@ class UEPatcher(SinglePatcherBase):
     def copy_config_files(self):
         # Source Paths
         config_paths = [[self._patch_file_path, "patched", "config"] for _ in self._setup_cfg.ue]
+
+        # TODO solve multiple UEs with different implementations
         template_paths = [
-            [self._patch_file_path, "templates", "docker"],
-            [self._patch_file_path, "templates", "config"]
+            [self._patch_file_path, "templates", "docker", "ue", str(self._setup_cfg.ue[0].implementation.value)],
+            [self._patch_file_path, "templates", "config", "ue", str(self._setup_cfg.ue[0].implementation.value)]
         ]
         paths_src = config_paths + template_paths
 

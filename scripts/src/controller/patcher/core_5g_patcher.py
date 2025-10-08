@@ -51,7 +51,8 @@ class Core5GPatcher(SinglePatcherBase):
         Patch the docker-compose file for Open5GS 5G core with custom IP addresses and subnet.
         """
         FolderManager.create_patch_folders(self._patch_file_path)
-        patch_file_path = os.path.join(self._patch_file_path, "templates", "docker", "srs_ran_5gc.yml")
+        patch_file_path = os.path.join(self._patch_file_path, "templates", "docker", "ran",
+                                       str(self._setup_cfg.core_5g.implementation.value), "srs_ran_5gc.yml")
 
         def str_presenter(dumper, data):
             return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='"')
@@ -95,7 +96,9 @@ class Core5GPatcher(SinglePatcherBase):
             dict: Merged dictionary with original env_dict and 5GC-specific variables.
         """
 
-        patch_file_path = os.path.join(self._patch_file_path, "templates", "config", "5gc_srsran_env")
+        patch_file_path = os.path.join(self._patch_file_path, "templates", "config", "ran",
+                                       str(self._setup_cfg.core_5g.implementation.value),
+                                       "5gc_srsran_env")
         env_dict_5gc = PatcherUtils.load_env_file_helper(patch_file_path)
 
         # Check if there are any UEs

@@ -6,10 +6,11 @@ from model.utils_config import BuildType
 
 
 class RICImplementation(Enum):
-    ORAN_SC_RIC = 0
-    FLEX_RIC = 1
+    ORAN_SC_RIC = "oran_sc_ric"
+    FLEX_RIC = "flex_ric"
 
 
+# TODO harmonize identifier names
 ALLOWED_IMPLEMENTATION_LIST = {'oran-sc-ric': RICImplementation.ORAN_SC_RIC, 'flex-ric': RICImplementation.FLEX_RIC}
 
 
@@ -71,7 +72,7 @@ class NearRtRICCFG:
     def __str__(self):
         return (f"NearRtRICCFG: \n"
                 f"    implementation={self.implementation}, \n"
-                f"    commit={self.commit}, \n" 
+                f"    commit={self.commit}, \n"
                 f"    release={self.release}, \n"
                 f"    build_type={self.build_type}, \n"
                 f"{self.ip_config}")

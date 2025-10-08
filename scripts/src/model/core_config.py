@@ -6,10 +6,10 @@ from model.utils_config import BuildType
 
 
 class CoreImplementation(Enum):
-    OPEN5GS = 0
-    OPEN5GS_SRS = 1
+    OPEN5GS = "open5gs"
+    OPEN5GS_SRS = "open5gs_srs"
 
-
+# TODO single enum
 ALLOWED_IMPLEMENTATION_LIST = {'Open5GS': CoreImplementation.OPEN5GS, 'Open5GS_SRS': CoreImplementation.OPEN5GS_SRS}
 
 

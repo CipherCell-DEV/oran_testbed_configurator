@@ -8,9 +8,10 @@ from model.utils_config import BuildType
 
 
 class UEImplementation(Enum):
-    SRS_4G = 0
+    SRS_4G = 'srs_4g'
 
 
+# TODO harmonize identifier names
 ALLOWED_IMPLEMENTATION_LIST = {'srs': UEImplementation.SRS_4G}
 
 
