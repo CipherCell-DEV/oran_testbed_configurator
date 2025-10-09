@@ -48,7 +48,7 @@ class USIMCfg:
     algo: Optional[USIMAlgo] = None
     opc: Optional[str] = None
     opc_value: Optional[str] = None
-    k: Optional[str] = None
+    key: Optional[str] = None
     k2: Optional[str] = None
     k3: Optional[str] = None
     imsi: Optional[str] = None
@@ -61,7 +61,7 @@ class USIMCfg:
                 f"    algo={self.algo}, \n"
                 f"    opc={self.opc}, \n"
                 f"    opc_value={self.opc_value}, \n"
-                f"    k={self.k}, \n"
+                f"    key={self.k}, \n"
                 f"    k2={self.k2}, \n"
                 f"    k3={self.k3}, \n"
                 f"    imsi={self.imsi}, \n"
@@ -111,7 +111,7 @@ class USIMFieldIdentifiers:
     MODE = "mode"
     ALGO = 'algo'
     OPC = 'opc'
-    KEY = 'k'
+    KEY = 'key'
     IMSI = 'imsi'
     IMEI = 'imei'
 

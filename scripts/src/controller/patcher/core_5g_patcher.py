@@ -53,7 +53,7 @@ class Core5GPatcher(SinglePatcherBase):
                 "ip_range": self._setup_cfg.ue.ip_range,
                 "gateway": self._setup_cfg.ue.gateway,
                 "imsi": self._setup_cfg.ue.ues[0].usim.imsi,
-                "key": self._setup_cfg.ue.ues[0].usim.k,
+                "key": self._setup_cfg.ue.ues[0].usim.key,
                 "opc": self._setup_cfg.ue.ues[0].usim.opc,
                 "ip": self._setup_cfg.ue.ues[0].ip
             },
