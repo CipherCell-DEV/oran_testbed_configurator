@@ -58,7 +58,7 @@ class DemoRunner:
         if self._cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
             self._program_pool.update({'5g_core': Program(working_dir=self._cfg.environment.build_dir,
                                                           name="5G-core",
-                                                          command=["docker", "compose", "up", "5gc"],
+                                                          command=["docker", "compose", "up", "5gc", "grafana"],
                                                           setup_cfg=self._cfg,
                                                           program_type=ProgramType.CORE,
                                                           enable_program_state_checker=True)})

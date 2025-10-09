@@ -1,13 +1,14 @@
 ## Telegraf
 
+WS_URL=gnb:8001
 TELEGRAF_VERSION=1.35.0
 TELEGRAF_LISTENER_PORT=4000
 TELEGRAF_INPUT_INTERVAL=1s
 TELEGRAF_OUTPUT_INTERVAL=1s
 TELEGRAF_BUFFER_LIMIT=10000
-# TELEGRAF_QUIET=false
-# TELEGRAF_DEBUG=true
-# TELEGRAF_LOG_FILE=/var/log/telegraf.log
+TELEGRAF_QUIET=false
+TELEGRAF_DEBUG=true
+TELEGRAF_LOG_FILE=/var/log/telegraf.log
 # TELEGRAF_DUMP_FILE=/var/log/telegraf/metrics.txt
 # TELEGRAF_LOAD_FILE=/etc/telegraf/metrics.txt
 # TELEGRAF_CLI_EXTRA_ARGS=--config /etc/telegraf/dump_metrics.conf
@@ -24,7 +25,7 @@ INFLUXDB3_EXTERNAL_URL=http://influxdb:${INFLUXDB3_PORT}
 INFLUXDB3_AUTH_TOKEN=fake-token-1234567890abcdef
 INFLUXDB3_BUCKET=srsran
 INFLUXDB3_TESTBED=default
-INFLUXDB3_LOG_LEVEL=error
+INFLUXDB3_LOG_LEVEL=debug
 INFLUXDB3_RATE_LIMIT=0
 INFLUXDB3_RATE_LIMIT_PERIOD=0s
 
@@ -34,7 +35,7 @@ INFLUXDB3_AUTH_TOKEN_FILE=/run/secrets/token
 
 GF_VERSION=12.0.2
 GF_PORT=3000
-GF_LOGO_URL=https://raw.githubusercontent.com/srsran/srsRAN_Project_docs/main/docs/source/.imgs/logo.png
+GF_LOGO_URL=https://ciphercell.de/images/cc_logo.png
 
 GF_AUTH_ANONYMOUS_ENABLED=true
 GF_LOG_LEVEL=warning
