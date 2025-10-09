@@ -6,7 +6,7 @@ from model.gnb_config import GNBCfg
 from model.ric_config import NearRtRICCFG
 from model.ue_config import UECfg
 from model.utils_config import LogLevel
-from model.demo_config import DemoCfg
+from model.program_descr_config import DemoCfg
 
 
 class ComponentIdentifiers:

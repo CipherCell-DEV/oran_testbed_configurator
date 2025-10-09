@@ -3,10 +3,10 @@ import threading
 import time
 from typing import Dict, Tuple, List
 
-from demo_config import DemoProgramGroup, ProgramGroupIdentifier
+from program_descr_config import DemoProgramGroup, ProgramGroupIdentifier
 from model.utils_config import ProgramState
 from model.setup_configuration import SetupConfiguration
-from model.demo_config import DemoProgram
+from model.program_descr_config import DemoProgram
 
 WATCHDOG_JOIN_TIMEOUT_IN_S = 5
 DEFAULT_RESTART_TIMEOUT_IN_S = 10

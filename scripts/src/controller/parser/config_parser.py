@@ -3,12 +3,12 @@ import os
 
 import yaml
 
-from controller.parser.demo_config_parser import DemoConfigParser
+from controller.parser.program_config_parser import DemoConfigParser
 from controller.parser.core_5g_config_parser import Core5GConfigParser
 from controller.parser.gnb_config_parser import GNBConfigParser
 from controller.parser.near_rt_ric_config_parser import NearRTRICConfigParser
 from controller.parser.ue_config_parser import UEConfigParser
-from model.demo_config import DemoCfg
+from model.program_descr_config import ProgramDescriptionCfg
 from model.setup_configuration import EnvironmentCfg, SetupConfiguration, \
     ComponentIdentifiers
 from model.utils_config import FILE_DIR
@@ -80,7 +80,7 @@ class ConfigParser:
         return setup_config
 
     @staticmethod
-    def parse_demo_setup_config(file_path: str, env_build_path: str) -> DemoCfg:
+    def parse_program_setup_config(file_path: str, env_build_path: str) -> ProgramDescriptionCfg:
         """Parses the yaml demo file, which lists a set of programs to be executed.
         Each program may have a specified working directory.
         In case the working directory is not specified, the environment build path is used instead.

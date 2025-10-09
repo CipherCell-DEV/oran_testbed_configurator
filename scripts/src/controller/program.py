@@ -2,7 +2,7 @@ import subprocess
 from typing import List, Optional
 
 from controller.program_state_monitor import ProgramStateMonitor, ProgramState
-from model.demo_config import DemoProgram
+from model.program_descr_config import DemoProgram
 
 class Program:
     """
