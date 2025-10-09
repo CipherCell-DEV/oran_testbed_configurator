@@ -21,33 +21,40 @@ near_rt_ric:
       rtmgr_sim_ip: 10.0.2.15
       xapp_runner_ip: 10.0.2.20
 
+    #implementation: "Open5GS"
+    #commit: "2b6369e9d997eb8eb158e3803e3ae4f4d207cd4d"
 5gc:
     implementation: "Open5GS_SRS"
     commit: "11c9bbabb69873752500d676f55e0034f6caa5c5"
     build_type: "docker"
-    ip_addr: 10.53.1.2
-    subnet: 10.53.1.0/24
+    network:
+      5gc_ip: 10.53.1.2
+      mongo_db_ip: 10.53.1.5
+      subnet: 10.53.1.0/24
 
 ue:
+  ip_range: 10.45.0.0/24
+  gateway: 10.45.0.1
+  ues:
     - ue:
-      implementation: "srs"
-      commit: "ec29b0c1ff79cebcbe66caa6d6b90778261c42b8"
-      name: "ue1"
-      build_type: "docker"
-      ue_type: "srsUE"
-      ip_addr: 10.45.1.2
-      srate: 11.52e6
-      usim:
-          mode: soft
-          algo: milenage
-          opc: 63BFA50EE6523365FF14C1F45F88737D
-          k: 00112233445566778899aabbccddeeff
-          imsi: 001010123456780
-          imei: 353490069873319
-      gateway:
-          netns: ue1
-          ip_devname: tun_srsue
-          ip_netmask: 255.255.255.0
+        implementation: "srs"
+        commit: "ec29b0c1ff79cebcbe66caa6d6b90778261c42b8"
+        name: "ue1"
+        build_type: "docker"
+        ue_type: "srsUE"
+        ip_addr: 10.45.1.2
+        srate: 11.52e6
+        usim:
+            mode: soft
+            algo: milenage
+            opc: 63BFA50EE6523365FF14C1F45F88737D
+            key: 00112233445566778899aabbccddeeff
+            imsi: 001010123456780
+            imei: 353490069873319
+        gateway:
+            netns: ue1
+            ip_devname: tun_srsue
+            ip_netmask: 255.255.255.0
 gnb:
   implementation: "srs"
   commit: "11c9bbabb69873752500d676f55e0034f6caa5c5"
