@@ -103,7 +103,7 @@ if __name__ == "__main__":
         config = ConfigParser.parse_config_file(DEFAULT_CFG_FILE)
 
     if cmd_line_cfg.run_demo:
-        demo_config = ConfigParser.parse_demo_setup_config(DEFAULT_DEMO_CFG_FILE, config.environment.build_dir)
+        demo_config = ConfigParser.parse_program_setup_config(DEFAULT_DEMO_CFG_FILE, config.environment.build_dir)
         config.demo_cfg = demo_config
 
     checkout_repositories(config)

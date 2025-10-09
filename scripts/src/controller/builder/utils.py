@@ -14,7 +14,7 @@ class BuildUtils:
         self.setup_cfg = setup_cfg
 
     def setup_logging(self, component_name: str) -> str:
-        FolderManager.create_log_dir(self.setup_cfg)
+        FolderManager.create_build_log_dir(self.setup_cfg)
         return os.path.join(self.setup_cfg.environment.log_dir, f"{component_name}.log")
 
     @staticmethod

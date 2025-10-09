@@ -3,7 +3,6 @@ import os
 
 import yaml
 
-from controller.parser.program_config_parser import DemoConfigParser
 from controller.parser.core_5g_config_parser import Core5GConfigParser
 from controller.parser.gnb_config_parser import GNBConfigParser
 from controller.parser.near_rt_ric_config_parser import NearRTRICConfigParser
@@ -12,6 +11,7 @@ from model.program_descr_config import ProgramDescriptionCfg
 from model.setup_configuration import EnvironmentCfg, SetupConfiguration, \
     ComponentIdentifiers
 from model.utils_config import FILE_DIR
+from parser.program_config_parser import ProgramConfigParser
 
 
 class ConfigParser:
@@ -87,7 +87,7 @@ class ConfigParser:
         """
         with open(file_path, "r") as f:
             parsed_config = yaml.safe_load(f)
-            demo_config = DemoConfigParser.parse_demo_cfg(parsed_config, env_build_path)
-            demo_config.config_file_name = os.path.basename(file_path)
-            demo_config.check_validity()
-            return demo_config
+            program_config = ProgramConfigParser.parse_program_cfg(file_path, parsed_config, env_build_path)
+            if not program_config.check_validity():
+                logging.error("Failed to validate program setup configuration")
+            return program_config

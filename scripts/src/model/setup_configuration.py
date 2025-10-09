@@ -6,7 +6,8 @@ from model.gnb_config import GNBCfg
 from model.ric_config import NearRtRICCFG
 from model.ue_config import UECfg
 from model.utils_config import LogLevel
-from model.program_descr_config import DemoCfg
+from model.program_descr_config import ProgramDescriptionCfg
+from parser.program_config_parser import ProgramConfigParser
 
 
 class ComponentIdentifiers:
@@ -45,7 +46,7 @@ class SetupConfiguration:
     near_rt_ric: Optional[NearRtRICCFG] = None
     core_5g: Optional[Core5GCfg] = None
     gnb: Optional[GNBCfg] = None
-    demo: Optional[DemoCfg] = None
+    programs: Optional[ProgramDescriptionCfg] = None
     ue: List[UECfg] = []
 
     def __str__(self):
@@ -54,5 +55,18 @@ class SetupConfiguration:
                 f"{self.near_rt_ric}, \n"
                 f"{self.core_5g}, \n"
                 f"{self.gnb}, \n"
+                f"{self.programs}, \n"
                 f"UECfgs: \n"
                 f"{pformat(self.ue, indent=4)}")
+
+
+    def verify_consistency(self) -> bool:
+        """
+        This project both manages building the ORAN component and running demo programs.
+        We need to make sure that the configuration is consistent across build related data
+        and the following program data.
+        Things to be checked:
+        # TODO: extend this
+        - The UE names must be consistent between the sample_configuration.yml and demo_configuration.yml files
+        """
+        return False

@@ -2,7 +2,7 @@ import subprocess
 from typing import List, Optional
 
 from controller.program_state_monitor import ProgramStateMonitor, ProgramState
-from model.program_descr_config import DemoProgram
+from model.program_descr_config import ProgramDescription
 
 class Program:
     """
@@ -11,7 +11,7 @@ class Program:
     single external command with its own working directory.
     """
 
-    def __init__(self, program : DemoProgram, restart_timeout : int, num_restarts : int,
+    def __init__(self, program : ProgramDescription, restart_timeout : int, num_restarts : int,
                  enable_program_state_checker: Optional[bool] = False):
         """
         Initialize a Program instance.
