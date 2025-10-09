@@ -83,7 +83,7 @@ def run_dialog() -> DialogConfig:
 
 def print_start_dialog():
     print("\n**************************************************")
-    print("*****    Starting CipherCell Configurator     *****")
+    print("*****    Starting CipherCell Configurator     ****")
     print("**************************************************\n")
 
 
