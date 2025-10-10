@@ -66,3 +66,36 @@ All components run in a fully Dockerized environment, ready for immediate experi
 ### Documentation
 
 Full setup and usage instructions are available in the [CipherCell Wiki](https://florianfrank.github.io/CipherCellWiki/docs/ciphercell_configurator/configurator-overview/).
+
+
+### Interface Monitoring
+
+The srsran gNB can generate `.pcap` files for various interfaces. 
+Those files are stored in the [log](logs/) directory, which is defined in the [setup configuration](scripts/config/sample_configuration.yml). Traffic logging can be de-/activated by modifying the `pcap` section the the [srsran gNB configuration file](repositories/srsRAN_Project/configs/gnb_zmq.yaml). 
+
+See the [official documantation](https://docs.srsran.com/projects/project/en/latest/user_manuals/source/config_ref.html) for further information.
+
+If you want to inspect the using wireshark you need to apply the following settings first (as described in the [official documentation](https://docs.srsran.com/projects/project/en/latest/user_manuals/source/outputs.html)). Make sure your installation of wireshark is up to date.
+
+#### Enable Protocols:
+- Analyze -> Enabled Protocols -> MAC-NR: mac_nr_udp
+- Edit->Preferences->Protocols->MAC-NR: Enable both checkboxes “Attempt to…”; Set LCID->DRB mapping to “From configuration protocol”
+
+- Analyze -> Enabled Protocols -> RLC-NR: rlc_nr_udp
+
+- Edit->Preferences->Protocols->NAS-5GS and enable “Try to detect and decode 5G-EA0 ciphered messages”.
+
+
+
+#### Set DLT_USER
+Go to Edit->Preferences->Protocols->DLT_USER->Edit and set the following values:
+
+| DLT | protocol |
+| --- | -------- |
+|149| udp |
+|152| ngap |
+|153| e1ap |
+|154| f1ap |
+|155| e2ap |
+|156| gtp |
+|157| mac-nr-framed |
