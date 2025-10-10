@@ -1,3 +1,5 @@
+import logging
+from logging import fatal
 from pprint import pformat
 from typing import List, Optional
 
@@ -8,6 +10,7 @@ from model.ue_config import UECfg
 from model.utils_config import LogLevel
 from model.program_descr_config import ProgramDescriptionCfg
 from parser.program_config_parser import ProgramConfigParser
+from program_descr_config import ProgramGroupIdentifier
 
 
 class ComponentIdentifiers:
@@ -69,4 +72,14 @@ class SetupConfiguration:
         # TODO: extend this
         - The UE names must be consistent between the sample_configuration.yml and demo_configuration.yml files
         """
-        return False
+        for group in self.programs.program_groups:
+            if group.group_type == ProgramGroupIdentifier.UE:
+                for program in group.programs:
+                    valid = False
+                    for ue_instance in self.ue:
+                        if ue_instance.name == program.name:
+                            valid = True
+                    if not valid:
+                        logging.error(f"{program.name} is not a valid UE name. Please check both build and program configurations")
+                        return False
+        return True

@@ -48,7 +48,7 @@ class DemoRunner:
                 logging.warning("No RIC will be started.")
             if len(rics) > 1:
                 logging.warning(f"Only one RIC is currently supported. Will only start program {rics[0].name}.")
-            self._program_pool.update({'ric': rics[0]})
+            self._program_pool.update({rics[0].name: rics[0]})
         else:
             raise KeyError(
                 f"Selected Near-RT RIC implementation '{self._cfg.near_rt_ric.implementation}' is not supported"
@@ -62,7 +62,7 @@ class DemoRunner:
                 logging.warning("No core will be started.")
             if len(cores) > 1:
                 logging.warning(f"Only one core is currently supported. Will only start program {cores[0].name}")
-            self._program_pool.update({'5g_core': cores[0]})
+            self._program_pool.update({cores[0].name: cores[0]})
         else:
             raise KeyError(
                 f"Selected 5G Core implementation '{self._cfg.core_5g.implementation}' is not supported"
@@ -76,7 +76,7 @@ class DemoRunner:
                 logging.warning("No gnb will be started.")
             if len(gnbs) > 1:
                 logging.warning(f"Only one gnb is currently supported. Will only start program {gnbs[0].name}")
-            self._program_pool.update({'gnb': gnbs[0]})
+            self._program_pool.update({gnbs[0].name: gnbs[0]})
         else:
             raise KeyError(
                 f"Selected gNB implementation '{self._cfg.gnb.implementation}' is not supported"
@@ -91,8 +91,6 @@ class DemoRunner:
                     logging.warning("No UEs will be started.")
                 if len(ue_programs) > 1:
                     logging.warning(f"About to start multiple UEs!")
-                if 'ue' not in self._program_pool:
-                    self._program_pool.update({'ue': []})
                 for program in ue_programs:
                     self._program_pool.update({program.name: program})
             else:
@@ -102,7 +100,9 @@ class DemoRunner:
 
 
     def _create_misc(self):
-        return
+        """All other programs are added without further restrictions"""
+        for program in self._cfg.programs.get_misc_programs():
+            self._program_pool.update({program.name: program})
 
     @property
     def cfg(self):

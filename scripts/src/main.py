@@ -105,6 +105,8 @@ if __name__ == "__main__":
     if cmd_line_cfg.run_demo:
         demo_config = ConfigParser.parse_program_setup_config(DEFAULT_DEMO_CFG_FILE, config.environment.build_dir)
         config.demo_cfg = demo_config
+        if not config.verify_consistency():
+            logging.error("Cannot run demo due to mismatching configuration!")
 
     checkout_repositories(config)
 
