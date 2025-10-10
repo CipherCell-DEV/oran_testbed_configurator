@@ -7,11 +7,15 @@ import yaml
 from controller.folder_manager import FolderManager
 from controller.patcher.patcher_utils import PatcherUtils
 from controller.patcher.single_patcher_base import SinglePatcherBase
+from dialog_cfg import DialogConfig
 from model.setup_configuration import SetupConfiguration
+from utils_config import BuildType
 
 
 class GnbPatcher(SinglePatcherBase):
-    def __init__(self, patch_file_path: str, setup_config: SetupConfiguration, patcher_utils: PatcherUtils):
+    def __init__(self, patch_file_path: str,
+                 setup_config: SetupConfiguration,
+                 patcher_utils: PatcherUtils):
         super().__init__(patch_file_path, setup_config, patcher_utils)
         self._patch_file_path = patch_file_path
         self._setup_cfg = setup_config
@@ -19,6 +23,7 @@ class GnbPatcher(SinglePatcherBase):
 
     def patch(self):
         pass
+
 
     def patch_config_file(self):
         patch_file_path = os.path.join(self._patch_file_path, "templates", "config", "gnb_zmq.yaml")
@@ -45,6 +50,21 @@ class GnbPatcher(SinglePatcherBase):
                 patch_content['e2']['bind_addr'] = f"{self._setup_cfg.gnb.ip_config.e2}"
                 patch_content['e2']['addr'] = f"{self._setup_cfg.near_rt_ric.ip_config.e2term_ip}"
 
+                pcap_i = "pcap"
+                if pcap_i in patch_content:
+                    for entry in patch_content[pcap_i]:
+                        if entry.__str__().endswith("_filename"):
+                            if self._setup_cfg.dialog.build_type.name == BuildType.DOCKER.name:
+                                # write files to docker volume
+                                log_file_path = os.path.join("/logs", "gnb")
+                                log_file_name = entry.split("_filename")[0] + ".pcap"
+                            else:
+                                # write files locally
+                                log_file_path = os.path.join(self._setup_cfg.environment.log_dir, "gnb")
+                                log_file_name = entry.split("_filename")[0] + ".pcap"
+                            log_file_path = os.path.join(log_file_path, log_file_name)
+                            patch_content[pcap_i][entry] = log_file_path
+
                 with open(new_file_path, "w") as new_file:
                     yaml.safe_dump(
                         patch_content,
@@ -66,6 +86,8 @@ class GnbPatcher(SinglePatcherBase):
                 patch_content = yaml.safe_load(patch_file)
                 patch_content["services"]["gnb"].update(
                     {"image": self._patcher_utils.replace_tag_and_image(patch_content["services"]["gnb"]["image"])})
+                log_file_path = os.path.join(self._setup_cfg.environment.log_dir, "gnb")
+                patch_content["volumes"]["gnb_interface_log"]["driver_opts"]["device"] = log_file_path
                 return patch_content
         except yaml.YAMLError as e:
             logging.error(f"Failed to parse YAML patch file: {e}")

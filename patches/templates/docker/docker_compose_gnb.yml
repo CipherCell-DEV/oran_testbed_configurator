@@ -23,8 +23,16 @@ services:
                 ipv4_address: 10.45.1.1 # gNB IP on internal network
         user: root
         command: ["./build_docker/apps/gnb/gnb", "-c", "./configs/gnb_zmq.yaml"]
-        # volumes:
-        #   - ./srsRAN_Project/configs:/app/configs
+        volumes:
+            - gnb_interface_log:/logs/gnb
         stdin_open: true
         tty: true
         restart: unless-stopped
+        
+volumes:
+    gnb_interface_log:
+        driver: local
+        driver_opts:
+            type: 'none'
+            o: 'bind'
+            device: '/tmp/log/gnb' # replaced during patching
