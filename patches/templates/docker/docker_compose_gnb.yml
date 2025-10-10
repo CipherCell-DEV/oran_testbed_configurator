@@ -35,4 +35,4 @@ volumes:
         driver_opts:
             type: 'none'
             o: 'bind'
-            device: '/tmp/log/gnb' # relaced during patching
+            device: '/tmp/log/gnb' # replaced during patching
