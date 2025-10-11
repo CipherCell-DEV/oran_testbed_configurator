@@ -9,6 +9,8 @@ from controller.patcher.patcher_utils import PatcherUtils
 from controller.patcher.single_patcher_base import SinglePatcherBase
 from model.setup_configuration import SetupConfiguration
 
+from jinja2 import Environment, FileSystemLoader
+
 
 class GnbPatcher(SinglePatcherBase):
     def __init__(self, patch_file_path: str, setup_config: SetupConfiguration, patcher_utils: PatcherUtils):
@@ -21,43 +23,21 @@ class GnbPatcher(SinglePatcherBase):
         pass
 
     def patch_config_file(self):
-        patch_file_path = os.path.join(self._patch_file_path, "templates", "config", "gnb",
-                                       str(self._setup_cfg.gnb.implementation.value), "gnb_zmq.yaml")
+        template_path = os.path.join(self._patch_file_path, "templates", "config", "gnb",
+                                       str(self._setup_cfg.gnb.implementation.value))
         new_file_path = os.path.join(FolderManager.add_config_folder(self._patch_file_path, "gnb",
                                                                      str(self._setup_cfg.gnb.implementation.value)),
                                      "gnb_zmq.yaml")
-        try:
-            with open(patch_file_path, "r") as patch_file:
-                patch_content = yaml.safe_load(patch_file)
 
-                patch_content['cu_cp']['amf']['addr'] = f"{self._setup_cfg.core_5g.network.ip}"
-
-                patch_content['cu_cp']['amf']['bind_addr'] = f"{self._setup_cfg.gnb.ip_config.cu_cp}"
-
-                patch_content['ru_sdr']['device_args'] = (
-                    f"tx_port=tcp://0.0.0.0:2000,"
-                    f"rx_port=tcp://{self._setup_cfg.ue.ues[0].ip}:2001,"  # TODO Allow multiple UEs
-                    f"base_srate={self._setup_cfg.gnb.srate}"
-                )
-
-                patch_content['ru_sdr']['srate'] = float(self._setup_cfg.gnb.srate) / 1e6
-                patch_content['ru_sdr']['tx_gain'] = self._setup_cfg.gnb.tx_gain
-                patch_content['ru_sdr']['rx_gain'] = self._setup_cfg.gnb.rx_gain
-
-                patch_content['e2']['bind_addr'] = f"{self._setup_cfg.gnb.ip_config.e2}"
-                patch_content['e2']['addr'] = f"{self._setup_cfg.near_rt_ric.ip_config.e2term_ip}"
-
-                with open(new_file_path, "w") as new_file:
-                    yaml.safe_dump(
-                        patch_content,
-                        new_file,
-                        default_flow_style=False,
-                        sort_keys=False
-                    )
-
-        except yaml.YAMLError as e:
-            logging.error(f"Failed to parse YAML patch file: {e}")
-            raise
+        env = Environment(loader=FileSystemLoader(template_path))
+        template = env.get_template("gnb_zmq.ini.j2.yaml")
+        rendered = template.render(
+            core5g=self._setup_cfg.core_5g,
+            gnb=self._setup_cfg.gnb,
+            ue=self._setup_cfg.ue.ues[0]
+        )
+        with open(new_file_path, "w") as new_file:
+            new_file.write(rendered)
 
     def patch_docker_compose(self) -> Optional[dict]:
         FolderManager.create_patch_folders(self._patch_file_path)
