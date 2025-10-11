@@ -188,12 +188,10 @@ class Core5GPatcher(SinglePatcherBase):
             dict: Merged dictionary with original env_dict and 5GC-specific variables.
         """
 
-        patch_file_path = os.path.join(self._patch_file_path, "templates", "config", "ran",
-                                       str(self._setup_cfg.core_5g.implementation.value),
-                                       "5gc_srsran_env")
-        env_dict_5gc = PatcherUtils.load_env_file_helper(patch_file_path)
+        template_path = os.path.join(self._patch_file_path, "templates", "config", "ran",
+                                     str(self._setup_cfg.core_5g.implementation.value))
 
-        # Check if there are any UEs
+        env_dict_5gc = dict()
         if not self._setup_cfg.ue:
             raise ValueError("No UEs configured in setup configuration")
 
@@ -209,14 +207,19 @@ class Core5GPatcher(SinglePatcherBase):
 
             if i == 0:
                 base_ip = ip_parts
-                env_dict_5gc['UE_IP_BASE'] = f"{base_ip[0]}.{base_ip[1]}.{base_ip[2]}"
+                env = Environment(loader=FileSystemLoader(template_path))
+                template = env.get_template("5gc_srsran_env.ini.j2")
+                rendered = template.render(
+                    core5g=self._setup_cfg.core_5g,
+                    gnb=self._setup_cfg.gnb,
+                    ue={'ip_range': '.'.join(str(self._setup_cfg.ue.ip_range).split('/')[0].split('.')[:3])}
+                )
+                env_dict_5gc = PatcherUtils.load_env_file_str_helper(rendered.split('\n'))
             else:
                 if ip_parts[0] != base_ip[0] or ip_parts[1] != base_ip[1] or ip_parts[2] != base_ip[2]:
                     raise ValueError(
                         f"UE IP {ue.ip} does not match base IP prefix "
-                        f"{base_ip[0]}.{base_ip[1]}.{base_ip[2]}"
-                    )
-
+                        f"{base_ip[0]}.{base_ip[1]}.{base_ip[2]}")
         return env_dict | env_dict_5gc
 
     def copy_config_files(self):

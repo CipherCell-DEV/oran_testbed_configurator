@@ -94,7 +94,7 @@ class NearRTRICPatcher(SinglePatcherBase):
 
         patch_file_path = os.path.join(self._patch_file_path, "templates", "config", "ric",
                                        str(self._setup_cfg.near_rt_ric.implementation.value), "oran_sc_ric_env")
-        env_dict_oran_sc_ric = PatcherUtils.load_env_file_helper(patch_file_path)
+        env_dict_oran_sc_ric = PatcherUtils.load_env_file_str_helper(patch_file_path)
 
         if self._setup_cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC:
             env_dict_oran_sc_ric['SC_RIC_VERSION'] = f'{self._setup_cfg.near_rt_ric.release}-release'

@@ -30,7 +30,7 @@ class GnbPatcher(SinglePatcherBase):
                                      "gnb_zmq.yaml")
 
         env = Environment(loader=FileSystemLoader(template_path))
-        template = env.get_template("gnb_zmq.ini.j2.yaml")
+        template = env.get_template("gnb_zmq.ini.j2")
         rendered = template.render(
             core5g=self._setup_cfg.core_5g,
             gnb=self._setup_cfg.gnb,
