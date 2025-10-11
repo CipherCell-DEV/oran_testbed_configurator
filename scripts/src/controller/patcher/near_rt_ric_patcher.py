@@ -11,6 +11,8 @@ from model.ric_config import RICImplementation, ORAN_SC_RIC_SERVICE_IP_MAP
 from model.setup_configuration import SetupConfiguration
 from model.utils_config import BuildType
 
+from jinja2 import Environment, FileSystemLoader
+
 
 class NearRTRICPatcher(SinglePatcherBase):
 
@@ -91,21 +93,17 @@ class NearRTRICPatcher(SinglePatcherBase):
             exit(1)
 
     def patch_env_file(self, env_dict: dict) -> dict:
-
-        patch_file_path = os.path.join(self._patch_file_path, "templates", "config", "ric",
-                                       str(self._setup_cfg.near_rt_ric.implementation.value), "oran_sc_ric_env")
-        env_dict_oran_sc_ric = PatcherUtils.load_env_file_str_helper(patch_file_path)
-
         if self._setup_cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC:
-            env_dict_oran_sc_ric['SC_RIC_VERSION'] = f'{self._setup_cfg.near_rt_ric.release}-release'
-            env_dict_oran_sc_ric['SYSTEM_NAME'] = f'oran_sc_ric'
+            template_path = os.path.join(self._patch_file_path, "templates", "config", "ric",
+                                         str(self._setup_cfg.near_rt_ric.implementation.value), )
 
-            env_dict_oran_sc_ric['RIC_SUBNET'] = f'{self._setup_cfg.near_rt_ric.ip_config.subnet}'
-            env_dict_oran_sc_ric['E2TERM_IP'] = f'{self._setup_cfg.near_rt_ric.ip_config.e2term_ip}'
-            env_dict_oran_sc_ric['E2MGR_IP'] = f'{self._setup_cfg.near_rt_ric.ip_config.e2mgr_ip}'
-            env_dict_oran_sc_ric['DBAAS_IP'] = f'{self._setup_cfg.near_rt_ric.ip_config.dbaas_ip}'
-            env_dict_oran_sc_ric['SUBMGR_IP'] = f'{self._setup_cfg.near_rt_ric.ip_config.submgr_ip}'
-            env_dict_oran_sc_ric['APPMGR_IP'] = f'{self._setup_cfg.near_rt_ric.ip_config.appmgr_ip}'
-            env_dict_oran_sc_ric['RTMGR_SIM_IP'] = f'{self._setup_cfg.near_rt_ric.ip_config.rtmgr_sim_ip}'
-            env_dict_oran_sc_ric['XAPP_PY_RUNNER_IP'] = f'{self._setup_cfg.near_rt_ric.ip_config.xapp_runner_ip}'
+            env = Environment(loader=FileSystemLoader(template_path))
+            template = env.get_template("oran_sc_ric_env.ini.j2")
+            rendered = template.render(
+                near_rt_ric=self._setup_cfg.near_rt_ric)
+
+            env_dict_oran_sc_ric = PatcherUtils.load_env_file_str_helper(rendered.split('\n'))
+        else:
+            logging.error("Unsupported RIC Implementation")
+            exit(1)
         return env_dict | env_dict_oran_sc_ric
