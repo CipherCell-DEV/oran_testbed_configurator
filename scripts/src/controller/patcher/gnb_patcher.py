@@ -24,8 +24,8 @@ class GnbPatcher(SinglePatcherBase):
 
     def patch_config_file(self):
         template_path = os.path.join(self._patch_file_path, "templates", "config", "gnb",
-                                       str(self._setup_cfg.gnb.implementation.value))
-        new_file_path = os.path.join(FolderManager.add_config_folder(self._patch_file_path, "gnb",
+                                     str(self._setup_cfg.gnb.implementation.value))
+        patched_file = os.path.join(FolderManager.add_config_folder(self._patch_file_path, "gnb",
                                                                      str(self._setup_cfg.gnb.implementation.value)),
                                      "gnb_zmq.yaml")
 
@@ -36,23 +36,21 @@ class GnbPatcher(SinglePatcherBase):
             gnb=self._setup_cfg.gnb,
             ue=self._setup_cfg.ue.ues[0]
         )
-        with open(new_file_path, "w") as new_file:
+        with open(patched_file, "w") as new_file:
             new_file.write(rendered)
 
     def patch_docker_compose(self) -> Optional[dict]:
         FolderManager.create_patch_folders(self._patch_file_path)
 
-        patch_file_path = os.path.join(self._patch_file_path, "templates", "docker", "gnb",
-                                       str(self._setup_cfg.gnb.implementation.value), "docker_compose.yml")
-        try:
-            with open(patch_file_path, "r") as patch_file:
-                patch_content = yaml.safe_load(patch_file)
-                patch_content["services"]["gnb"].update(
-                    {"image": self._patcher_utils.replace_tag_and_image(patch_content["services"]["gnb"]["image"])})
-                return patch_content
-        except yaml.YAMLError as e:
-            logging.error(f"Failed to parse YAML patch file: {e}")
-            raise
+        template_path = os.path.join(self._patch_file_path, "templates", "docker", "gnb",
+                                     str(self._setup_cfg.gnb.implementation.value))
+        env = Environment(loader=FileSystemLoader(template_path))
+        template = env.get_template("docker_compose.ini.j2")
+        rendered = template.render(
+            gnb=self._setup_cfg.gnb,
+            image=self._patcher_utils.replace_tag_and_image("localhost:4000/gnb:selftag")
+        )
+        return yaml.safe_load(rendered)
 
     def copy_config_files(self):
         src_dirs = [[self._patch_file_path, "patched", "config", "gnb", self._setup_cfg.gnb.implementation.value],
