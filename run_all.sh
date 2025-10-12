@@ -47,4 +47,4 @@ echo "Install python dependencies"
 pip3 install --upgrade pip --no-index
 pip3 install -r scripts/src/requirements.txt
 
-python3 scripts/src/main.py --supress_welcome_header --config_file=scripts/config/sample_configuration.yml
+python3 scripts/src/main.py --suppress_welcome_header --config_file=scripts/config/sample_configuration.yml
