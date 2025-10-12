@@ -3,16 +3,16 @@ services:
     dbaas:
         container_name: ric_dbaas
         hostname: dbaas
-        image: nexus3.o-ran-sc.org:10002/o-ran-sc/ric-plt-dbaas:${DBAAS_VER}
+        image: {{ dbaas.image }}
         command: redis-server --loadmodule /usr/local/libexec/redismodule/libredismodule.so
         platform: linux/amd64
         networks:
             ric_network:
-                ipv4_address: ${DBAAS_IP:-10.0.2.12}
+                ipv4_address: ${DBAAS_IP:-{{ dbaas.ip }}}
     rtmgr_sim:
         container_name: ric_rtmgr_sim
         hostname: rtmgr_sim
-        image: localhost:4000/rtmgr_sim:${SC_RIC_VERSION}-selftag
+        image: {{ rtmgr_sim.image }}
         platform: linux/amd64
         build:
             context: ./oran-sc-ric/ric
@@ -31,11 +31,11 @@ services:
             - RMR_SRC_ID=${RTMGR_SIM_IP}
         networks:
             ric_network:
-                ipv4_address: ${RTMGR_SIM_IP:-10.0.2.15}
+                ipv4_address: ${RTMGR_SIM_IP:-{{ rtmgr_sim.ip }}}
     submgr:
         container_name: ric_submgr
         hostname: submgr
-        image: localhost:4000/ric-plt-submgr:${SUBMGR_VER}-selftag
+        image: {{ submgr.image }}
         platform: linux/amd64
         build:
             context: ./oran-sc-ric/ric
@@ -57,12 +57,12 @@ services:
         command: ./submgr -f $${CFG_FILE}
         networks:
             ric_network:
-                ipv4_address: ${SUBMGR_IP:-10.0.2.13}
+                ipv4_address: ${SUBMGR_IP:-{{ submgr.ip }}}
     e2term:
         container_name: ric_e2term
         hostname: e2term
         platform: linux/amd64
-        image: localhost:4000/ric-plt-e2:${E2TERM_VER}-selftag
+        image: {{ e2term.image }}
         build:
             context: ./oran-sc-ric/ric
             dockerfile: ./images/e2term/Dockerfile
@@ -81,11 +81,11 @@ services:
         command: ./e2 -p config -f config.conf
         networks:
             ric_network:
-                ipv4_address: ${E2TERM_IP:-10.0.2.10}
+                ipv4_address: ${E2TERM_IP:-{{ e2term.ip }}}
     appmgr:
         container_name: ric_appmgr
         hostname: appmgr
-        image: localhost:4000/ric-plt-appmgr:${APPMGR_VER}-selftag
+        image: {{ appmgr.image }}
         build:
             context: ./oran-sc-ric/ric
             dockerfile: ./images/appmgr/Dockerfile
@@ -103,11 +103,11 @@ services:
             - RMR_SRC_ID=${APPMGR_IP}
         networks:
             ric_network:
-                ipv4_address: ${APPMGR_IP:-10.0.2.14}
+                ipv4_address: ${APPMGR_IP:-{{ appmgr.ip }}}
     e2mgr:
         container_name: ric_e2mgr
         hostname: e2mgr
-        image: localhost:4000/ric-plt-e2mgr:${E2MGR_VER}-selftag
+        image: {{ e2mgr.image }}
         build:
             context: ./oran-sc-ric/ric
             dockerfile: ./images/e2mgr/Dockerfile
@@ -126,11 +126,11 @@ services:
         command: ./main -port=3800 -f /opt/E2Manager/resources/configuration.yaml
         networks:
             ric_network:
-                ipv4_address: ${E2MGR_IP:-10.0.2.11}
+                ipv4_address: ${E2MGR_IP:-{{ e2mgr.ip }}}
     python_xapp_runner:
         container_name: python_xapp_runner
         hostname: python_xapp_runner
-        image: localhost:4000/python_xapp_runner:${SC_RIC_VERSION}-selftag
+        image: {{ python_xapp_runner.image }}
         platform: linux/amd64
         build:
             context: ./oran-sc-ric/
@@ -150,10 +150,10 @@ services:
             - /bin/bash
         networks:
             ric_network:
-                ipv4_address: ${XAPP_PY_RUNNER_IP:-10.0.2.20}
+                ipv4_address: ${XAPP_PY_RUNNER_IP:-{{ python_xapp_runner.ip }}}
 networks:
     ric_network:
         ipam:
             driver: default
             config:
-                - subnet: 10.0.2.0/24
+                - subnet: {{ ric.subnet }}
