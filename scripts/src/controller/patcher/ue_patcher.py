@@ -1,6 +1,7 @@
 import os
 from typing import Optional
 
+import yaml
 from jinja2 import Environment, FileSystemLoader
 
 from controller.folder_manager import FolderManager
@@ -47,27 +48,15 @@ class UEPatcher(SinglePatcherBase):
     def patch_docker_compose(self) -> Optional[dict]:
         FolderManager.create_patch_folders(self._patch_file_path)
         for i, ue in enumerate(self._setup_cfg.ue.ues):
-            ue_dict = {
-                "services": {
-                    f"{ue.name}": {
-                        "image": f"{self._setup_cfg.environment.docker_registry}/ue{self._patcher_utils.get_tag_or_empty_string(':')}",
-                        "build": "./srsRAN_4G",
-                        "container_name": f"{ue.name}",
-                        "platform": "linux/amd64",
-                        "networks": {
-                            "internal_net": {"ipv4_address": f"{ue.ip}"},
-                        },
-                        "user": "root",
-                        "privileged": True,
-                        "cap_add": ["NET_ADMIN"],
-                        "entrypoint": f"/app/ue_entrypoint.sh {ue.name}",
-                        "stdin_open": True,
-                        "tty": True,
-                        "restart": "unless-stopped"
-                    }
-                }
-            }
-            return ue_dict['services']
+            template_path = os.path.join(self._patch_file_path, "templates", "docker", "ue",
+                                         str(ue.implementation.value))
+            env = Environment(loader=FileSystemLoader(template_path))
+            template = env.get_template("docker_compose.ini.j2")
+            rendered = template.render(
+                image=f"{self._setup_cfg.environment.docker_registry}/ue{self._patcher_utils.get_tag_or_empty_string(':')}",
+                ue=ue
+            )
+            return yaml.safe_load(rendered)['services']
 
     def copy_config_files(self):
         # TODO solve multiple UEs with different implementations
@@ -90,11 +79,8 @@ class UEPatcher(SinglePatcherBase):
         paths_dst = config_dst + template_dst
 
         config_files = [f"{ue.name}_zmq.conf" for ue in self._setup_cfg.ue.ues]
-        template_files = ["dockerfile_ue", "ue_entrypoint.sh"]
-        file_names_src = config_files + template_files
-        file_names_dst = config_files + ["Dockerfile", "ue_entrypoint.sh"]
-
-        super().copy_helper(paths_src, file_names_src, paths_dst, file_names_dst)
+        file_name = config_files + ["Dockerfile", "ue_entrypoint.sh"]
+        super().copy_helper(paths_src, file_name, paths_dst, file_name)
 
     def _get_usim_mode(self):
         if self._setup_cfg.ue.ues[0].usim.mode == USIMMode.HARD:

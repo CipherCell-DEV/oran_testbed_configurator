@@ -25,9 +25,9 @@ class GnbPatcher(SinglePatcherBase):
     def patch_config_file(self):
         template_path = os.path.join(self._patch_file_path, "templates", "config", "gnb",
                                      str(self._setup_cfg.gnb.implementation.value))
-        patched_file = os.path.join(FolderManager.add_config_folder(self._patch_file_path, "gnb",
-                                                                     str(self._setup_cfg.gnb.implementation.value)),
-                                     "gnb_zmq.yaml")
+        patched_file = os.path.join(FolderManager.
+                                    add_config_folder(self._patch_file_path, "gnb",
+                                                      str(self._setup_cfg.gnb.implementation.value)), "gnb_zmq.yaml")
 
         env = Environment(loader=FileSystemLoader(template_path))
         template = env.get_template("gnb_zmq.ini.j2")
@@ -57,7 +57,6 @@ class GnbPatcher(SinglePatcherBase):
                     [self._patch_file_path, "templates", "docker", "gnb", self._setup_cfg.gnb.implementation.value]]
         dest_dirs = [[self._setup_cfg.environment.build_dir, "srsRAN_Project", "configs"],
                      [self._setup_cfg.environment.build_dir, "srsRAN_Project", ]]
-        src_filenames = ["gnb_zmq.yaml", "dockerfile_gnb"]
-        dest_filenames = ["gnb_zmq.yaml", "Dockerfile"]
+        file_names = ["gnb_zmq.yaml", "Dockerfile"]
 
-        super().copy_helper(src_dirs, src_filenames, dest_dirs, dest_filenames)
+        super().copy_helper(src_dirs, file_names, dest_dirs, file_names)
