@@ -44,31 +44,31 @@ class NearRTRICPatcher(SinglePatcherBase):
             config = {
                 'dbaas': {
                     "image": "nexus3.o-ran-sc.org:10002/o-ran-sc/ric-plt-dbaas:${DBAAS_VER}",
-                    "ip": "dummy"
+                    "ip": "${DBAAS_IP:-dummy}"
                 },
                 'rtmgr_sim': {
                     "image": "localhost:4000/rtmgr_sim:${SC_RIC_VERSION}-selftag",
-                    "ip": "dummy"
+                    "ip": "${RTMGR_SIM_IP:-dummy}"
                 },
                 'submgr': {
                     "image": "localhost:4000/ric-plt-submgr:${SUBMGR_VER}-selftag",
-                    "ip": "dummy"
+                    "ip": "${SUBMGR_IP:-dummy}"
                 },
                 'e2term': {
                     "image": "localhost:4000/ric-plt-e2:${E2TERM_VER}-selftag",
-                    "ip": "dummy"
+                    "ip": "${E2TERM_IP:-dummy}"
                 },
                 'appmgr': {
                     "image": "localhost:4000/ric-plt-appmgr:${APPMGR_VER}-selftag",
-                    "ip": "dummy"
+                    "ip": "${APPMGR_IP:-dummy}"
                 },
                 'e2mgr': {
                     "image": "localhost:4000/ric-plt-e2mgr:${E2MGR_VER}-selftag",
-                    "ip": "dummy"
+                    "ip": "${E2MGR_IP:-dummy}"
                 },
                 'python_xapp_runner': {
                     "image": "localhost:4000/python_xapp_runner:${SC_RIC_VERSION}-selftag",
-                    "ip": "dummy"
+                    "ip": "${XAPP_PY_RUNNER_IP:-dummy}"
                 },
                 'ric': {
                     "subnet": self._setup_cfg.near_rt_ric.ip_config.subnet
@@ -77,14 +77,14 @@ class NearRTRICPatcher(SinglePatcherBase):
 
             for service, (env_var, ip_attr) in ORAN_SC_RIC_SERVICE_IP_MAP.items():
                 ip_value = getattr(self._setup_cfg.near_rt_ric.ip_config, ip_attr)
-                config[service]['ip'] = ip_value
-                config[service]['image'] = self._patcher_utils.replace_tag_and_image("config[service]['image']")
+                config[service]['ip'] = config[service]['ip'].replace('dummy', str(ip_value))
+                config[service]['image'] = self._patcher_utils.replace_tag_and_image(config[service]['image'])
 
-                template_path = os.path.join(self._patch_file_path, "templates", "docker", "ric",
-                                             str(self._setup_cfg.near_rt_ric.implementation.value))
-                env = Environment(loader=FileSystemLoader(template_path))
-                template = env.get_template("docker_compose.ini.j2")
-                return yaml.safe_load(template.render(**config))
+            template_path = os.path.join(self._patch_file_path, "templates", "docker", "ric",
+                                         str(self._setup_cfg.near_rt_ric.implementation.value))
+            env = Environment(loader=FileSystemLoader(template_path))
+            template = env.get_template("docker_compose.ini.j2")
+            return yaml.safe_load(template.render(**config))
         else:
             logging.error("Cannot patch unsupported RIC implementation!")
             exit(1)

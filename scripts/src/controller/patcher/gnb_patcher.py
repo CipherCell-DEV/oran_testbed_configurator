@@ -33,6 +33,7 @@ class GnbPatcher(SinglePatcherBase):
         template = env.get_template("gnb_zmq.ini.j2")
         rendered = template.render(
             core5g=self._setup_cfg.core_5g,
+            ric=self._setup_cfg.near_rt_ric,
             gnb=self._setup_cfg.gnb,
             ue=self._setup_cfg.ue.ues[0]
         )

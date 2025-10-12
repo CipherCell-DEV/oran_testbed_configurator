@@ -70,7 +70,7 @@ class LiveConsoleViewer:
         self.thread_pool = ComponentThreadPool()
         self.demo_runner = demo_runner
         programs = demo_runner.get_programs()
-        logging.info(f"Add {len(programs)} to demo runner.")
+        logging.info(f"Add {len(programs)} programs to demo runner.")
 
         self.thread_pool.add_program(programs['ric'])
         self.thread_pool.add_program(programs['5g_core'])

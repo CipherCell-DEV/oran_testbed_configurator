@@ -65,7 +65,7 @@ e2:
   enable_cu_up_e2: true             # Enables the CU E2 agent for CU-UP
   e2sm_kpm_enabled: true            # Enable KPM service module
   e2sm_rc_enabled: true             # Enable RC service module
-  addr: {{ gnb.ip_config.e2term_ip }}                   # RIC IP address
+  addr: {{ ric.ip_config.e2term_ip }}                   # RIC IP address
   bind_addr: {{ gnb.ip_config.e2 }}               # A local IP that the E2 agent binds to for traffic from the RIC. ONLY required if running the RIC on a separate machine.
   port: 36421                       # RIC port
 
