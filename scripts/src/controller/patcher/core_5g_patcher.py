@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import Optional
 
 import yaml
 
@@ -32,11 +33,19 @@ class Core5GPatcher(SinglePatcherBase):
             logging.error("Native build patching for srsRAN 5G core is not implemented yet. -> Exit Program")
             exit(1)
 
-    def patch_docker_compose(self):
-        if self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
-            return self._open5gs_5gc_srs_patch_docker_compose()
-        elif self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
-            return self._open5gs_5gc_patch_docker_compose()
+    def patch_docker_compose(self) -> Optional[dict]:
+        if (self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS or
+                self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS):
+            FolderManager.create_patch_folders(self._patch_file_path)
+            template_path = os.path.join(self._patch_file_path, "templates", "docker", "ran",
+                                         str(self._setup_cfg.core_5g.implementation.value))
+            env = Environment(loader=FileSystemLoader(template_path))
+            template = env.get_template("docker_compose.ini.j2")
+            rendered = template.render(
+                core_5g=self._setup_cfg.core_5g,
+                image=self._patcher_utils.replace_tag_and_image("localhost:4000/open5gs-5gc:selftag")
+            )
+            return yaml.safe_load(rendered)
         else:
             logging.error("Unsupported 5G core implementation for docker patching.")
             exit(1)
@@ -104,75 +113,6 @@ class Core5GPatcher(SinglePatcherBase):
     # *****************************************
     # **** Implementation Specific Methods ****
     # *****************************************
-    def _open5gs_5gc_srs_patch_docker_compose(self):
-        """
-        Patch the docker-compose file for Open5GS 5G core with custom IP addresses and subnet.
-        """
-        FolderManager.create_patch_folders(self._patch_file_path)
-        patch_file_path = os.path.join(self._patch_file_path, "templates", "docker", "ran",
-                                       str(self._setup_cfg.core_5g.implementation.value), "srs_ran_5gc.yml")
-
-        def str_presenter(dumper, data):
-            return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='"')
-
-        def inline_list_presenter(dumper, data):
-            return dumper.represent_sequence('tag:yaml.org,2002:seq', data, flow_style=True)
-
-        yaml.add_representer(str, str_presenter)
-        yaml.add_representer(list, inline_list_presenter)
-
-        try:
-            with open(patch_file_path, "r") as patch_file:
-                patch_content = yaml.safe_load(patch_file)
-
-                patch_content['services']['5gc']['networks']['ran'][
-                    'ipv4_address'] = f"${{OPEN5GS_IP:-{self._setup_cfg.core_5g.network.ip}}}"
-
-                patch_content['networks']['ran']['ipam']['config'][0][
-                    'subnet'] = f"{self._setup_cfg.core_5g.network.subnet}"
-
-                patch_content['services']['5gc']['image'] = self._patcher_utils.replace_tag_and_image(
-                    patch_content['services']['5gc']['image'])
-
-                return patch_content
-
-        except yaml.YAMLError as e:
-            logging.error(f"Failed to parse YAML patch file: {e}")
-            raise
-
-    def _open5gs_5gc_patch_docker_compose(self):
-        FolderManager.create_patch_folders(self._patch_file_path)
-        patch_file_path = os.path.join(self._patch_file_path, "templates", "docker", "ran",
-                                       str(self._setup_cfg.core_5g.implementation.value),
-                                       "docker_compose_open5gs_5gc.yml")
-
-        def str_presenter(dumper, data):
-            return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='"')
-
-        def inline_list_presenter(dumper, data):
-            return dumper.represent_sequence('tag:yaml.org,2002:seq', data, flow_style=True)
-
-        yaml.add_representer(str, str_presenter)
-        yaml.add_representer(list, inline_list_presenter)
-
-        try:
-            with open(patch_file_path, "r") as patch_file:
-                patch_content = yaml.safe_load(patch_file)
-
-                patch_content['services']['mongodb']['networks']['ran'][
-                    'ipv4_address'] = f'{self._setup_cfg.core_5g.network.mongodb_ip}'
-
-                patch_content['services']['5gc']['networks']['ran'][
-                    'ipv4_address'] = f'{self._setup_cfg.core_5g.network.ip}'
-
-                patch_content['services']['5gc']['image'] = self._patcher_utils.replace_tag_and_image(
-                    patch_content['services']['5gc']['image'])
-
-                return patch_content
-
-        except yaml.YAMLError as e:
-            logging.error(f"Failed to parse YAML patch file: {e}")
-            raise
 
     def _open5gs_5gc_srs_patch_env_file(self, env_dict: dict):
         """
