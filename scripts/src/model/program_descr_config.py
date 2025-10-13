@@ -65,6 +65,9 @@ class TerminalDescription:
     We assume the following systax: [subprocess_prefix] [tmux attach-session -t .....] [subprocess_postfix]
     Example for gnome terminal:
     gnome-terminal -- bash -c tmux attach-session -t ...
+    subprocess_idle is the command which is running inside tmux. Normally this is the shell i.e. bash, sh, etc.
+    subprocess_idle is used to differentiate between "A program is currently running in tmux" and
+    "The tmux pane is ready to start a program"
     """
     name: Optional[str] = None
     subproc_prefix: Optional[List[str]] = None
@@ -138,7 +141,7 @@ class ProgramDescriptionCfg:
     session_prefix: Optional[str] = None # used for tmux output
     panes_per_session: Optional[int] = None # used for tmux output
     show_num_lines: Optional[int] = None # used for python output
-    used_terminal: Optional[str] = None
+    used_terminal: Optional[TerminalDescription] = None
     terminal_descriptions: Optional[List[TerminalDescription]] = None
     program_groups: Optional[List[ProgramDescrGroup]] = None
 

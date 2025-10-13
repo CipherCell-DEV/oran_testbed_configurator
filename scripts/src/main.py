@@ -3,6 +3,7 @@ import sys
 import pathlib
 
 from controller.component_checkout_manager import ComponentCheckoutManager
+from live_console_view import LiveView
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.resolve()))
 
@@ -71,8 +72,13 @@ def run_demo(setup_cfg: SetupConfiguration):
     print("\n***********Run Demo***********\n")
     demo_runner = DemoRunner(setup_cfg)
     demo_runner.create_programs()
-    live_view = LiveConsoleViewer(demo_runner=demo_runner)
-    live_view.start_live_display_loop()
+    view = LiveView(demo_runner)
+    view.setup()
+    view.start_programs()
+    view.connect_view()
+
+    #live_view = LiveConsoleViewer(demo_runner=demo_runner)
+    #live_view.start_live_display_loop()
 
 
 def checkout_repositories(setup_cfg: SetupConfiguration):
