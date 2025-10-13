@@ -3,11 +3,11 @@ import os
 
 from controller.builder.docker.docker_builder_base import DockerBuilderBase
 from model.setup_configuration import SetupConfiguration
-from model.ue_config import UECfg
+from model.ue_config import UEInstCfg
 
 
 class UEDockerBuildRunner(DockerBuilderBase):
-    def __init__(self, setup_cfg: SetupConfiguration, ue: UECfg):
+    def __init__(self, setup_cfg: SetupConfiguration, ue: UEInstCfg):
         super().__init__(setup_cfg)
         self._ue = ue
 

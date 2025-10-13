@@ -22,7 +22,7 @@ class GNBConfigParser:
             raise KeyError(f"Missing required parameter for gNB config: '{GnbFieldIdentifiers.IP_ADDR}'")
 
         if GnbFieldIdentifiers.SRATE in params:
-            cfg.srate = params[GnbFieldIdentifiers.SRATE]
+            cfg.srate = float(params[GnbFieldIdentifiers.SRATE]) / 1e6
         else:
             logging.warning(f"No srate specified for gNB -> Apply default srate {DefaultValuesGNB.DEFAULT_SRATE}")
             cfg.srate = DefaultValuesGNB.DEFAULT_SRATE

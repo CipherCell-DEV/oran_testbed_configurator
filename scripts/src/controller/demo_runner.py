@@ -55,17 +55,23 @@ class DemoRunner:
 
     def _create_core(self):
         """Create the 5G Core program."""
+        program = None
         if self._cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
-            self._program_pool.update({'5g_core': Program(working_dir=self._cfg.environment.build_dir,
-                                                          name="5G-core",
-                                                          command=["docker", "compose", "up", "5gc"],
-                                                          setup_cfg=self._cfg,
-                                                          program_type=ProgramType.CORE,
-                                                          enable_program_state_checker=True)})
+            program = ["docker", "compose", "up", "5gc"]
+
+        elif self._cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
+            program = ["docker", "compose", "up", "5gc", "mongodb"]
         else:
             raise KeyError(
                 f"Selected 5G Core implementation '{self._cfg.core_5g.implementation}' is not supported"
             )
+
+        self._program_pool.update({'5g_core': Program(working_dir=self._cfg.environment.build_dir,
+                                                      name="5G-core",
+                                                      command=program,
+                                                      setup_cfg=self._cfg,
+                                                      program_type=ProgramType.CORE,
+                                                      enable_program_state_checker=True)})
 
     def _create_gnb(self):
         """Create the gNB program."""
@@ -85,7 +91,7 @@ class DemoRunner:
 
     def _create_ues(self):
         """Create programs for all configured UEs."""
-        for ue in self._cfg.ue:
+        for ue in self._cfg.ue.ues:
             if ue.implementation == UEImplementation.SRS_4G:
                 if 'ue' not in self._program_pool:
                     self._program_pool.update({'ue': []})

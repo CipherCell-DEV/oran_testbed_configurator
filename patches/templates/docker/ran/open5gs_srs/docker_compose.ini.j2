@@ -21,7 +21,7 @@
 services:
     5gc:
         container_name: open5gs_5gc
-        image: localhost:4000/open5gs-5gc:selftag
+        image: {{ image }}
         build:
             context: srsRAN_Project/docker/open5gs
             target: open5gs
@@ -44,7 +44,7 @@ services:
             retries: 60
         networks:
             ran:
-                ipv4_address: ${OPEN5GS_IP:-10.53.1.2}
+                ipv4_address: {{ core_5g.network.ip }}
 
     telegraf:
         container_name: telegraf
@@ -119,7 +119,7 @@ networks:
         ipam:
             driver: default
             config:
-                - subnet: 10.53.1.0/24
+                - subnet: {{ core_5g.network.subnet }}
     metrics:
         ipam:
             driver: default

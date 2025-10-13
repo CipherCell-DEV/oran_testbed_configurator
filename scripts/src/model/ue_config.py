@@ -1,16 +1,17 @@
 import ipaddress
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
+from typing import Optional, List
 
 from model.gnb_config import DefaultValuesGNB
 from model.utils_config import BuildType
 
 
 class UEImplementation(Enum):
-    SRS_4G = 0
+    SRS_4G = 'srs_4g'
 
 
+# TODO harmonize identifier names
 ALLOWED_IMPLEMENTATION_LIST = {'srs': UEImplementation.SRS_4G}
 
 
@@ -47,7 +48,7 @@ class USIMCfg:
     algo: Optional[USIMAlgo] = None
     opc: Optional[str] = None
     opc_value: Optional[str] = None
-    k: Optional[str] = None
+    key: Optional[str] = None
     k2: Optional[str] = None
     k3: Optional[str] = None
     imsi: Optional[str] = None
@@ -60,7 +61,7 @@ class USIMCfg:
                 f"    algo={self.algo}, \n"
                 f"    opc={self.opc}, \n"
                 f"    opc_value={self.opc_value}, \n"
-                f"    k={self.k}, \n"
+                f"    key={self.k}, \n"
                 f"    k2={self.k2}, \n"
                 f"    k3={self.k3}, \n"
                 f"    imsi={self.imsi}, \n"
@@ -69,7 +70,7 @@ class USIMCfg:
 
 
 @dataclass
-class UECfg:
+class UEInstCfg:
     implementation: Optional[UEImplementation] = None
     commit: str = "latest"
     name: Optional[str] = None
@@ -90,11 +91,27 @@ class UECfg:
                 f"{self.usim}")
 
 
+@dataclass
+class UECfg:
+    ip_range: Optional[ipaddress.IPv4Address] = None
+    gateway: Optional[ipaddress.IPv4Network] = None
+    ues: List[UEInstCfg] = field(default_factory=list)
+
+    def __str__(self):
+        ues_str = "\n".join(f"  {ue}" for ue in self.ues) if self.ues else "  None"
+        return (
+            f"UECfg:\n"
+            f"    ip_range={self.ip_range}\n"
+            f"    gateway={self.gateway}\n"
+            f"    ues:\n{ues_str}"
+        )
+
+
 class USIMFieldIdentifiers:
     MODE = "mode"
     ALGO = 'algo'
     OPC = 'opc'
-    KEY = 'k'
+    KEY = 'key'
     IMSI = 'imsi'
     IMEI = 'imei'
 
@@ -115,6 +132,7 @@ class UEFieldIdentifiers:
     USIM = 'usim'
     USIM_FIELD_IDENTIFIERS = USIMFieldIdentifiers()
     GATEWAY_IDENTIFIERS = GatewayFieldIdentifiers()
+    IP_RANGE = 'ip_range'
 
 
 class DefaultValuesUE:

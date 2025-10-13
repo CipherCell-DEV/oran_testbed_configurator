@@ -11,6 +11,8 @@ from model.ric_config import RICImplementation, ORAN_SC_RIC_SERVICE_IP_MAP
 from model.setup_configuration import SetupConfiguration
 from model.utils_config import BuildType
 
+from jinja2 import Environment, FileSystemLoader
+
 
 class NearRTRICPatcher(SinglePatcherBase):
 
@@ -32,48 +34,78 @@ class NearRTRICPatcher(SinglePatcherBase):
         pass
 
     def patch_docker_compose(self) -> Optional[dict]:
-        FolderManager.create_patch_folders(self._patch_file_path)
-        """ Patch the ORAN SC RIC docker-compose.yml file with custom IP addresses and subnet. """
-        patch_file_path = os.path.join(self._patch_file_path, "templates", "docker", "oran_sc_docker.yml")
+        if self._setup_cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC:
+            FolderManager.create_patch_folders(self._patch_file_path)
+            """ Patch the ORAN SC RIC docker-compose.yml file with custom IP addresses and subnet. """
+            patch_file_path = os.path.join(self._patch_file_path, "templates", "docker", "ric",
+                                           str(self._setup_cfg.near_rt_ric.implementation.value),
+                                           "docker_compose.ini.j2")
 
-        try:
-            with open(patch_file_path, "r") as patch_file:
-                patch_content = yaml.safe_load(patch_file)
-
-            logging.info("Patching ORAN SC RIC docker-compose.yml with custom IP addresses...")
-
-            for service in patch_content["services"]:
-                if "image" in patch_content["services"][service]:
-                    patch_content["services"][service]["image"] = self._patcher_utils.replace_tag_and_image(
-                        patch_content["services"][service]["image"])
+            config = {
+                'dbaas': {
+                    "image": "nexus3.o-ran-sc.org:10002/o-ran-sc/ric-plt-dbaas:${DBAAS_VER}",
+                    "ip": "${DBAAS_IP:-dummy}"
+                },
+                'rtmgr_sim': {
+                    "image": "localhost:4000/rtmgr_sim:${SC_RIC_VERSION}-selftag",
+                    "ip": "${RTMGR_SIM_IP:-dummy}"
+                },
+                'submgr': {
+                    "image": "localhost:4000/ric-plt-submgr:${SUBMGR_VER}-selftag",
+                    "ip": "${SUBMGR_IP:-dummy}"
+                },
+                'e2term': {
+                    "image": "localhost:4000/ric-plt-e2:${E2TERM_VER}-selftag",
+                    "ip": "${E2TERM_IP:-dummy}"
+                },
+                'appmgr': {
+                    "image": "localhost:4000/ric-plt-appmgr:${APPMGR_VER}-selftag",
+                    "ip": "${APPMGR_IP:-dummy}"
+                },
+                'e2mgr': {
+                    "image": "localhost:4000/ric-plt-e2mgr:${E2MGR_VER}-selftag",
+                    "ip": "${E2MGR_IP:-dummy}"
+                },
+                'python_xapp_runner': {
+                    "image": "localhost:4000/python_xapp_runner:${SC_RIC_VERSION}-selftag",
+                    "ip": "${XAPP_PY_RUNNER_IP:-dummy}"
+                },
+                'ric': {
+                    "subnet": self._setup_cfg.near_rt_ric.ip_config.subnet
+                }
+            }
 
             for service, (env_var, ip_attr) in ORAN_SC_RIC_SERVICE_IP_MAP.items():
                 ip_value = getattr(self._setup_cfg.near_rt_ric.ip_config, ip_attr)
-                patch_content["services"][service]["networks"]["ric_network"]["ipv4_address"] = (
-                    f"${{{env_var}:-{ip_value}}}"
-                )
+                config[service]['ip'] = config[service]['ip'].replace('dummy', str(ip_value))
+                config[service]['image'] = self._patcher_utils.replace_tag_and_image(config[service]['image'])
 
-            subnet_value = self._setup_cfg.near_rt_ric.ip_config.subnet
-            patch_content["networks"]["ric_network"]["ipam"]["config"][0]["subnet"] = (
-                f"{subnet_value}"
-            )
-
-            return patch_content
-
-        except yaml.YAMLError as e:
-            logging.error(f"Failed to parse YAML patch file: {e}")
-            raise
+            template_path = os.path.join(self._patch_file_path, "templates", "docker", "ric",
+                                         str(self._setup_cfg.near_rt_ric.implementation.value))
+            env = Environment(loader=FileSystemLoader(template_path))
+            template = env.get_template("docker_compose.ini.j2")
+            return yaml.safe_load(template.render(**config))
+        else:
+            logging.error("Cannot patch unsupported RIC implementation!")
+            exit(1)
 
     def copy_config_files(self):
+        if self._setup_cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC:
+            docker_files = ["dockerfile_appmgr", "dockerfile_submgr", "dockerfile_e2term", "dockerfile_rtmgr_sim",
+                            "dockerfile_e2mgr", "dockerfile_ric-plt-xapp-frame-py"]
+            dst_file_paths = [
+                [self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images", file.replace("dockerfile_", "")]
+                for
+                file in docker_files]
 
-        docker_files = ["dockerfile_appmgr", "dockerfile_submgr", "dockerfile_e2term", "dockerfile_rtmgr_sim",
-                        "dockerfile_e2mgr", "dockerfile_ric-plt-xapp-frame-py"]
-        dst_file_paths = [
-            [self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images", file.replace("dockerfile_", "")] for
-            file in docker_files]
-
-        super().copy_helper([[self._patch_file_path, "templates", "docker"] for _ in docker_files], docker_files,
-                            dst_file_paths, ["Dockerfile" for _ in docker_files])
+            super().copy_helper(
+                [[self._patch_file_path, "templates", "docker", "ric",
+                  str(self._setup_cfg.near_rt_ric.implementation.value)]
+                 for _ in docker_files], docker_files,
+                dst_file_paths, ["Dockerfile" for _ in docker_files])
+        else:
+            logging.error(f"{str(self._setup_cfg.near_rt_ric.implementation.value)} is not implemented yet.")
+            exit(1)
 
     def _patch_oran_sc(self) -> dict:
         if self._setup_cfg.near_rt_ric.build_type == BuildType.DOCKER:
@@ -83,21 +115,17 @@ class NearRTRICPatcher(SinglePatcherBase):
             exit(1)
 
     def patch_env_file(self, env_dict: dict) -> dict:
-
-        patch_file_path = os.path.join(self._patch_file_path, "templates", "config", "oran_sc_ric_env")
-        env_dict_oran_sc_ric = PatcherUtils.load_env_file_helper(patch_file_path)
-        # first patch Near RT RIC
         if self._setup_cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC:
-            env_dict_oran_sc_ric['SC_RIC_VERSION'] = f'{self._setup_cfg.near_rt_ric.release}-release'
-            env_dict_oran_sc_ric['SYSTEM_NAME'] = f'oran_sc_ric'
+            template_path = os.path.join(self._patch_file_path, "templates", "config", "ric",
+                                         str(self._setup_cfg.near_rt_ric.implementation.value), )
 
-            # SET Near RT RIC IPs
-            env_dict_oran_sc_ric['RIC_SUBNET'] = f'{self._setup_cfg.near_rt_ric.ip_config.subnet}'
-            env_dict_oran_sc_ric['E2TERM_IP'] = f'{self._setup_cfg.near_rt_ric.ip_config.e2term_ip}'
-            env_dict_oran_sc_ric['E2MGR_IP'] = f'{self._setup_cfg.near_rt_ric.ip_config.e2mgr_ip}'
-            env_dict_oran_sc_ric['DBAAS_IP'] = f'{self._setup_cfg.near_rt_ric.ip_config.dbaas_ip}'
-            env_dict_oran_sc_ric['SUBMGR_IP'] = f'{self._setup_cfg.near_rt_ric.ip_config.submgr_ip}'
-            env_dict_oran_sc_ric['APPMGR_IP'] = f'{self._setup_cfg.near_rt_ric.ip_config.appmgr_ip}'
-            env_dict_oran_sc_ric['RTMGR_SIM_IP'] = f'{self._setup_cfg.near_rt_ric.ip_config.rtmgr_sim_ip}'
-            env_dict_oran_sc_ric['XAPP_PY_RUNNER_IP'] = f'{self._setup_cfg.near_rt_ric.ip_config.xapp_runner_ip}'
+            env = Environment(loader=FileSystemLoader(template_path))
+            template = env.get_template("oran_sc_ric_env.ini.j2")
+            rendered = template.render(
+                near_rt_ric=self._setup_cfg.near_rt_ric)
+
+            env_dict_oran_sc_ric = PatcherUtils.load_env_file_str_helper(rendered.split('\n'))
+        else:
+            logging.error("Unsupported RIC Implementation")
+            exit(1)
         return env_dict | env_dict_oran_sc_ric

@@ -13,7 +13,6 @@ from controller.patcher.near_rt_ric_patcher import NearRTRICPatcher
 from controller.patcher.patcher_utils import PatcherUtils
 from controller.patcher.single_patcher_base import SinglePatcherBase
 from controller.patcher.ue_patcher import UEPatcher
-from dialog_cfg import DialogConfig
 from model.core_config import CoreImplementation
 from model.setup_configuration import SetupConfiguration
 
@@ -89,7 +88,7 @@ class FirmwarePatcher:
                         single_config["volumes"].update({key: core_config["volumes"][key]})
 
             elif self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
-                logging.warning("Currently not supported")
+                logging.info("Patching standalone open5gs")
             else:
                 logging.error(
                     "Currently only SRS RAN is supported for 5G Core implementation."

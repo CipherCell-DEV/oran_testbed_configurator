@@ -68,7 +68,7 @@ class ComponentCheckoutManager:
             exit(1)
 
     def checkout_ue(self):
-        for ue in self._setup_cfg.ue:
+        for ue in self._setup_cfg.ue.ues:
             if ue.implementation == UEImplementation.SRS_4G:
                 self._clone_repository(repo=SRS_RAN_4G_REPO, name="srsRAN 4G", folder='srsRAN_4G',
                                        commit=ue.commit)

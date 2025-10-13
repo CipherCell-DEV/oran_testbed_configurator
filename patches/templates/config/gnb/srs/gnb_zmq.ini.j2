@@ -1,0 +1,100 @@
+# This configuration file example shows how to configure the srsRAN Project gNB to allow srsUE to connect to it. 
+# This specific example uses ZMQ in place of a USRP for the RF-frontend, and creates an FDD cell with 10 MHz bandwidth. 
+# To run the srsRAN Project gNB with this config, use the following command: 
+#   sudo ./gnb -c gnb_zmq.yaml
+
+cu_cp:
+  amf:
+    addr: {{ core5g.network.ip }}                 # The address or hostname of the AMF.
+    port: 38412
+    bind_addr: {{ gnb.ip_config.cu_cp }}            # A local IP that the gNB binds to for traffic from the AMF.
+    supported_tracking_areas:
+      - tac: 7
+        plmn_list:
+          - plmn: "00101"
+            tai_slice_support_list:
+              - sst: 1
+  inactivity_timer: 7200            # Sets the UE/PDU Session/DRB inactivity timer to 7200 seconds. Supported: [1 - 7200].
+
+ru_sdr:
+  device_driver: zmq                # The RF driver name.
+  device_args: tx_port=tcp://0.0.0.0:2000,rx_port=tcp://{{ ue.ip }}:2001,base_srate={{ gnb.srate }} # Optionally pass arguments to the selected RF driver.
+  srate: {{ gnb.srate }}                      # RF sample rate might need to be adjusted according to selected bandwidth.
+  tx_gain: {{ gnb.tx_gain }}                       # Transmit gain of the RF might need to adjusted to the given situation.
+  rx_gain: {{ gnb.rx_gain }}                       # Receive gain of the RF might need to adjusted to the given situation.
+
+cell_cfg:
+  dl_arfcn: 368500                  # ARFCN of the downlink carrier (center frequency).
+  band: 3                           # The NR band.
+  channel_bandwidth_MHz: 10         # Bandwith in MHz. Number of PRBs will be automatically derived.
+  common_scs: 15                    # Subcarrier spacing in kHz used for data.
+  plmn: "00101"                     # PLMN broadcasted by the gNB.
+  tac: 7                            # Tracking area code (needs to match the core configuration).
+  pdcch:
+    common:
+      ss0_index: 0                  # Set search space zero index to match srsUE capabilities
+      coreset0_index: 6             # Set search CORESET Zero index to match srsUE capabilities
+    dedicated:
+      ss2_type: common              # Search Space type, has to be set to common
+      dci_format_0_1_and_1_1: false # Set correct DCI format (fallback)
+  prach:
+    prach_config_index: 1           # Sets PRACH config to match what is expected by srsUE
+  pdsch:
+    mcs_table: qam64
+  pusch:
+    mcs_table: qam64
+
+log:
+  filename: /tmp/gnb.log            # Path of the log file.
+  all_level: info                   # Logging level applied to all layers.
+  hex_max_size: 0
+
+pcap:
+  ngap_filename:  {{ pcap.ngap.filename }}            # Path for NGAP PCAPs. Set during patching
+  ngap_enable: true                                   # Enable/disable NGAP packet capture. Supported: [false, true].
+  n3_filename: {{ pcap.n3.filename }}                 # Path for N3 PCAPs. Set during patching
+  n3_enable: true                                     # Enable/disable N3 packet capture. Supported: [false, true].
+  e1ap_filename: {{ pcap.e1ap.filename }}             # Path for E1AP PCAPs. Set during patching
+  e1ap_enable: true                                   # Enable/disable E1AP packet capture. Supported: [false, true].
+  e2ap_cu_cp_filename: {{ pcap.e2ap_cu_cp.filename }} # Path for E2AP CU-CP PCAPs. Set during patching
+  e2ap_cu_up_filename: {{ pcap.e2ap_cu_up.filename }} # Path for E2AP CU-UP PCAPs. Set during patching
+  e2ap_du_filename: {{ pcap.e2ap_du.filename }}       # Path for E2AP CU PCAPs. Set during patching
+  e2ap_enable: true                                   # Enable/disable E2AP packet capture. Supported: [false, true].
+  f1ap_filename: {{ pcap.f1ap.filename }}             # Path for F1AP PCAPs. Set during patching
+  f1ap_enable: true                                   # Enable/disable F1AP packet capture. Supported: [false, true].
+  f1u_filename: {{ pcap.f1u.filename }}               # Path for F1AP PCAPs. Set during patching
+  f1u_enable: true                                    # Enable/disable F1AP packet capture. Supported: [false, true].
+  rlc_filename: {{ pcap.rlc.filename }}               # Path for RLC PCAPs. Set during patching
+  rlc_rb_type: all                                    # Sets the RLC PCAP RB type. Supported: [all, srb, drb].
+  rlc_enable: true                                    # Enable/disable RLC packet capture. Supported: [false, true].
+  mac_filename: {{ pcap.mac.filename }}               # Path for MAC PCAPs. Set during patching
+  mac_type: udp                                       # Sets the MAC PCAP pcap type. Supported: [DLT or UDP].
+  mac_enable: true                                    # Enable/disable MAC packet capture. Supported: [false, true].
+
+e2:
+  enable_du_e2: true                # Enable DU E2 agent (one for each DU instance)
+  enable_cu_cp_e2: true             # Enables the CU E2 agent for CU-CP
+  enable_cu_up_e2: true             # Enables the CU E2 agent for CU-UP
+  e2sm_kpm_enabled: true            # Enable KPM service module
+  e2sm_rc_enabled: true             # Enable RC service module
+  addr: {{ ric.ip_config.e2term_ip }}                   # RIC IP address
+  bind_addr: {{ gnb.ip_config.e2 }}               # A local IP that the E2 agent binds to for traffic from the RIC. ONLY required if running the RIC on a separate machine.
+  port: 36421                       # RIC port
+
+metrics:
+  autostart_stdout_metrics: false
+  enable_log: false
+  enable_json: false
+
+  periodicity:
+    du_report_period: 1000
+    cu_up_report_period: 1000
+    cu_cp_report_period: 1000
+
+  layers:
+    enable_ru: false
+    enable_sched: true
+    enable_rlc: true
+    enable_mac: true
+    enable_pdcp: false
+    enable_du_low: false

@@ -1,7 +1,6 @@
 import logging
 import sys
 import pathlib
-from typing import List
 
 from controller.component_checkout_manager import ComponentCheckoutManager
 
@@ -90,7 +89,8 @@ def checkout_repositories(setup_cfg: SetupConfiguration):
 if __name__ == "__main__":
     sys.path.append(FILE_DIR)
     setup_logging()
-    print_start_dialog()
+    if not '--suppress_welcome_header' in sys.argv:
+        print_start_dialog()
     cmd_line_cfg = parse_command_line_arguments(sys.argv)
 
     if len(sys.argv) > 1:

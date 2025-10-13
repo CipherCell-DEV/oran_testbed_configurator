@@ -5,13 +5,13 @@ from typing import Tuple, List
 from controller.builder.native.native_builder_base import NativeBuilderBase
 from controller.folder_manager import FolderManager
 from model.setup_configuration import SetupConfiguration
-from model.ue_config import UEImplementation, UECfg, SRSRAN_4G_UE_DEPENDENCIES_LINUX
+from model.ue_config import UEImplementation, SRSRAN_4G_UE_DEPENDENCIES_LINUX, UEInstCfg
 
 UE_LOG_NAME = "ue_native_build"
 
 
 class UENativeBuilder(NativeBuilderBase):
-    def __init__(self, setup_cfg: SetupConfiguration, ue: UECfg):
+    def __init__(self, setup_cfg: SetupConfiguration, ue: UEInstCfg):
         super().__init__(setup_cfg)
         self._ue = ue
 

@@ -10,17 +10,17 @@ networks:
 services:
     gnb:
         build: ./srsRAN_Project
-        image: localhost:4000/gnb:selftag
+        image: {{ image }}
         container_name: srsran_gnb
         privileged: true
         platform: linux/amd64
         networks:
             ran:
-                ipv4_address: 10.53.1.3 # Pick an unused IP
+                ipv4_address: {{ gnb.ip_config.cu_cp }}
             ric_network:
-                ipv4_address: 10.0.2.3 # gNB IP on RIC network
+                ipv4_address: {{ gnb.ip_config.e2 }}
             internal_net:
-                ipv4_address: 10.45.1.1 # gNB IP on internal network
+                ipv4_address: {{ gnb.ip_config.ru_sdr }}
         user: root
         command: ["./build_docker/apps/gnb/gnb", "-c", "./configs/gnb_zmq.yaml"]
         volumes:
@@ -28,11 +28,11 @@ services:
         stdin_open: true
         tty: true
         restart: unless-stopped
-        
+
 volumes:
     gnb_interface_log:
         driver: local
         driver_opts:
             type: 'none'
             o: 'bind'
-            device: '/tmp/log/gnb' # replaced during patching
+            device: {{ log_file_path }}

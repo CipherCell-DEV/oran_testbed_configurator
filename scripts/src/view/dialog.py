@@ -83,7 +83,7 @@ def run_dialog() -> DialogConfig:
 
 def print_start_dialog():
     print("\n**************************************************")
-    print("*****    Starting CipherCell Configurator     *****")
+    print("*****    Starting CipherCell Configurator     ****")
     print("**************************************************\n")
 
 
@@ -142,7 +142,8 @@ def parse_command_line_arguments(argv: List[str]) -> CommandLineConfig:
         elif v.startswith("--run_demo="):
             cfg.run_demo = parse_boolean_value(v.split("=", 1)[1])
             logging.info(f"Run demo: {cfg.run_demo}")
-
+        elif v.startswith("--suppress_welcome_header"):
+            pass
         else:
             logging.warning(f"Ignoring unrecognized argument: {v}")
 

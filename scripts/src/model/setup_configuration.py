@@ -1,7 +1,8 @@
+from dataclasses import dataclass, field
 from pprint import pformat
-from typing import List, Optional
+from typing import Optional
 
-from dialog_cfg import DialogConfig
+from model.dialog_cfg import DialogConfig
 from model.core_config import Core5GCfg
 from model.gnb_config import GNBCfg
 from model.ric_config import NearRtRICCFG
@@ -40,13 +41,14 @@ class EnvironmentCfg:
                 f"    tag_appendix={self.tag_appendix}")
 
 
+@dataclass
 class SetupConfiguration:
     dialog: Optional[DialogConfig] = None
     environment: Optional[EnvironmentCfg] = None
     near_rt_ric: Optional[NearRtRICCFG] = None
     core_5g: Optional[Core5GCfg] = None
     gnb: Optional[GNBCfg] = None
-    ue: List[UECfg] = []
+    ue: UECfg = field(default_factory=lambda: None)
 
     def __str__(self):
         return (f"SetupConfiguration: \n"

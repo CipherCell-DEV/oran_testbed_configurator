@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+from typing import List
 
 from model.setup_configuration import SetupConfiguration
 
@@ -22,22 +23,17 @@ class PatcherUtils:
             return f"{prefix}{self._setup_cfg.environment.tag_appendix}"
 
     @staticmethod
-    def load_env_file_helper(patch_file_path: str) -> dict:
-        try:
-            with open(patch_file_path, "r") as patch_file:
-                env_dict = {}
-                for line in patch_file.readlines():
-                    # ^ (?!  # ) -> not start with comment
-                    # \s* → optional leading spaces
-                    # ([^=]+?) -> Capture everything until =
-                    # \s*=\s* -> allow optional spaces around =
-                    # (.*) capture everything after =
-                    matches = re.findall(r'^(?!#)\s*([^=]+?)\s*=\s*(.*)$', line.strip())
-                    env_dict.update(dict(matches))
-                return env_dict
-        except Exception as e:
-            logging.error(f"Failed to parse env file: {e}")
-            raise
+    def load_env_file_str_helper(env_file_content: List[str]) -> dict:
+        env_dict = {}
+        for line in env_file_content:
+            # ^ (?!  # ) -> not start with comment
+            # \s* → optional leading spaces
+            # ([^=]+?) -> Capture everything until =
+            # \s*=\s* -> allow optional spaces around =
+            # (.*) capture everything after =
+            matches = re.findall(r'^(?!#)\s*([^=]+?)\s*=\s*(.*)$', line.strip())
+            env_dict.update(dict(matches))
+        return env_dict
 
     @staticmethod
     def patch_env_file(patch_file_path: str, env_dict: dict):

@@ -4,17 +4,18 @@ from typing import List
 
 from controller.parser.parser_utils import ParsingUtils
 from model.ue_config import UEFieldIdentifiers, DefaultValuesUE, UECfg, USIMCfg, USIMMode, USIMAlgo, \
-    UEGatewayCfg, ALLOWED_IMPLEMENTATION_LIST
+    UEGatewayCfg, ALLOWED_IMPLEMENTATION_LIST, UEInstCfg
 
 
 class UEConfigParser:
     @staticmethod
-    def parse_ue_cfg(elements: dict) -> List[UECfg]:
+    def parse_ue_cfg(elements: dict) -> UECfg:
         logging.info("Parse UE Configuration")
         list_cfgs = []
-        for params in elements:
-            cfg = UECfg()
-
+        ue_cfg = UECfg()
+        for params in elements['ues']:
+            params = params['ue']
+            cfg = UEInstCfg()
             cfg.build_type = ParsingUtils.parse_build_type(params, 'UE')
             cfg.implementation = ParsingUtils.parse_implementation(params, ALLOWED_IMPLEMENTATION_LIST, 'UE')
             cfg.commit = ParsingUtils.parse_commit(params, 'UE')
@@ -47,7 +48,21 @@ class UEConfigParser:
 
             list_cfgs.append(cfg)
 
-        return list_cfgs
+        ue_cfg.ues = list_cfgs
+
+        if UEFieldIdentifiers.IP_RANGE in elements:
+            ue_cfg.ip_range = ipaddress.IPv4Network(elements[UEFieldIdentifiers.IP_RANGE])
+        else:
+            raise KeyError(
+                f"Missing required parameter {UEFieldIdentifiers.IP_RANGE}")
+
+        if UEFieldIdentifiers.GATEWAY in elements:
+            ue_cfg.gateway = ipaddress.IPv4Address(elements[UEFieldIdentifiers.GATEWAY])
+        else:
+            raise KeyError(
+                f"Missing required parameter {UEFieldIdentifiers.GATEWAY}")
+
+        return ue_cfg
 
     @staticmethod
     def _parse_usim_cfg(params: dict) -> USIMCfg:

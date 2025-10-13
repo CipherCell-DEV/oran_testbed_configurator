@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 from typing import Optional
 
 import yaml
@@ -7,9 +8,10 @@ import yaml
 from controller.folder_manager import FolderManager
 from controller.patcher.patcher_utils import PatcherUtils
 from controller.patcher.single_patcher_base import SinglePatcherBase
-from dialog_cfg import DialogConfig
 from model.setup_configuration import SetupConfiguration
-from utils_config import BuildType
+from model.utils_config import BuildType
+
+from jinja2 import Environment, FileSystemLoader
 
 
 class GnbPatcher(SinglePatcherBase):
@@ -24,81 +26,74 @@ class GnbPatcher(SinglePatcherBase):
     def patch(self):
         pass
 
-
     def patch_config_file(self):
-        patch_file_path = os.path.join(self._patch_file_path, "templates", "config", "gnb_zmq.yaml")
-        new_file_path = os.path.join(self._patch_file_path, "patched", "config", "gnb_zmq.yaml")
+        template_path = os.path.join(self._patch_file_path, "templates", "config", "gnb",
+                                     str(self._setup_cfg.gnb.implementation.value))
+        patched_file = os.path.join(FolderManager.
+                                    add_config_folder(self._patch_file_path, "gnb",
+                                                      str(self._setup_cfg.gnb.implementation.value)), "gnb_zmq.yaml")
 
-        try:
-            with open(patch_file_path, "r") as patch_file:
-                patch_content = yaml.safe_load(patch_file)
+        env = Environment(loader=FileSystemLoader(template_path))
+        config_file_name = "gnb_zmq.ini.j2"
+        template = env.get_template(config_file_name)
+        rendered = template.render(
+            core5g=self._setup_cfg.core_5g,
+            ric=self._setup_cfg.near_rt_ric,
+            gnb=self._setup_cfg.gnb,
+            ue=self._setup_cfg.ue.ues[0],
+            pcap=self._parse_pcap_dict(template_path, config_file_name)
+        )
 
-                patch_content['cu_cp']['amf']['addr'] = f"{self._setup_cfg.core_5g.ip}"
+        with open(patched_file, "w") as new_file:
+            new_file.write(rendered)
 
-                patch_content['cu_cp']['amf']['bind_addr'] = f"{self._setup_cfg.gnb.ip_config.cu_cp}"
+    def _parse_pcap_dict(self, template_path: str, config_file_name: str) -> dict:
+        pcap_dict = dict()
+        with open(os.path.join(template_path, config_file_name), "r") as template_file:
+            lines = template_file.read()
+            # replace placeholders to enable yaml parsing.
+            text = re.sub(r"{{\s*[\S]+\s*}}", "dummy", lines)
+            try:
+                yaml_ret = yaml.safe_load(text)
+                for entry in yaml_ret['pcap'].keys():
+                    if entry.__str__().endswith("_filename"):
+                        if self._setup_cfg.gnb.build_type == BuildType.DOCKER:
+                            # write files to docker volume
+                            log_file_path = os.path.join("/logs", "gnb")
+                        else:
+                            # write files locally
+                            log_file_path = os.path.join(self._setup_cfg.environment.log_dir, "gnb")
 
-                patch_content['ru_sdr']['device_args'] = (
-                    f"tx_port=tcp://0.0.0.0:2000,"
-                    f"rx_port=tcp://{self._setup_cfg.ue[0].ip}:2001,"  # TODO Allow multiple UEs
-                    f"base_srate={self._setup_cfg.gnb.srate}"
-                )
-
-                patch_content['ru_sdr']['srate'] = float(self._setup_cfg.gnb.srate) / 1e6
-                patch_content['ru_sdr']['tx_gain'] = self._setup_cfg.gnb.tx_gain
-                patch_content['ru_sdr']['rx_gain'] = self._setup_cfg.gnb.rx_gain
-
-                patch_content['e2']['bind_addr'] = f"{self._setup_cfg.gnb.ip_config.e2}"
-                patch_content['e2']['addr'] = f"{self._setup_cfg.near_rt_ric.ip_config.e2term_ip}"
-
-                pcap_i = "pcap"
-                if pcap_i in patch_content:
-                    for entry in patch_content[pcap_i]:
-                        if entry.__str__().endswith("_filename"):
-                            if self._setup_cfg.dialog.build_type.name == BuildType.DOCKER.name:
-                                # write files to docker volume
-                                log_file_path = os.path.join("/logs", "gnb")
-                                log_file_name = entry.split("_filename")[0] + ".pcap"
-                            else:
-                                # write files locally
-                                log_file_path = os.path.join(self._setup_cfg.environment.log_dir, "gnb")
-                                log_file_name = entry.split("_filename")[0] + ".pcap"
-                            log_file_path = os.path.join(log_file_path, log_file_name)
-                            patch_content[pcap_i][entry] = log_file_path
-
-                with open(new_file_path, "w") as new_file:
-                    yaml.safe_dump(
-                        patch_content,
-                        new_file,
-                        default_flow_style=False,
-                        sort_keys=False
-                    )
-
-        except yaml.YAMLError as e:
-            logging.error(f"Failed to parse YAML patch file: {e}")
-            raise
+                        component_name = entry.split("_filename")[0]
+                        log_file_name = component_name + ".pcap"
+                        log_file_path = os.path.join(log_file_path, log_file_name)
+                        pcap_dict[component_name] = {
+                            'filename': log_file_path
+                        }
+            except yaml.YAMLError as e:
+                logging.error(f"Failed to parse YAML patch file: {e}")
+                raise
+        return pcap_dict
 
     def patch_docker_compose(self) -> Optional[dict]:
         FolderManager.create_patch_folders(self._patch_file_path)
 
-        patch_file_path = os.path.join(self._patch_file_path, "templates", "docker", "docker_compose_gnb.yml")
-        try:
-            with open(patch_file_path, "r") as patch_file:
-                patch_content = yaml.safe_load(patch_file)
-                patch_content["services"]["gnb"].update(
-                    {"image": self._patcher_utils.replace_tag_and_image(patch_content["services"]["gnb"]["image"])})
-                log_file_path = os.path.join(self._setup_cfg.environment.log_dir, "gnb")
-                patch_content["volumes"]["gnb_interface_log"]["driver_opts"]["device"] = log_file_path
-                return patch_content
-        except yaml.YAMLError as e:
-            logging.error(f"Failed to parse YAML patch file: {e}")
-            raise
+        template_path = os.path.join(self._patch_file_path, "templates", "docker", "gnb",
+                                     str(self._setup_cfg.gnb.implementation.value))
+        env = Environment(loader=FileSystemLoader(template_path))
+        template = env.get_template("docker_compose.ini.j2")
+        rendered = template.render(
+            gnb=self._setup_cfg.gnb,
+            image=self._patcher_utils.replace_tag_and_image("localhost:4000/gnb:selftag"),
+            log_file_path=os.path.join(self._setup_cfg.environment.log_dir, "gnb")
+        )
+        return yaml.safe_load(rendered)
 
     def copy_config_files(self):
-        src_dirs = [[self._patch_file_path, "patched", "config"],
-                    [self._patch_file_path, "templates", "docker"]]
+        src_dirs = [[self._patch_file_path, "patched", "config", "gnb", self._setup_cfg.gnb.implementation.value],
+                    [self._patch_file_path, "templates", "docker", "gnb", self._setup_cfg.gnb.implementation.value]]
         dest_dirs = [[self._setup_cfg.environment.build_dir, "srsRAN_Project", "configs"],
                      [self._setup_cfg.environment.build_dir, "srsRAN_Project", ]]
-        src_filenames = ["gnb_zmq.yaml", "dockerfile_gnb"]
-        dest_filenames = ["gnb_zmq.yaml", "Dockerfile"]
+        file_names = ["gnb_zmq.yaml", "Dockerfile"]
 
-        super().copy_helper(src_dirs, src_filenames, dest_dirs, dest_filenames)
+        super().copy_helper(src_dirs, file_names, dest_dirs, file_names)

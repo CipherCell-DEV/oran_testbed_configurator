@@ -1,0 +1,43 @@
+services:
+  mongodb:
+    image: mongo:6
+    container_name: open5gs_mongodb
+    networks:
+      ran:
+        ipv4_address: {{ core_5g.network.mongodb_ip }}
+    restart: unless-stopped
+    command: --bind_ip_all
+
+
+  5gc:
+    build: ./open5gs
+    image: {{ image }}
+    container_name: open5gcore
+    privileged: true
+    platform: linux/amd64
+    ports:
+      - "9999:9999/tcp"
+    healthcheck:
+      test: [ "CMD-SHELL", "nc -z 127.0.0.20 7777" ]
+      interval: 3s
+      timeout: 1s
+      retries: 60
+    depends_on:
+      - mongodb
+    networks:
+      ran:
+        ipv4_address: {{ core_5g.network.ip }}
+    user: root
+    restart: unless-stopped
+
+networks:
+  ran:
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.53.1.0/24
+  metrics:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.19.1.0/24
