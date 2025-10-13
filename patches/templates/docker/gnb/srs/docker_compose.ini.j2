@@ -23,6 +23,16 @@ services:
                 ipv4_address: {{ gnb.ip_config.ru_sdr }}
         user: root
         command: ["./build_docker/apps/gnb/gnb", "-c", "./configs/gnb_zmq.yaml"]
+        volumes:
+            - gnb_interface_log:/logs/gnb
         stdin_open: true
         tty: true
         restart: unless-stopped
+
+volumes:
+    gnb_interface_log:
+        driver: local
+        driver_opts:
+            type: 'none'
+            o: 'bind'
+            device: {{ log_file_path }}
