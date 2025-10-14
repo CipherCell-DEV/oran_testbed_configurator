@@ -1,4 +1,5 @@
 import logging
+import os
 from logging import fatal
 from pprint import pformat
 from typing import List, Optional
@@ -9,8 +10,7 @@ from model.ric_config import NearRtRICCFG
 from model.ue_config import UECfg
 from model.utils_config import LogLevel
 from model.program_descr_config import ProgramDescriptionCfg
-from parser.program_config_parser import ProgramConfigParser
-from program_descr_config import ProgramGroupIdentifier
+from program_descr_config import ProgramGroupIdentifier, ProgramDescription
 
 
 class ComponentIdentifiers:
@@ -63,6 +63,13 @@ class SetupConfiguration:
                 f"{pformat(self.ue, indent=4)}")
 
 
+    def _combine_cfg_data(self):
+        """
+        Some configuration data depends on one another.
+        """
+        # extend relative logging path of the demo configuration
+        self.programs.log_dir = os.path.join(self.environment.log_dir, self.programs.log_dir)
+
     def verify_consistency(self) -> bool:
         """
         This project both manages building the ORAN component and running demo programs.
@@ -72,14 +79,16 @@ class SetupConfiguration:
         # TODO: extend this
         - The UE names must be consistent between the sample_configuration.yml and demo_configuration.yml files
         """
-        for group in self.programs.program_groups:
-            if group.group_type == ProgramGroupIdentifier.UE:
-                for program in group.programs:
-                    valid = False
-                    for ue_instance in self.ue:
-                        if ue_instance.name == program.name:
-                            valid = True
-                    if not valid:
-                        logging.error(f"{program.name} is not a valid UE name. Please check both build and program configurations")
-                        return False
+        self._combine_cfg_data()
+        if self.programs is not None:
+            for group in self.programs.program_groups:
+                if group.group_type == ProgramGroupIdentifier.UE:
+                    for program in group.programs:
+                        valid = False
+                        for ue_instance in self.ue:
+                            if ue_instance.name == program.name:
+                                valid = True
+                        if not valid:
+                            logging.error(f"{program.name} is not a valid UE name. Please check both build and program configurations")
+                            return False
         return True

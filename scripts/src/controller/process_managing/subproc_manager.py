@@ -1,8 +1,8 @@
 import logging
 import subprocess
 
-from demo_runner import DemoRunner
-from process_manager_base import ProcessManager
+from controller.demo_runner import DemoRunner
+from controller.process_managing.process_manager_base import ProcessManager
 
 class SubprocessManager(ProcessManager):
     def __init__(self, runner : DemoRunner):

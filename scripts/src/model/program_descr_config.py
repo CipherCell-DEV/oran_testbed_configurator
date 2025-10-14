@@ -80,19 +80,19 @@ class TerminalDescription:
         ret_str += f"Subproc postfix: {self.subprocess_postfix}\n"
 
 
-@dataclass
 class ProgramDescription:
     """
     Describes a single program/command to be executed.
     A setup may consist of several such program instances.
     (E.g. core, ric, ue1, ue2, ... gnb, monitoring1, monitoring2, ..., traffic generation, ...)
     """
-    name: Optional[str] = None
-    depends_on_names: Optional[List[str]] = None
-    command: Optional[List[str]] = None
-    working_directory: Optional[str] = None
-    transition_stop_to_init: Optional[str] = None
-    transition_init_run: Optional[str] = None
+    def __init__(self):
+        self.name: Optional[str] = None
+        self.depends_on_names: List[str] = []
+        self.command: List[str] = []
+        self.working_directory: Optional[str] = None
+        self.transition_stop_to_init: Optional[str] = None
+        self.transition_init_run: Optional[str] = None
 
     def __str__(self) -> str:
         ret_str = f"name={self.name}\n"
@@ -104,18 +104,18 @@ class ProgramDescription:
         return ret_str
 
 
-@dataclass
 class ProgramDescrGroup:
     """
     Describes a set of individual programs/commands to be executed.
     The programs within each set share common attributes.
     Group names must be unique.
     """
-    group_type: Optional[ProgramGroupIdentifier] = None
-    group_name: Optional[str] = None
-    restart_timeout: Optional[int] = None
-    restart_max_num: Optional[int] = None
-    programs: Optional[List[ProgramDescription]] = None
+    def __init__(self):
+        self.group_type: Optional[ProgramGroupIdentifier] = None
+        self.group_name: Optional[str] = None
+        self.restart_timeout: Optional[int] = None
+        self.restart_max_num: Optional[int] = None
+        self.programs: List[ProgramDescription] = []
 
     def __str__(self) -> str:
         ret_str = f"group_type={self.group_type}\n"
@@ -128,22 +128,22 @@ class ProgramDescrGroup:
         return ret_str
 
 
-@dataclass
 class ProgramDescriptionCfg:
     """
     Contains all programs/commands to be deployed.
     Individual programs may depend on other programs.
     Each individual program must have a unique name.
     """
-    config_file_path: Optional[str] = None
-    output_mode: Optional[OutputMode] = None
-    log_dir: Optional[str] = None
-    session_prefix: Optional[str] = None # used for tmux output
-    panes_per_session: Optional[int] = None # used for tmux output
-    show_num_lines: Optional[int] = None # used for python output
-    used_terminal: Optional[TerminalDescription] = None
-    terminal_descriptions: Optional[List[TerminalDescription]] = None
-    program_groups: Optional[List[ProgramDescrGroup]] = None
+    def __init__(self):
+        self.config_file_path: Optional[str] = None
+        self.output_mode: Optional[OutputMode] = None
+        self.log_dir: Optional[str] = None
+        self.session_prefix: Optional[str] = None # used for tmux output
+        self.panes_per_session: Optional[int] = None # used for tmux output
+        self.show_num_lines: Optional[int] = None # used for python output
+        self.used_terminal: Optional[TerminalDescription] = None
+        self.terminal_descriptions: List[TerminalDescription] = []
+        self.program_groups: List[ProgramDescrGroup] = []
 
 
     def __str__(self) -> str:
@@ -215,12 +215,10 @@ class ProgramDescriptionCfg:
                     return False
                 if program.transition_stop_to_init is None or len(program.transition_stop_to_init) == 0:
                     if program.transition_init_run is None or len(program.transition_init_run) == 0:
-                        logging.error(f"{program.name}: Partial transition definition (missing init_to_run)")
-                        return False
+                        logging.debug(f"{program.name}: Partial transition definition (missing init_to_run)")
                 if program.transition_init_run is None or len(program.transition_init_run) == 0:
                     if program.transition_stop_to_init is None or len(program.transition_stop_to_init) == 0:
-                        logging.error(f"{program.name}: Partial transition definition (missing stop_to_init)")
-                        return False
+                        logging.debug(f"{program.name}: Partial transition definition (missing stop_to_init)")
                 all_program_names.append(program.name)
         if len(all_program_names) != len(set(all_program_names)):
             logging.error(f"{self.config_file_path}: All program names must be unique!")
@@ -228,7 +226,7 @@ class ProgramDescriptionCfg:
         # dependencies must refer to program names
         for group in self.program_groups:
             for program in group.programs:
-                for dependency in program.dependencies:
+                for dependency in program.depends_on_names:
                     if dependency not in all_program_names:
                         logging.error(f"{self.config_file_path}: Program {program.name}: Dependency {dependency} is not in program list!")
                         return False
@@ -274,3 +272,10 @@ class ProgramDescriptionCfg:
     def get_misc_programs(self) -> List[ProgramDescription]:
         ret = self._get_programs_of_group(ProgramGroupIdentifier.MISC)
         return ret
+
+    def get_used_terminal_data(self) -> TerminalDescription | None:
+        if self.used_terminal is not None:
+            for t in self.terminal_descriptions:
+                if t.name == self.used_terminal:
+                    return t
+        return None

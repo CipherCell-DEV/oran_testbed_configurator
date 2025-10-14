@@ -12,15 +12,17 @@ terminals:
   - gnome-terminal:
       subprocess_prefix: ["gnome-terminal", "--", "bash", "-c"]
       subprocess_postfix: []
+  - dummy-terminal:
+      subprocess_prefix: ["gnome-terminal", "--", "bash", "-c"]
+      subprocess_postfix: []
      
-
 # Supported options: [tmux|python]
 output_mode: "tmux"
 output_settings:
   log_dir: "run_logs" # This folder is relative to the log folder of the environment (see sample_configuration.yml)
   tmux:
     session_prefix: "oran_demo_"
-    panes_per_window: 4 
+    panes_per_session: 4 
   python:
     show_num_lines: 10
 
@@ -44,7 +46,7 @@ programs:
         depends_on: []
         command: ["docker", "compose", "up", "5gc"]
         # working_directory: "./repositories"
-        state_transitios:
+        state_transitions:
           stop_to_init: "open5gs_5gc"
           init_to_running: "UDR initialize...done"
   run_ric:
@@ -86,7 +88,7 @@ programs:
     program_list:
       - name: "monitor_e2"
         depends_on: []
-        command: cat
+        command: ["cat"]
         
         
     

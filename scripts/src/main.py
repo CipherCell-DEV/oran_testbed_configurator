@@ -3,7 +3,7 @@ import sys
 import pathlib
 
 from controller.component_checkout_manager import ComponentCheckoutManager
-from live_console_view import LiveView
+from view.live_console_view import LiveView
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.resolve()))
 
@@ -18,7 +18,6 @@ from controller.parser.config_parser import ConfigParser
 from controller.demo_runner import DemoRunner
 from controller.patcher.firmware_patcher import FirmwarePatcher
 from view.dialog import setup_logging, print_start_dialog, run_dialog, parse_command_line_arguments
-from view.live_console_viewer import LiveConsoleViewer
 
 
 def patch_firmware(setup_cfg: SetupConfiguration, dialog_config: DialogConfig):
@@ -110,7 +109,7 @@ if __name__ == "__main__":
 
     if cmd_line_cfg.run_demo:
         demo_config = ConfigParser.parse_program_setup_config(DEFAULT_DEMO_CFG_FILE, config.environment.build_dir)
-        config.demo_cfg = demo_config
+        config.programs = demo_config
         if not config.verify_consistency():
             logging.error("Cannot run demo due to mismatching configuration!")
 

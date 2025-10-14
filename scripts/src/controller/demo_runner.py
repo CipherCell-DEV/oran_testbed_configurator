@@ -21,13 +21,20 @@ class DemoRunner:
         self._cfg = setup_cfg
         self._program_pool: List[ProgramDescription] = []
 
-    def get_programs(self) -> List[ProgramDescription]:
+    @property
+    def programs(self):
         """
         Get the list of prepared Program instances.
 
         @return: A list of Program objects.
         """
         return self._program_pool
+
+
+    @property
+    def cfg(self):
+        return self._cfg
+
 
     def create_programs(self):
         """
@@ -41,7 +48,6 @@ class DemoRunner:
         self._create_gnb()
         self._create_ues()
         self._create_misc()
-        self._sort_program_pool_by_dependencies()
 
     def _create_ric(self):
         """Create the Near-RT RIC program."""
@@ -103,43 +109,8 @@ class DemoRunner:
                 )
 
 
-    # TODO: Laufzeit: O(h god no)
-    def _sort_program_pool_by_dependencies(self):
-        sorted_list = List[ProgramDescription]()
-        programs_added = 0
-        self._program_pool.sort(key=lambda el : 0 if el.depends_on_names is None else len(el.depends_on_names))
-        while programs_added < len(self._program_pool):
-            inv = programs_added
-            for program in self._program_pool:
-                if program.depends_on_names is None or len(program.depends_on_names) == 0:
-                    sorted_list.insert(0, program)
-                    self._program_pool.remove(program)
-                else:
-                    unmet_deps : dict[str : bool] = {}
-                    for dep in program.depends_on_names:
-                        unmet_deps.update({dep : False})
-                    for sorted_el in sorted_list:
-                        if sorted_el.name in unmet_deps:
-                            unmet_deps[sorted_el.name] = True
-                    addable = True
-                    for dep in unmet_deps:
-                        addable = addable and unmet_deps[dep]
-                    if addable:
-                        sorted_list.append(program)
-                        self._program_pool.remove(program)
-            if programs_added == inv:
-                # no changes in loop invariant -> exit with error
-                logging.error("Cannot construct dependency graph! There may be cyclic dependencies!")
-                exit(1)
-        self._program_pool = sorted_list
-
-
     def _create_misc(self):
         """All other programs are added without further restrictions"""
         for program in self._cfg.programs.get_misc_programs():
             self._program_pool.append(program)
 
-
-    @property
-    def cfg(self):
-        return self._cfg

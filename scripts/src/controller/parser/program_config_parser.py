@@ -9,15 +9,20 @@ class ProgramConfigParser:
     @staticmethod
     def _parse_terminal_data(params: dict, cfg : ProgramDescriptionCfg):
         if TerminalIdentifiers.TERMINALS.value in params:
-            for terminal in params[TerminalIdentifiers.TERMINALS.value]:
-                t_data = TerminalDescription()
-                t_data.name = terminal
-                if TerminalIdentifiers.SUBPROC_PREFIX.value in params[TerminalIdentifiers.TERMINALS.value][terminal]:
-                    t_data.subproc_prefix.extend([TerminalIdentifiers.TERMINALS.value][terminal][TerminalIdentifiers.SUBPROC_PREFIX.value])
-                if TerminalIdentifiers.SUBPROC_POSTFIX.value in params[TerminalIdentifiers.TERMINALS.value][terminal]:
-                    t_data.subprocess_postfix.extend([TerminalIdentifiers.TERMINALS.value][terminal][TerminalIdentifiers.SUBPROC_POSTFIX.value])
-                cfg.terminal_descriptions.append(t_data)
-
+            for terminal_dict in params[TerminalIdentifiers.TERMINALS.value]:
+                for terminal  in terminal_dict:
+                    t_data = TerminalDescription()
+                    t_data.name = terminal
+                    if TerminalIdentifiers.SUBPROC_PREFIX.value in terminal_dict[terminal]:
+                        t_data.subproc_prefix = terminal_dict[terminal][TerminalIdentifiers.SUBPROC_PREFIX.value]
+                    if TerminalIdentifiers.SUBPROC_POSTFIX.value in terminal_dict[terminal]:
+                        t_data.subprocess_postfix = terminal_dict[terminal][TerminalIdentifiers.SUBPROC_POSTFIX.value]
+                    if cfg.terminal_descriptions is None:
+                        cfg.terminal_descriptions = [t_data]
+                    else:
+                        cfg.terminal_descriptions.append(t_data)
+        if TerminalIdentifiers.USED_TERMINAL.value in params:
+            cfg.used_terminal = params[TerminalIdentifiers.USED_TERMINAL.value]
 
     @staticmethod
     def _parse_output_data(params: dict, cfg: ProgramDescriptionCfg) -> None:
@@ -27,18 +32,21 @@ class ProgramConfigParser:
             if params[OutputIdentifiers.OUTPUT_MODE.value] == OutputMode.TMUX.value:
                 cfg.output_mode = OutputMode.TMUX
         if OutputIdentifiers.OUTPUT_SETTINGS.value in params:
-            if OutputIdentifiers.LOG_DIR.value in params[OutputIdentifiers.OUTPUT_SETTINGS.value]:
-                cfg.log_dir = params[OutputIdentifiers.OUTPUT_SETTINGS.value][OutputIdentifiers.LOG_DIR.value]
-            if cfg.log_dir is not None or cfg.log_dir == "":
+            output_settings = params[OutputIdentifiers.OUTPUT_SETTINGS.value]
+            if OutputIdentifiers.LOG_DIR.value in output_settings:
+                cfg.log_dir = output_settings[OutputIdentifiers.LOG_DIR.value]
+            if cfg.log_dir is None or cfg.log_dir == "":
                 logging.warning(f"{cfg.config_file_path}: No dedicated log_dir folder given!")
-        if cfg.output_mode == OutputMode.PYTHON:
-            if params[OutputIdentifiers.SHOW_NUM_LINES.value] in params[OutputIdentifiers.OUTPUT_SETTINGS.value]:
-                cfg.show_num_lines = params[OutputIdentifiers.OUTPUT_SETTINGS.value][OutputIdentifiers.SHOW_NUM_LINES.value]
-        if cfg.output_mode == OutputMode.TMUX:
-            if params[OutputIdentifiers.SESSION_PREFIX.value] in params[OutputIdentifiers.OUTPUT_SETTINGS.value]:
-                cfg.session_prefix = params[OutputIdentifiers.OUTPUT_SETTINGS.value][OutputIdentifiers.SESSION_PREFIX.value]
-            if params[OutputIdentifiers.PANES_PER_SESSION.value] in params[OutputIdentifiers.OUTPUT_SETTINGS.value]:
-                cfg.panes_per_session = params[OutputIdentifiers.OUTPUT_SETTINGS.value][OutputIdentifiers.PANES_PER_SESSION.value]
+            if cfg.output_mode == OutputMode.PYTHON:
+                output_settings_python = output_settings[OutputMode.PYTHON.value]
+                if OutputIdentifiers.SHOW_NUM_LINES.value in output_settings_python:
+                    cfg.show_num_lines = output_settings_python[OutputIdentifiers.SHOW_NUM_LINES.value]
+            if cfg.output_mode == OutputMode.TMUX:
+                output_settings_tmux = output_settings[OutputMode.TMUX.value]
+                if OutputIdentifiers.SESSION_PREFIX.value in output_settings_tmux:
+                    cfg.session_prefix = output_settings_tmux[OutputIdentifiers.SESSION_PREFIX.value]
+                if OutputIdentifiers.PANES_PER_SESSION.value in output_settings_tmux:
+                    cfg.panes_per_session = output_settings_tmux[OutputIdentifiers.PANES_PER_SESSION.value]
 
 
     @staticmethod
@@ -52,26 +60,26 @@ class ProgramConfigParser:
             if ProgramIdentifiers.PROGRAM_COMMAND.value in config_entry:
                 p_desc.command.extend(config_entry[ProgramIdentifiers.PROGRAM_COMMAND.value])
             if ProgramIdentifiers.PROGRAM_WORKING_DIRECTORY.value in config_entry:
-                p_desc.working_dir = params[ProgramIdentifiers.PROGRAM_WORKING_DIRECTORY.value]
-                if p_desc.working_dir == "":
-                    logging.warning(f"{p_desc.name}: Invalid working directory {p_desc.working_dir}. Will use environment build directory instead.")
-                    p_desc.working_dir = default_working_dir
+                p_desc.working_directory = params[ProgramIdentifiers.PROGRAM_WORKING_DIRECTORY.value]
+                if p_desc.working_directory == "":
+                    logging.warning(f"{p_desc.name}: Invalid working directory {p_desc.working_directory}. Will use environment build directory instead.")
+                    p_desc.working_directory = default_working_dir
             else:
-                p_desc.working_dir = default_working_dir
+                p_desc.working_directory = default_working_dir
             if ProgramIdentifiers.PROGRAM_STATE_TRANSITIONS.value in config_entry:
-                if ProgramIdentifiers.PROGRAM_TRANSITION_STOP_INIT.value in config_entry[ProgramIdentifiers.PROGRAM_STATE_TRANSITIONS.value]:
-                    p_desc.transition_init_run = config_entry[ProgramIdentifiers.PROGRAM_STATE_TRANSITIONS.value][
-                        ProgramIdentifiers.PROGRAM_TRANSITION_STOP_INIT.value]
-                if ProgramIdentifiers.PROGRAM_TRANSITION_INIT_RUN.value in config_entry[ProgramIdentifiers.PROGRAM_STATE_TRANSITIONS.value]:
-                    p_desc.transition_init_run = config_entry[ProgramIdentifiers.PROGRAM_STATE_TRANSITIONS.value][
-                        ProgramIdentifiers.PROGRAM_TRANSITION_INIT_RUN.value]
+                state_transitions = config_entry[ProgramIdentifiers.PROGRAM_STATE_TRANSITIONS.value]
+                if ProgramIdentifiers.PROGRAM_TRANSITION_STOP_INIT.value in state_transitions:
+                    p_desc.transition_stop_to_init = state_transitions[ProgramIdentifiers.PROGRAM_TRANSITION_STOP_INIT.value]
+                if ProgramIdentifiers.PROGRAM_TRANSITION_INIT_RUN.value in state_transitions:
+                    p_desc.transition_init_run = state_transitions[ProgramIdentifiers.PROGRAM_TRANSITION_INIT_RUN.value]
             group.programs.append(p_desc)
 
 
     @staticmethod
     def _parse_program_descr_groups(params: dict, cfg: ProgramDescriptionCfg, default_working_dir : str) -> None:
         if ProgramIdentifiers.PROGRAM_GROUPS.value in params:
-            for group in params[ProgramIdentifiers.PROGRAM_GROUPS.value]:
+            group_section = params[ProgramIdentifiers.PROGRAM_GROUPS.value]
+            for group in group_section:
                 new_group = ProgramDescrGroup()
                 match group:
                     case ProgramGroupIdentifier.CORE.value:
@@ -84,13 +92,13 @@ class ProgramConfigParser:
                         new_group.group_type = ProgramGroupIdentifier.UE
                     case _:
                         new_group.group_type = ProgramGroupIdentifier.MISC
-                new_group.groups = group # With this we can still distinguish the MISC groups by name
-                if ProgramIdentifiers.RESTART_TIMEOUT.value in params[group]:
-                    new_group.timeout = params[group][ProgramIdentifiers.RESTART_TIMEOUT.value]
-                if ProgramIdentifiers.RESTART_MAX_NUM.value in params[group]:
-                    new_group.max_num = params[group][ProgramIdentifiers.RESTART_MAX_NUM.value]
-                if ProgramIdentifiers.PROGRAM_LIST in params[group]:
-                    ProgramConfigParser._parse_program_descr(params[group][ProgramIdentifiers.PROGRAM_LIST.value],
+                new_group.group_name = group # With this we can still distinguish the MISC groups by name
+                if ProgramIdentifiers.RESTART_TIMEOUT.value in group_section[group]:
+                    new_group.restart_timeout = group_section[group][ProgramIdentifiers.RESTART_TIMEOUT.value]
+                if ProgramIdentifiers.RESTART_MAX_NUM.value in group_section[group]:
+                    new_group.restart_max_num = group_section[group][ProgramIdentifiers.RESTART_MAX_NUM.value]
+                if ProgramIdentifiers.PROGRAM_LIST.value in group_section[group]:
+                    ProgramConfigParser._parse_program_descr(group_section[group][ProgramIdentifiers.PROGRAM_LIST.value],
                                                              new_group, default_working_dir)
                 cfg.program_groups.append(new_group)
 

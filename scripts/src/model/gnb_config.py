@@ -2,6 +2,7 @@ import ipaddress
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
+
 from model.utils_config import BuildType
 
 

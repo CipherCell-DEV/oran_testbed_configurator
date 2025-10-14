@@ -73,7 +73,7 @@ class UECfg:
     implementation: Optional[UEImplementation] = None
     commit: str = "latest"
     name: Optional[str] = None
-    build_type = BuildType = BuildType.DOCKER
+    build_type : BuildType = BuildType.DOCKER
     ip: Optional[ipaddress.IPv4Address] = None
     srate: Optional[int] = None
     usim: Optional[USIMCfg] = None
