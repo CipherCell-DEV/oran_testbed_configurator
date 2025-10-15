@@ -142,6 +142,19 @@ class TmuxManager(ProcessManager):
         self._stop_watchdogs : bool = False
         self._setup_completed : bool = False
 
+
+    # region internal_helper
+    @staticmethod
+    def _is_tmux_installed() -> bool:
+        result = subprocess.run(["tmux", "-V"],
+                                timeout=GENERAL_SUBPROCESS_TIMEOUT,
+                                text=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        # Expected output is e.g.: tmux 3.2a
+        return re.search("^tmux ", result.stdout) is not None
+
+
     def _get_session_index(self, name : str) -> int:
         """
         A negative return value indicates that no index has been found.
@@ -151,87 +164,16 @@ class TmuxManager(ProcessManager):
                 return index
         return -1
 
-    def _state_checker_thread_func(self, state : ProgramStateData):
-        """
-        Monitor state changes until RUNNING state is reached.
-        Restarts programs if they time out
-        """
-        while not self._stop_watchdogs:
-            with state.cv_state_change:
-                if state.cv_state_change.wait(state.program.timeout):
-                    logging.info(f"State change: {state.program.name} -> {state.program_state.name}")
-                    if state.program_state.value == ProgramState.RUNNING.value:
-                        logging.info(f"Program {state.program.name} started running. Will stop timeout watcher.")
-                        break
-                else:
-                    # My state has not changed during my timeout period
-                    # If I am not running, this is a problem
-                    # If my preconditions are already running, but I do not, then I will trigger a restart:
-                    if state.program_state.value is not ProgramState.RUNNING.value:
-                        all_precons_running = True
-                        for dep in state.program.depends_on_names:
-                            all_precons_running = all_precons_running and self._program_record.has_program_finished(dep)
-                        if all_precons_running:
-                            logging.info(f"Timeout detected: {state.program.name}.")
-                            if state.cur_num_restarts >= state.program_num_restarts:
-                                logging.error(f"Reached max. amount of restarts for program {state.program.name}.")
-                            else:
-                                logging.info(f"Restarting program {state.program.name}.")
-                                for paneid in self._pane_state_pair:
-                                    if self._pane_state_pair[paneid].program.name == state.program.name:
-                                        # send command to this pane to end
-                                        # paneid string has the following structure [sess_name]:[window_nr].[pane_nr]
-                                        # we are interested in session name and pane nr
-                                        sess_nr = self._get_session_index(paneid.split(":")[0])
-                                        if sess_nr < 0:
-                                            logging.fatal(f"Invalid session name for program {state.program.name} detected!")
-                                            continue
-                                        pane_nr = int(paneid.split(".")[-1])
-                                        program_pane = self._sessions[sess_nr].panes[pane_nr]
-                                        program_pane.send_keys("C-c")
-                                        state.cur_num_restarts = state.cur_num_restarts + 1
-                                        # Wait until program is stopped
-                                        seconds_waited = 0
-                                        while seconds_waited < GENERAL_SUBPROCESS_TIMEOUT:
-                                            idle_command = os.path.basename(self._server.show_environment()['SHELL'])
-                                            if program_pane.pane_current_command == idle_command:
-                                                logging.info(f"Program {state.program.name} has stopped. Restarting ...")
-                                                state.change_state_to(ProgramState.STOPPED)
-                                                program_pane.send_keys(" ".join(state.program.command))
-                                                break
-                                            sleep(CHECKUP_PERIOD)
-                                            seconds_waited = seconds_waited + CHECKUP_PERIOD
-
-
-        logging.info(f"State checker {state.program.name} ended.")
-
-    def _record_checker_thread_func(self):
-        while not self._stop_watchdogs:
-            with self._program_record.cv_finished_programs:
-                if self._program_record.cv_finished_programs.wait(GENERAL_SUBPROCESS_TIMEOUT):
-                    self._program_record.log_finished_programs()
-        logging.info(f"Record checker thread ended.")
-
 
     def _compute_num_sessions(self) -> int:
         needed_sessions = len(self._program_state_data) // self._panes_per_session
         if len(self._program_state_data) % self._panes_per_session != 0:
             needed_sessions = needed_sessions + 1
         return needed_sessions
+    # endregion
 
 
-    def _validate(self) -> bool:
-        if self._session_prefix is None or self._session_prefix == "":
-            logging.error("Invalid session_prefix")
-            return False
-        if self._panes_per_session <= 0:
-            logging.error("Invalid number of panes per window")
-            return False
-        if CHECKUP_PERIOD <= 0 or GENERAL_SUBPROCESS_TIMEOUT < 0:
-            logging.error("Invalid program constants")
-        return True
-
-
+    # region internal_tmux_setup
     def _generate_detached_sessions(self, force: bool = False) -> bool:
         """
         Creates new detached sessions for the programs. Since the number of programs
@@ -273,17 +215,81 @@ class TmuxManager(ProcessManager):
             session.active_window.select_layout("tiled")
 
 
-    @staticmethod
-    def _is_tmux_installed() -> bool:
-        result = subprocess.run(["tmux", "-V"],
-                                timeout=GENERAL_SUBPROCESS_TIMEOUT,
-                                text=True,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
-        # Expected output is e.g.: tmux 3.2a
-        return re.search("^tmux ", result.stdout) is not None
+    def _validate(self) -> bool:
+        if self._session_prefix is None or self._session_prefix == "":
+            logging.error("Invalid session_prefix")
+            return False
+        if self._panes_per_session <= 0:
+            logging.error("Invalid number of panes per window")
+            return False
+        if CHECKUP_PERIOD <= 0 or GENERAL_SUBPROCESS_TIMEOUT < 0:
+            logging.error("Invalid program constants")
+        return True
+    # endregion
 
 
+    # region thread_functions
+    def _state_checker_thread_func(self, state : ProgramStateData):
+        """
+        Monitor state changes until RUNNING state is reached.
+        Restarts programs if they time out
+        """
+        while not self._stop_watchdogs:
+            with state.cv_state_change:
+                if state.cv_state_change.wait(state.program.timeout):
+                    logging.debug(f"State change: {state.program.name} -> {state.program_state.name}")
+                    if state.program_state.value == ProgramState.RUNNING.value:
+                        logging.info(f"Program {state.program.name} started running. Will stop timeout watcher.")
+                        break
+                else:
+                    # My state has not changed during my timeout period
+                    # If my preconditions are already running, but I do not, then I will trigger a restart:
+                    if state.program_state.value is not ProgramState.RUNNING.value:
+                        if state.are_preconditions_met():
+                            logging.info(f"Timeout detected: {state.program.name}.")
+                            if state.cur_num_restarts >= state.program_num_restarts:
+                                logging.error(f"Reached max. amount of restarts for program {state.program.name}.")
+                            else:
+                                logging.info(f"Restarting program {state.program.name}.")
+                                for paneid in self._pane_state_pair:
+                                    if self._pane_state_pair[paneid].program.name == state.program.name:
+                                        # send command to this pane to end
+                                        # paneid string has the following structure [sess_name]:[window_nr].[pane_nr]
+                                        # we are interested in session name and pane nr
+                                        sess_nr = self._get_session_index(paneid.split(":")[0])
+                                        if sess_nr < 0:
+                                            logging.fatal(f"Invalid session name for program {state.program.name} detected!")
+                                            continue
+                                        pane_nr = int(paneid.split(".")[-1])
+                                        program_pane = self._sessions[sess_nr].panes[pane_nr]
+                                        program_pane.send_keys("C-c")
+                                        state.cur_num_restarts = state.cur_num_restarts + 1
+                                        # Wait until program is stopped
+                                        seconds_waited = 0
+                                        while seconds_waited < GENERAL_SUBPROCESS_TIMEOUT:
+                                            idle_command = os.path.basename(self._server.show_environment()['SHELL'])
+                                            if program_pane.pane_current_command == idle_command:
+                                                logging.info(f"Program {state.program.name} has stopped. Restarting ...")
+                                                state.change_state_to(ProgramState.STOPPED)
+                                                program_pane.send_keys(" ".join(state.program.command))
+                                                break
+                                            sleep(CHECKUP_PERIOD)
+                                            seconds_waited = seconds_waited + CHECKUP_PERIOD
+
+
+        logging.debug(f"State checker {state.program.name} ended.")
+
+
+    def _record_checker_thread_func(self):
+        while not self._stop_watchdogs:
+            with self._program_record.cv_finished_programs:
+                if self._program_record.cv_finished_programs.wait(GENERAL_SUBPROCESS_TIMEOUT):
+                    self._program_record.log_finished_programs()
+        logging.info(f"Record checker thread ended.")
+    # endregion
+
+
+    # region public_override
     def cleanup_and_shutdown(self):
         """Stop and kill all sessions"""
         for session in self._sessions:
@@ -342,6 +348,7 @@ class TmuxManager(ProcessManager):
         # join all programs
         for thread in self._program_starter_threads:
             thread.join_thread()
+
 
     def setup_program_data(self):
         # create log directory
@@ -410,4 +417,4 @@ class TmuxManager(ProcessManager):
         for session in self._sessions:
             ret.append(session.name)
         return ret
-
+    # endregion

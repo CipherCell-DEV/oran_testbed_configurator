@@ -12,9 +12,6 @@ terminals:
   - gnome-terminal:
       subprocess_prefix: ["gnome-terminal", "--", "bash", "-c"]
       subprocess_postfix: []
-  - dummy-terminal:
-      subprocess_prefix: ["gnome-terminal", "--", "bash", "-c"]
-      subprocess_postfix: []
      
 # Supported options: [tmux|python]
 output_mode: "tmux"
