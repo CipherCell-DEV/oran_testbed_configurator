@@ -72,6 +72,7 @@ class ProgramConfigParser:
                     p_desc.transition_stop_to_init = state_transitions[ProgramIdentifiers.PROGRAM_TRANSITION_STOP_INIT.value]
                 if ProgramIdentifiers.PROGRAM_TRANSITION_INIT_RUN.value in state_transitions:
                     p_desc.transition_init_run = state_transitions[ProgramIdentifiers.PROGRAM_TRANSITION_INIT_RUN.value]
+            p_desc.update_group_data(group.restart_timeout, group.restart_max_num)
             group.programs.append(p_desc)
 
 

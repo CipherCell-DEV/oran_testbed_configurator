@@ -93,6 +93,9 @@ class ProgramDescription:
         self.working_directory: Optional[str] = None
         self.transition_stop_to_init: Optional[str] = None
         self.transition_init_run: Optional[str] = None
+        self.timeout : int = 0 # in seconds
+        self.max_num_restarts : int = 0
+
 
     def __str__(self) -> str:
         ret_str = f"name={self.name}\n"
@@ -101,8 +104,15 @@ class ProgramDescription:
         ret_str += f"    working_directory={self.working_directory}\n"
         ret_str += f"    transition_stop_to_init={self.transition_stop_to_init}\n"
         ret_str += f"    transition_init_run={self.transition_init_run}\n"
+        ret_str += f"    timeout={self.timeout}\n"
+        ret_str += f"    max_num_restarts={self.max_num_restarts}\n"
         return ret_str
 
+
+    def update_group_data(self, timeout : int, max_num_restarts : int):
+        """Some program attributes are defined per program group"""
+        self.timeout = timeout
+        self.max_num_restarts = max_num_restarts
 
 class ProgramDescrGroup:
     """
@@ -139,8 +149,8 @@ class ProgramDescriptionCfg:
         self.output_mode: Optional[OutputMode] = None
         self.log_dir: Optional[str] = None
         self.session_prefix: Optional[str] = None # used for tmux output
-        self.panes_per_session: Optional[int] = None # used for tmux output
-        self.show_num_lines: Optional[int] = None # used for python output
+        self.panes_per_session: int = 0 # used for tmux output
+        self.show_num_lines: int = 0 # used for python output
         self.used_terminal: Optional[TerminalDescription] = None
         self.terminal_descriptions: List[TerminalDescription] = []
         self.program_groups: List[ProgramDescrGroup] = []

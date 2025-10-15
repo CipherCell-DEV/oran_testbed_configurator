@@ -8,6 +8,7 @@ from demo_runner import DemoRunner
 GENERAL_SUBPROCESS_TIMEOUT = 20
 CHECKUP_PERIOD = 2
 
+
 class ProcessManager(ABC):
     def __init__(self, runner: DemoRunner):
         self.demo_runner = runner

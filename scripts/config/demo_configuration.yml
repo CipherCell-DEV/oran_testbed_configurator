@@ -76,19 +76,12 @@ programs:
     max_num_restart: 3
     program_list:
       - name: "ue1"
-        depends_on: ["gnb", "monitor_e2"]
+        depends_on: ["gnb"]
         command: ["docker", "compose", "up", "--force-recreate", "ue1"]
         # working_directory: "./repositories"
         state_transitions:
           stop_to_init: "Attaching to ue"
           init_to_running: "PDU Session Establishment successful."
-  run_misc:
-    restart_timeout_s: 30
-    max_num_restart: 0
-    program_list:
-      - name: "monitor_e2"
-        depends_on: []
-        command: ["cat"]
         
         
     
