@@ -1,5 +1,4 @@
 import time
-from asyncio import timeout
 from typing import override
 
 from model.traffic.traffic_handler import TrafficServer, TrafficClient
