@@ -1,13 +1,18 @@
 import logging
 import signal
 import subprocess
+import threading
+from time import sleep
 from typing import Optional
+
+from git import refresh
+from rich.live import Live
 
 from controller.demo_runner import DemoRunner
 from controller.process_managing.process_manager_base import ProcessManager, GENERAL_SUBPROCESS_TIMEOUT
 from controller.process_managing.subproc_manager import SubprocessManager
 from controller.process_managing.tmux_manager import TmuxManager
-from model.program_descr_config import OutputMode, TerminalDescription
+from model.program_descr_config import OutputMode
 
 
 class LiveView:
@@ -28,7 +33,7 @@ class LiveView:
         self._process_manager.setup_program_data()
 
     def _signal_handler(self, signum, frame):
-        """Handle SIGINT (Ctrl+C) and SIGTERM to gracefully shutdown all containers."""
+        """Handle SIGINT (Ctrl+C) and SIGTERM to gracefully shut down all containers."""
         logging.info(f"Received signal {signum}. Stopping all programs...")
         self._process_manager.cleanup_and_shutdown()
         exit(0)
@@ -62,6 +67,14 @@ class LiveView:
                                stderr=subprocess.PIPE)
             # now wait until we end
             while True:
-                pass
+                sleep(3000)
+
         else:
-            logging.error(f"Invalid output mode {self._runner.cfg.programs.output_mode}")
+            with Live(refresh_per_second=4) as live:
+
+
+
+
+            # now wait until we end
+            while True:
+                sleep(3000)

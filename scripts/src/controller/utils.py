@@ -4,6 +4,8 @@ from enum import Enum
 import platform
 import re
 
+# Internal constants
+GENERAL_SUBPROCESS_TIMEOUT = 20 # Default timeout for python subprocesses, thread joining, etc.
 
 def check_docker_compose_daemon_is_running() -> bool:
     try:

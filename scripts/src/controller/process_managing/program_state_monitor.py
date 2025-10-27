@@ -45,11 +45,7 @@ class ProgramStateData:
             self.use_state_checking = True
 
     def change_state_on_output(self, output_str : str):
-        if output_str == "Running":
-            print("Checking?")
         if self.use_state_checking:
-            if output_str == "Running":
-                print("Checking -> yes")
             if self.program_state.value == ProgramState.STOPPED.value:
                 if output_str.__contains__(self.program.transition_stop_to_init):
                     self.change_state_to(ProgramState.INITIALIZING)
