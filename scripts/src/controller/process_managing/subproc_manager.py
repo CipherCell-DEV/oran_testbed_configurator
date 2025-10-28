@@ -162,12 +162,13 @@ class SubprocessManager(ProcessManager):
 
         # stop all processes spawned by the starter threads
         for thread in self._program_starter_threads:
-            thread.get_process().kill()
-            try:
-                val = thread.get_process().wait(GENERAL_SUBPROCESS_TIMEOUT)
-                logging.info(f"Proces kill result: {val}")
-            except subprocess.TimeoutExpired:
-                logging.error(f"Failed to stop spawned subprocess for {thread.program_state.program.name}")
+            if thread.get_process() is not None:
+                thread.get_process().kill()
+                try:
+                    val = thread.get_process().wait(GENERAL_SUBPROCESS_TIMEOUT)
+                    logging.info(f"Proces kill result: {val}")
+                except subprocess.TimeoutExpired:
+                    logging.error(f"Failed to stop spawned subprocess for {thread.program_state.program.name}")
 
 
     def setup_program_data(self):
