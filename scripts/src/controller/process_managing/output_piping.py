@@ -2,6 +2,7 @@ import logging
 import os
 import re
 from threading import Thread
+from time import sleep
 
 from process_managing.program_state_monitor import ProgramStateData
 from utils import GENERAL_SUBPROCESS_TIMEOUT, get_operating_system, OperatingSystem
@@ -10,6 +11,17 @@ from utils_config import ProgramState
 # want to remove color characters and docker "Enable Watch" console artefacts
 ansi_escape = re.compile(r'\x1B(?:[0-9@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
 docker_enable_watch = re.compile(r'w Enable Watch')
+
+
+class OutputBuffer:
+    def __init__(self, capacity : int):
+        self._capacity :int = capacity
+        self._buffer = [str] * self._capacity
+        self._num_read_lines : int = 0 # number of lines that have been stored in the buffer over its lifetime
+
+    def add_line(self, line : str):
+        self._buffer[self._num_read_lines] = line
+
 
 
 class OutputPipe:
