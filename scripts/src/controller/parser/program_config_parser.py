@@ -1,6 +1,6 @@
 import logging
 
-from program_descr_config import ProgramDescriptionCfg, TerminalIdentifiers, TerminalDescription, OutputIdentifiers, \
+from model.program_descr_config import ProgramDescriptionCfg, TerminalIdentifiers, TerminalDescription, OutputIdentifiers, \
     OutputMode, ProgramDescription, ProgramIdentifiers, ProgramDescrGroup, ProgramGroupIdentifier
 
 

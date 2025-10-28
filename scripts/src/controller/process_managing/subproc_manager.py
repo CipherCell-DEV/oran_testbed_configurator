@@ -1,21 +1,18 @@
 import logging
-import os
 import subprocess
-import threading
 from threading import Thread
 from pathlib import Path
-from time import sleep
 from typing import List
 
 from controller.demo_runner import DemoRunner
 from controller.process_managing.process_manager_base import ProcessManager, GENERAL_SUBPROCESS_TIMEOUT, CHECKUP_PERIOD
-from process_managing.output_piping import OutputPipe, OutputPipeListenerThread
-from process_managing.program_state_monitor import ProgramStateData, ProgramRecord
-from utils_config import ProgramState
+from controller.process_managing.output_piping import OutputPipe, OutputPipeListenerThread, OutputBuffer
+from controller.process_managing.program_state_monitor import ProgramStateData, ProgramRecord
+from model.utils_config import ProgramState
 
 
 class SubProcRunnerThread:
-    def __init__(self, state : ProgramStateData, log_file_path : str, record : ProgramRecord):
+    def __init__(self, state : ProgramStateData, record : ProgramRecord):
         self.program_state : ProgramStateData = state
         self._record : ProgramRecord = record
         self.program_thread : Thread = Thread()
@@ -73,6 +70,8 @@ class SubprocessManager(ProcessManager):
         super().__init__(runner)
         # Threads
         self._program_starter_threads: List[SubProcRunnerThread] = [] # List elements contain references to running subprocesses
+        # Buffer used by view
+        self._output_buffers : dict[str : OutputBuffer] = {}
 
     # region internal_subprocess_setup
     def _validate(self) -> bool:
@@ -180,9 +179,9 @@ class SubprocessManager(ProcessManager):
                 new_state_obj = ProgramStateData(to_run, to_run.timeout, to_run.max_num_restarts, self._program_record)
                 self._program_state_data.append(new_state_obj)
                 # Use program data and state to start a thread, which itself starts a process and stores the reference to the process
-                log_file_path = os.path.join(self.demo_runner.cfg.environment.log_dir,
-                                             f"{new_state_obj.program.name}.log")
-                new_subprocess_proc_obj = SubProcRunnerThread(new_state_obj, log_file_path, self._program_record)
+                new_subprocess_proc_obj = SubProcRunnerThread(new_state_obj, self._program_record)
+                # The view layer wants to display the latest process output. Create buffer to be used by view
+                self._output_buffers[to_run.name] = OutputBuffer(self.demo_runner.cfg.programs.show_num_lines)
                 self._program_starter_threads.append(new_subprocess_proc_obj)
             self._setup_completed = True
         else:
@@ -194,7 +193,9 @@ class SubprocessManager(ProcessManager):
         for program_nr in range(len(self._program_starter_threads)):
             cur_program = self._program_starter_threads[program_nr]
             # create thread, which parses all program output lines
-            output_piping = OutputPipe(cur_program.program_state, self.demo_runner.cfg.programs.log_dir)
+            # we buffer the output such that a  view can access and render them
+            output_piping = OutputPipe(cur_program.program_state, self.demo_runner.cfg.programs.log_dir,
+                                       self._output_buffers[cur_program.program_state.program.name])
             output_processing = OutputPipeListenerThread(output_piping)
             self._output_listener_threads.append(output_processing)
             output_processing.start_thread()
@@ -211,5 +212,9 @@ class SubprocessManager(ProcessManager):
         logging.info("All programs started!")
 
 
-    def get_view_ref_str(self) -> List[str]:
-        raise NotImplementedError("Base class does not implement get_view_ref_str")
+    def get_view_ref_str(self, **kwargs) -> List[str]:
+        for k, val in kwargs.items():
+            if k == "name":
+                return [self._output_buffers[val].get_combined_string()]
+        return [""]
+

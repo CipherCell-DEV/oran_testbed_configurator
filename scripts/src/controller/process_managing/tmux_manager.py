@@ -13,9 +13,9 @@ from libtmux import Session, Pane
 
 from controller.demo_runner import DemoRunner
 from controller.process_managing.process_manager_base import ProcessManager, GENERAL_SUBPROCESS_TIMEOUT, CHECKUP_PERIOD
-from process_managing.output_piping import OutputPipeListenerThread, OutputPipe
-from process_managing.program_state_monitor import ProgramRecord, ProgramStateData
-from utils_config import ProgramState
+from controller.process_managing.output_piping import OutputPipeListenerThread, OutputPipe
+from controller.process_managing.program_state_monitor import ProgramRecord, ProgramStateData
+from model.utils_config import ProgramState
 
 
 class TmuxRunnerThread:
@@ -298,7 +298,7 @@ class TmuxManager(ProcessManager):
 
         logging.info("All programs started!")
 
-    def get_view_ref_str(self) -> List[str]:
+    def get_view_ref_str(self, **kwargs) -> List[str]:
         ret = []
         for session in self._sessions:
             ret.append(session.name)

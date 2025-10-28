@@ -1,12 +1,15 @@
+import collections
 import logging
 import os
 import re
+import textwrap
+import threading
 from threading import Thread
-from time import sleep
 
-from process_managing.program_state_monitor import ProgramStateData
-from utils import GENERAL_SUBPROCESS_TIMEOUT, get_operating_system, OperatingSystem
-from utils_config import ProgramState
+from controller.process_managing.program_state_monitor import ProgramStateData
+from controller.utils import GENERAL_SUBPROCESS_TIMEOUT, get_operating_system, OperatingSystem
+from model.utils_config import ProgramState
+from model.utils_config import MAX_DISPLAY_LINE_LENGTH
 
 # want to remove color characters and docker "Enable Watch" console artefacts
 ansi_escape = re.compile(r'\x1B(?:[0-9@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
@@ -16,20 +19,26 @@ docker_enable_watch = re.compile(r'w Enable Watch')
 class OutputBuffer:
     def __init__(self, capacity : int):
         self._capacity :int = capacity
-        self._buffer = [str] * self._capacity
-        self._num_read_lines : int = 0 # number of lines that have been stored in the buffer over its lifetime
+        self._buffer = collections.deque(maxlen = self._capacity)
+        self._lock = threading.Lock()
 
     def add_line(self, line : str):
-        self._buffer[self._num_read_lines] = line
+        with self._lock:
+            wrapped_lines = textwrap.wrap(line.rstrip(), MAX_DISPLAY_LINE_LENGTH)
+            self._buffer.extend(wrapped_lines)
 
+    def get_combined_string(self) -> str:
+        with self._lock:
+            return f"{os.linesep}".join(self._buffer)
 
 
 class OutputPipe:
-    def __init__(self, data : ProgramStateData, log_location_path: str):
+    def __init__(self, data : ProgramStateData, log_location_path: str, buffer : OutputBuffer | None = None):
         self.program_state_data : ProgramStateData = data
         self.pipe_name : str = self.get_pipe_path(data.program.name) # temporary program output
         self.log_file_name : str = os.path.join(log_location_path, f"{data.program.name}.log") # permanent program output log
         self.pipe_created : bool = False
+        self.buffer : OutputBuffer | None = buffer
 
         # TODO: windows compatibility (mkfifo is not available, also check other program aspects not compatible with windows ...)
         if get_operating_system().value is OperatingSystem.WINDOWS.value:
@@ -49,6 +58,7 @@ class OutputPipe:
             logging.error(f"Error: {e}. Failed to create a named pipe for output processing")
             self.pipe_created = False
 
+
     @staticmethod
     def get_pipe_path(program_name : str) -> str:
         if get_operating_system().value is not OperatingSystem.WINDOWS.value:
@@ -65,6 +75,7 @@ class OutputPipeListenerThread:
         self.running = False
 
     def _pipe_thread_funct(self):
+        buffer_output = self.output_pipes.buffer is not None
         with open(self.output_pipes.pipe_name, 'r') as pipe:
             logging.debug(f"Listening to pipe {self.output_pipes.pipe_name} ...")
             while self.running:
@@ -75,6 +86,8 @@ class OutputPipeListenerThread:
                     if len(line.strip()) > 0:
                         with open(self.output_pipes.log_file_name, "a") as logfile:
                             logfile.write(f"{line}")
+                            if buffer_output:
+                                self.output_pipes.buffer.add_line(line)
                             # Only if program is not running: -> check output for state transitions
                             if self.output_pipes.program_state_data.program_state.value != ProgramState.RUNNING.value:
                                 self.output_pipes.program_state_data.change_state_on_output(line)

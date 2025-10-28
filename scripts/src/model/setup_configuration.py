@@ -1,6 +1,5 @@
 import logging
 import os
-from logging import fatal
 from pprint import pformat
 from typing import List, Optional
 
@@ -10,7 +9,7 @@ from model.ric_config import NearRtRICCFG
 from model.ue_config import UECfg
 from model.utils_config import LogLevel
 from model.program_descr_config import ProgramDescriptionCfg
-from program_descr_config import ProgramGroupIdentifier, ProgramDescription
+from model.program_descr_config import ProgramGroupIdentifier
 
 
 class ComponentIdentifiers:

@@ -1,15 +1,17 @@
 import logging
 import signal
 import subprocess
-import threading
-from time import sleep
-from typing import Optional
+from email.headerregistry import Group
 
-from git import refresh
+from time import sleep
+from typing import Optional, List
+
 from rich.live import Live
+from rich.panel import Panel
+from rich.console import Group
 
 from controller.demo_runner import DemoRunner
-from controller.process_managing.process_manager_base import ProcessManager, GENERAL_SUBPROCESS_TIMEOUT
+from controller.process_managing.process_manager_base import GENERAL_SUBPROCESS_TIMEOUT
 from controller.process_managing.subproc_manager import SubprocessManager
 from controller.process_managing.tmux_manager import TmuxManager
 from model.program_descr_config import OutputMode
@@ -18,7 +20,7 @@ from model.program_descr_config import OutputMode
 class LiveView:
     def __init__(self, runner : DemoRunner):
         self._runner : DemoRunner = runner
-        self._process_manager : ProcessManager
+        self._is_display_active = False
 
         if self._runner.cfg.programs.output_mode.value == OutputMode.PYTHON.value:
             self._process_manager = SubprocessManager(runner)
@@ -28,6 +30,11 @@ class LiveView:
             logging.error(f"Invalid output mode {self._runner.cfg.programs.output_mode} for live view runner!")
             exit(1)
 
+    def create_program_panels(self) -> List[Panel]:
+        panels = []
+        for program in self._process_manager.demo_runner.programs:
+            panels.append(Panel(self._process_manager.get_view_ref_str(name=program.name)[0], title=program.name))
+        return panels
 
     def setup(self):
         self._process_manager.setup_program_data()
@@ -35,6 +42,7 @@ class LiveView:
     def _signal_handler(self, signum, frame):
         """Handle SIGINT (Ctrl+C) and SIGTERM to gracefully shut down all containers."""
         logging.info(f"Received signal {signum}. Stopping all programs...")
+        self._is_display_active = False
         self._process_manager.cleanup_and_shutdown()
         exit(0)
 
@@ -48,7 +56,7 @@ class LiveView:
 
         if self._runner.cfg.programs.output_mode.value == OutputMode.TMUX.value:
 
-            # open tmux session windows -> need running session names
+            # open tmux session windows -> need list of running session names
             refs = self._process_manager.get_view_ref_str()
             for ref in refs:
                 # opening terminal windows is platform dependent
@@ -65,16 +73,17 @@ class LiveView:
                                timeout=GENERAL_SUBPROCESS_TIMEOUT,
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)
-            # now wait until we end
-            while True:
-                sleep(3000)
+        elif self._runner.cfg.programs.output_mode.value == OutputMode.PYTHON.value:
+            self._is_display_active = True
+            with Live(redirect_stderr=False, redirect_stdout=False) as live:
+                while self._is_display_active:
+                    live.update(Group(*self.create_program_panels()))
+                    sleep(0.5) # avoid busy waiting
+                live.update("")
 
         else:
-            with Live(refresh_per_second=4) as live:
+            logging.error(f"Invalid output mode {self._runner.cfg.programs.output_mode} for live view runner!")
 
-
-
-
-            # now wait until we end
-            while True:
-                sleep(3000)
+        # now wait until we end
+        while True:
+            sleep(3000)

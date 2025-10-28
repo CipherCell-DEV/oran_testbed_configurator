@@ -1,15 +1,14 @@
 import logging
-import os
-import re
+
 from abc import ABC
 from threading import Thread
 from typing import List
 
-from demo_runner import DemoRunner
-from process_managing.output_piping import OutputPipeListenerThread
-from process_managing.program_state_monitor import ProgramRecord, ProgramStateData
-from utils import GENERAL_SUBPROCESS_TIMEOUT
-from utils_config import ProgramState
+from controller.demo_runner import DemoRunner
+from controller.process_managing.output_piping import OutputPipeListenerThread
+from controller.process_managing.program_state_monitor import ProgramRecord, ProgramStateData
+from controller.utils import GENERAL_SUBPROCESS_TIMEOUT
+from model.utils_config import ProgramState
 
 CHECKUP_PERIOD = 2
 
@@ -84,7 +83,7 @@ class ProcessManager(ABC):
         self._record_checker = Thread(target=self._record_checker_thread_func)
         self._record_checker.start()
 
-    def get_view_ref_str(self) -> List[str]:
+    def get_view_ref_str(self, **kwargs) -> List[str]:
         raise NotImplementedError("Base class does not implement get_view_ref_str")
 
     def cleanup_and_shutdown(self):

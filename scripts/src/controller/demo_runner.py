@@ -8,7 +8,7 @@ from model.gnb_config import GNBImplementation
 from model.ric_config import RICImplementation
 from model.setup_configuration import SetupConfiguration
 from model.ue_config import UEImplementation
-from program_descr_config import ProgramDescription
+from model.program_descr_config import ProgramDescription
 
 
 class DemoRunner:
