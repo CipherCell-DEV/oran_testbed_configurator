@@ -27,7 +27,7 @@ class SubProcRunnerThread:
                     if not self.program_state.are_preconditions_met():
                         continue
             # can now start program as subprocess
-            logging.info(f"Start Program {self.program_state.program.name}")
+            logging.debug(f"Start Program {self.program_state.program.name}")
             with open(OutputPipe.get_pipe_path(self.program_state.program.name), "w") as pipe:
                 self._process = subprocess.Popen(
                     self.program_state.program.command,
@@ -45,9 +45,9 @@ class SubProcRunnerThread:
                 self._record.add_finished_program(self.program_state.program.name)
                 self.program_state.program_state = ProgramState.RUNNING
 
-            logging.info(f"Program: {self.program_state.program.name} started")
+            logging.debug(f"Program: {self.program_state.program.name} started")
             break
-        logging.info(f"Ending Program Starter thread {self.program_state.program.name}.")
+        logging.debug(f"Ending Program Starter thread {self.program_state.program.name}.")
 
     def get_process(self):
         return self._process
@@ -56,7 +56,7 @@ class SubProcRunnerThread:
         self.running = True
         self.program_thread = Thread(target=self._runner_thread_funct)
         self.program_thread.start()
-        logging.info(f"Program starter thread for {self.program_state.program.name} started")
+        logging.debug(f"Program starter thread for {self.program_state.program.name} started")
 
     def set_stop_signal(self):
         self.running = False
@@ -166,7 +166,7 @@ class SubprocessManager(ProcessManager):
                 thread.get_process().kill()
                 try:
                     val = thread.get_process().wait(GENERAL_SUBPROCESS_TIMEOUT)
-                    logging.info(f"Proces kill result: {val}")
+                    logging.debug(f"Proces kill result: {val}")
                 except subprocess.TimeoutExpired:
                     logging.error(f"Failed to stop spawned subprocess for {thread.program_state.program.name}")
 
@@ -210,7 +210,7 @@ class SubprocessManager(ProcessManager):
             # execute command inside thread
             cur_program.start_thread()
 
-        logging.info("All programs started!")
+        logging.debug("All programs are scheduled to start!")
 
 
     def get_view_ref_str(self, **kwargs) -> List[str]:

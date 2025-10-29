@@ -60,7 +60,7 @@ class ProgramConfigParser:
             if ProgramIdentifiers.PROGRAM_COMMAND.value in config_entry:
                 p_desc.command.extend(config_entry[ProgramIdentifiers.PROGRAM_COMMAND.value])
             if ProgramIdentifiers.PROGRAM_WORKING_DIRECTORY.value in config_entry:
-                p_desc.working_directory = params[ProgramIdentifiers.PROGRAM_WORKING_DIRECTORY.value]
+                p_desc.working_directory = config_entry[ProgramIdentifiers.PROGRAM_WORKING_DIRECTORY.value]
                 if p_desc.working_directory == "":
                     logging.warning(f"{p_desc.name}: Invalid working directory {p_desc.working_directory}. Will use environment build directory instead.")
                     p_desc.working_directory = default_working_dir

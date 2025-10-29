@@ -67,7 +67,7 @@ class LiveView:
             for command in subprocess_commands:
                 logging.info(f"\t{" ".join(command)}")
             choice = ask_choice("Do you want me to execute the commands listed above?",
-                                ["Yes, open the1 terminal windows for me",
+                                ["Yes, open the terminal windows for me",
                                         "No, just keep running the demo in the background"],
                                         default=1)
             if choice == 1:
@@ -87,6 +87,8 @@ class LiveView:
             logging.info("You can connect to the tmux session windows anytime by running the following commands in a terminal of your choice:")
             for ref in refs:
                 logging.info(f"\t tmux attach-session -t {ref}")
+
+        logging.info("Programs are running. Press Ctrl+C to close software.")
 
     def start_programs(self):
         self._process_manager.start_programs()

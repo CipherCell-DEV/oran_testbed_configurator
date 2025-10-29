@@ -21,14 +21,14 @@ output_settings:
     session_prefix: "oran_demo_"
     panes_per_session: 4 
   python:
-    show_num_lines: 10
+    show_num_lines: 10 # Lines per panel on the python live display
 
 
 # Each program has the following parameters
 #   <name>: a name to reference the programs by in a readable way. Must be unique.
 #   <depends_on>: list of programs, which must run before this program can be started
 #   <command>: command to executed, including parameters (array of strings)
-#   <working_dir>: [Optional] the directory, in which the command is to be started. If this is missing, the environment build directory is used instead
+#   <working_dir>: [Optional] the directory (absolute path), in which the command is to be started. If this is missing, the environment build directory is used instead
 #   <state_transitions>: [Optional] A program has the states 'stopped', 'initializing' and 'running'. The transition from one stage into the other may be
 #                                  indicated by an expected output string.
 #                                  This field is optional, but if it is given, then it must have the sub fields 
@@ -42,7 +42,6 @@ programs:
       - name: "5G_core"
         depends_on: []
         command: ["docker", "compose", "up", "5gc"]
-        # working_directory: "./repositories"
         state_transitions:
           stop_to_init: "open5gs_5gc"
           init_to_running: "UDR initialize...done"
@@ -53,7 +52,6 @@ programs:
       - name: "ric"
         depends_on: ["5G_core"]
         command: ["docker", "compose", "up", "dbaas", "rtmgr_sim", "submgr", "e2term", "appmgr", "e2mgr", "python_xapp_runner"]
-        # working_directory: "./repositories"
         state_transitions:
           stop_to_init: "Running"
           init_to_running: "RMR is ready now ..."
@@ -64,7 +62,6 @@ programs:
       - name: "gnb"
         depends_on: ["ric"]
         command: ["docker", "compose", "up", "gnb"]
-        # working_directory: "./repositories"
         state_transitions:
           stop_to_init: "--== srsRAN"
           init_to_running: "==== gNB started ==="
@@ -75,10 +72,28 @@ programs:
       - name: "ue1"
         depends_on: ["gnb"]
         command: ["docker", "compose", "up", "--force-recreate", "ue1"]
-        # working_directory: "./repositories"
         state_transitions:
           stop_to_init: "Attaching to ue"
           init_to_running: "PDU Session Establishment successful."
+        ############################################ Add more UEs here. Currently not supported.
+  run_misc:
+    restart_timeout_s: 20
+    max_num_restart: 3
+    ############################################## Add your own stuff here!
+    program_list: 
+      - name: custom_1
+        depends_on: []
+        working_directory: "/home/technischeinfo/ORAN"
+        command: ["echo", "I am some very important program!"]
+      - name: custom_2
+        depends_on: []
+        # working_directory: "/home/technischeinfo/ORAN"
+        command: ["echo", "I am much more important than this other guy me!"]
+      - name: custom_3
+        depends_on: ["custom_1", "custom_2"]
+        # working_directory: "/home/technischeinfo/ORAN"
+        command: ["echo", "My significance is unparalleled on this mortal realm"]
+          
         
         
     

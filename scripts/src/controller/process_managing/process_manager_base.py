@@ -41,7 +41,7 @@ class ProcessManager(ABC):
                 if state.cv_state_change.wait(state.program.timeout):
                     logging.debug(f"State change: {state.program.name} -> {state.program_state.name}")
                     if state.program_state.value == ProgramState.RUNNING.value:
-                        logging.info(f"Program {state.program.name} started running. Will stop timeout watcher.")
+                        logging.debug(f"Program {state.program.name} started running. Will stop timeout watcher.")
                         break
                 else:
                     # My state has not changed during my timeout period
@@ -70,7 +70,7 @@ class ProcessManager(ABC):
             with self._program_record.cv_finished_programs:
                 if self._program_record.cv_finished_programs.wait(GENERAL_SUBPROCESS_TIMEOUT):
                     self._program_record.log_finished_programs()
-        logging.info(f"Record checker thread ended.")
+        logging.debug(f"Record checker thread ended.")
 
 
     def setup_program_data(self):
@@ -91,7 +91,7 @@ class ProcessManager(ABC):
         logging.info("Stopping watchdogs ...")
         self._stop_watchdogs = True
         # Notify all watchdog threads such that they can exit their while !_stop_watchdog loops
-        logging.info("Notify all watchdog condition variables")
+        logging.debug("Notify all watchdog condition variables")
         with self._program_record.cv_finished_programs:
             self._program_record.cv_finished_programs.notify_all()
         for state_machine in self._program_state_data:

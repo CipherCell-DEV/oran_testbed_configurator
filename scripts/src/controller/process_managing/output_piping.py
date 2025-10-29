@@ -91,13 +91,13 @@ class OutputPipeListenerThread:
                             # Only if program is not running: -> check output for state transitions
                             if self.output_pipes.program_state_data.program_state.value != ProgramState.RUNNING.value:
                                 self.output_pipes.program_state_data.change_state_on_output(line)
-        logging.info(f"Ending Output Processing thread {self.output_pipes.pipe_name}")
+        logging.debug(f"Ending Output Processing thread {self.output_pipes.pipe_name}")
 
     def start_thread(self):
         self.running = True
         self.thread = Thread(target=self._pipe_thread_funct)
         self.thread.start()
-        logging.info(f"Started Output Processing thread {self.output_pipes.pipe_name}")
+        logging.debug(f"Started Output Processing thread {self.output_pipes.pipe_name}")
 
 
     def stop_thread(self):

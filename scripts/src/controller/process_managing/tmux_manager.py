@@ -34,22 +34,22 @@ class TmuxRunnerThread:
                     if not self._program_state.are_preconditions_met():
                         continue
             # can now start program
-            logging.info(f"Start Program {self._program_state.program.name}")
+            logging.debug(f"Start Program {self._program_state.program.name}")
             self._pane.send_keys(" ".join(self._program_state.program.command))
             if not self._program_state.use_state_checking:
                 # Since this program has no state transitions, we immediately consider it running
                 self._record.add_finished_program(self._program_state.program.name)
                 self._program_state.program_state = ProgramState.RUNNING
 
-            logging.info(f"Program: {self._program_state.program.name} started")
+            logging.debug(f"Program: {self._program_state.program.name} started")
             break
-        logging.info(f"Ending Program Starter thread {self._program_state.program.name}.")
+        logging.debug(f"Ending Program Starter thread {self._program_state.program.name}.")
 
     def start_thread(self):
         self.running = True
         self.program_thread = Thread(target=self._runner_thread_funct)
         self.program_thread.start()
-        logging.info(f"Program starter thread for {self._program_state.program.name} started")
+        logging.debug(f"Program starter thread for {self._program_state.program.name} started")
 
     def set_stop_signal(self):
         self.running = False
@@ -172,7 +172,7 @@ class TmuxManager(ProcessManager):
                 # we are interested in session name and pane nr
                 sess_nr = self._get_session_index(paneid.split(":")[0])
                 if sess_nr < 0:
-                    logging.fatal(f"Invalid session name for program {state.program.name} detected!")
+                    logging.error(f"Invalid session name for program {state.program.name} detected!")
                     continue
                 pane_nr = int(paneid.split(".")[-1])
                 program_pane = self._sessions[sess_nr].panes[pane_nr]

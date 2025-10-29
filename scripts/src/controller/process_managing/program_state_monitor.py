@@ -25,7 +25,7 @@ class ProgramRecord:
 
     def log_finished_programs(self):
         with self._mutex:
-            logging.info(f"Currently running: {self._finished_programs}")
+            logging.debug(f"Currently running: {self._finished_programs}")
 
 
 class ProgramStateData:
