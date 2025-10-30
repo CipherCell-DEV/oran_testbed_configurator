@@ -12,6 +12,24 @@ terminals:
   - gnome-terminal:
       subprocess_prefix: ["gnome-terminal", "--", "bash", "-c"]
       subprocess_postfix: []
+  - xterm:
+      subprocess_prefix: ["xterm", "-e", "bash", "-c"]
+      subprocess_postfix: []
+  - xcfe4-terminal:
+      subprocess_prefix: ["xfce4-terminal", "--command=bash", "-c"]
+      subprocess_postfix: []
+  - konsole:
+      subprocess_prefix: ["konsole", "-e", "bash", "-c"]
+      subprocess_postfix: []
+  - kitty:
+      subprocess_prefix: ["kitty", "bash", "-c"]
+      subprocess_postfix: []
+  - tilix:
+      subprocess_prefix: ["tilix", "-e", "bash", "-c"]
+      subprocess_postfix: []
+  - lxterminal:
+      subprocess_prefix: ["lxterminal", "-e", "bash", "-c"]
+      subprocess_postfix: []
      
 # Supported options: [tmux|python]
 output_mode: "python"
