@@ -2,17 +2,20 @@ parameters:
   core:
     service: 5gc  # Name of the 5G Core docker service
     address: 10.45.1.1
-  ue1:
-    service: ue1  # Name of the UE docker service
-    address: 10.45.1.2
-  ue2:
-    service: ue2  # Name of the UE docker service
-    address: 10.45.1.3
+  user-equipments:
+    ue1:
+      service: ue1  # Name of the UE docker service
+      address: 10.45.1.2
+    ue2:
+      service: ue2  # Name of the UE docker service
+      address: 10.45.1.3
   direction: DL  # Direction of traffic. Either DL (Download), UL (Upload) or BI (Bidirectional) (currently not supported)
   workdir: ../../repositories/  # The directory of the main docker-compose file.
   granularity: 100ms  # The granularity of time intervals, i.e. the timespan of one slot in the traffic array.
                       # Anything under 100 ms is probably less than the RTT between UE and gNB and thus not sensible.
   loop: false  # Whether to repeat the pattern forever.
+  use_nist: false  # Whether the trafficker is used with the NIST O-RAN Testbed or the CipherCell Configurator (default).
+
 
 
 # Supported units: Timespans can be given in ms, s, m or h; packet sizes can be given in B, kB, MB, GB
