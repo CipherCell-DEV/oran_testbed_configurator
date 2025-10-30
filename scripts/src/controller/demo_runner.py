@@ -66,6 +66,7 @@ class DemoRunner:
 
     def _create_core(self):
         """Create the 5G Core program."""
+        program = None
         if self._cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
             cores = self._cfg.programs.get_core_programs()
             if len(cores) == 0:
@@ -94,7 +95,7 @@ class DemoRunner:
 
     def _create_ues(self):
         """Create programs for all configured UEs."""
-        for ue in self._cfg.ue:
+        for ue in self._cfg.ue.ues:
             if ue.implementation == UEImplementation.SRS_4G:
                 ue_programs = self._cfg.programs.get_ue_programs()
                 if len(ue_programs) == 0:

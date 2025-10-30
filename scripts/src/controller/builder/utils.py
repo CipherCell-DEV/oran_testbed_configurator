@@ -14,6 +14,8 @@ class BuildUtils:
         self.setup_cfg = setup_cfg
 
     def setup_logging(self, component_name: str) -> str:
+        if component_name == "gnb":
+            os.makedirs(os.path.join(self.setup_cfg.environment.log_dir, "gnb"), exist_ok=True)
         FolderManager.create_build_log_dir(self.setup_cfg)
         return os.path.join(self.setup_cfg.environment.log_dir, f"{component_name}.log")
 

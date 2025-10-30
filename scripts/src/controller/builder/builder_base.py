@@ -9,5 +9,5 @@ class BuilderBase(metaclass=ABCMeta):
         self.setup_cfg: SetupConfiguration = setup_cfg
         self.utils = BuildUtils(setup_cfg)
 
-    def build(self):
+    def build(self) -> bool:
         raise NotImplementedError("Subclasses should implement this method.")

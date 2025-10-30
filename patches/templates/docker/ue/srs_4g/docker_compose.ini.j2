@@ -1,0 +1,17 @@
+services:
+  {{ ue.name }}:
+    image: {{ image }}
+    build: ./srsRAN_4G
+    container_name: {{ ue.name }}
+    platform: linux/amd64
+    networks:
+      internal_net:
+        ipv4_address: {{ ue.ip }}
+    user: root
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+    entrypoint: /app/ue_entrypoint.sh {{ ue.name }}
+    stdin_open: true
+    tty: true
+    restart: unless-stopped

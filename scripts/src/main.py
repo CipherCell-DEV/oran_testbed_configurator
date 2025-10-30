@@ -20,7 +20,7 @@ from controller.patcher.firmware_patcher import FirmwarePatcher
 from view.dialog import setup_logging, print_start_dialog, run_dialog, parse_command_line_arguments
 
 
-def patch_firmware(setup_cfg: SetupConfiguration, dialog_config: DialogConfig):
+def patch_firmware(setup_cfg: SetupConfiguration):
     """
     Apply required firmware and Docker image patches for the demo environment.
     """
@@ -35,26 +35,26 @@ def patch_firmware(setup_cfg: SetupConfiguration, dialog_config: DialogConfig):
     return True, fw_patcher.get_images_to_push()
 
 
-def build_firmware(setup_cfg: SetupConfiguration, dialog_config: DialogConfig, images_to_push: list[str]) -> bool:
+def build_firmware(setup_cfg: SetupConfiguration, images_to_push: list[str]) -> bool:
     """
     Build all software components required for the demo (RIC, 5G Core, gNB/UE).
     """
     print("\n***********Build Components***********\n")
     build_runner = BuildRunner(setup_configuration=setup_cfg)
 
-    if dialog_config.build_near_rt_ric:
+    if setup_cfg.dialog.build_near_rt_ric:
         if not build_runner.build_ric():
             return False
 
-    if dialog_config.build_core_net:
+    if setup_cfg.dialog.build_core_net:
         if not build_runner.build_5g_core():
             return False
 
-    if dialog_config.build_gnb:
+    if setup_cfg.dialog.build_gnb:
         if not build_runner.build_gnb():
             return False
 
-    if dialog_config.build_ue:
+    if setup_cfg.dialog.build_ue:
         if not build_runner.build_ues():
             return False
 
@@ -94,7 +94,8 @@ def checkout_repositories(setup_cfg: SetupConfiguration):
 if __name__ == "__main__":
     sys.path.append(FILE_DIR)
     setup_logging()
-    print_start_dialog()
+    if not '--suppress_welcome_header' in sys.argv:
+        print_start_dialog()
     cmd_line_cfg = parse_command_line_arguments(sys.argv)
 
     if len(sys.argv) > 1:
@@ -114,16 +115,17 @@ if __name__ == "__main__":
             logging.error("Cannot run demo due to mismatching configuration!")
 
     checkout_repositories(config)
+    config.dialog = dialog_cfg
 
     if cmd_line_cfg.generate_patch_files:
-        success, images_to_push = patch_firmware(config, dialog_cfg)
+        success, images_to_push = patch_firmware(config)
         if not success:
             logging.error("Could not patch firmware! -> Exit program")
-            exit(0)
+            exit(1)
 
         firmware_build_success = True
         if cmd_line_cfg.enable_build:
-            firmware_build_success = build_firmware(config, dialog_cfg, images_to_push)
+            firmware_build_success = build_firmware(config, images_to_push)
             if not firmware_build_success:
                 logging.error("Failed to build firmware! -> Exit Program!")
 

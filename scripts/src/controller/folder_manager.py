@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import List
 
 from model.core_config import CoreImplementation
 from model.gnb_config import GNBImplementation
@@ -10,15 +11,28 @@ from model.ue_config import UEImplementation
 class FolderManager:
 
     @staticmethod
-    def create_patch_folders(path_file_path: str):
-        patched_folder = os.path.join(path_file_path, "patched")
-        docker_folder = os.path.join(path_file_path, "patched", "docker")
-        config_folder = os.path.join(path_file_path, "patched", "config")
+    def _create_path_helper(path_list: List[str]) -> str:
+        """Create nested folders from a list of path segments."""
+        current_path = ""
+        for i in range(len(path_list)):
+            current_path = os.path.join(current_path, path_list[i])
+            if not os.path.exists(current_path):
+                logging.info(f"Creating missing folder: {current_path}")
+                os.makedirs(current_path)
+        return current_path
 
-        for folder in [patched_folder, docker_folder, config_folder]:
-            if not os.path.exists(folder):
-                logging.info(f"Implement non existing folder {folder}")
-                os.makedirs(folder)
+    @staticmethod
+    def create_patch_folders(path_file_path: str):
+        FolderManager._create_path_helper([path_file_path, "patched", "docker"])
+        FolderManager._create_path_helper([path_file_path, "patched", "config"])
+
+    @staticmethod
+    def add_config_folder(path_file_path: str, component_type: str, component_name: str) -> str:
+        return FolderManager._create_path_helper([path_file_path, "patched", "config", component_type, component_name])
+
+    @staticmethod
+    def add_docker_folder(path_file_path: str, component_type: str, component_name: str) -> str:
+        return FolderManager._create_path_helper([path_file_path, "patched", "docker", component_type, component_name])
 
     @staticmethod
     def create_folder(path: str, component_name: str):
@@ -37,7 +51,7 @@ class FolderManager:
             srs_gnb_path = os.path.join(setup_cfg.environment.build_dir, "srsRAN_Project", "configs")
             FolderManager.create_folder(srs_gnb_path, "srsRAN_Project (gNB)")
 
-        for ue in setup_cfg.ue:
+        for ue in setup_cfg.ue.ues:
             if ue.implementation == UEImplementation.SRS_4G:
                 srs_ue_path = os.path.join(setup_cfg.environment.build_dir, "srsRAN_4G", "configs")
                 FolderManager.create_folder(srs_ue_path, "srsRAN_4G")

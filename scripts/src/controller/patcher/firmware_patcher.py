@@ -78,15 +78,17 @@ class FirmwarePatcher:
 
             single_config: Dict[str, Any] = {
                 "services": dict(ric_config.get("services", {})),
-                "networks": dict(ric_config.get("networks", {}))
+                "networks": dict(ric_config.get("networks", {})),
+                "volumes": ue_gnb_config["volumes"]
             }
 
             if self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
                 if "volumes" in core_config:
-                    single_config["volumes"] = dict(core_config["volumes"])
+                    for key in core_config["volumes"]:
+                        single_config["volumes"].update({key: core_config["volumes"][key]})
 
             elif self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
-                logging.warning("Currently not supported")
+                logging.info("Patching standalone open5gs")
             else:
                 logging.error(
                     "Currently only SRS RAN is supported for 5G Core implementation."

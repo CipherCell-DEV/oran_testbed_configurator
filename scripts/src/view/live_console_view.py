@@ -49,7 +49,7 @@ class LiveView:
 
     def _ask_for_open_tmux(self):
         refs = self._process_manager.get_view_ref_str()
-        logging.info(f"The following tmux sessions are currently running: {", ".join(refs)}")
+        logging.info(f"The following tmux sessions are currently running: {', '.join(refs)}")
         tmux_terminal = self._runner.cfg.programs.get_used_terminal_data()
         subprocess_commands = [] # commands to be run, unless user declines
         display_instruction = False
@@ -65,7 +65,7 @@ class LiveView:
             logging.info(f"Currently selected terminal: {self._runner.cfg.programs.used_terminal}")
             logging.info("About to execute the following commands to attach to tmux sessions:")
             for command in subprocess_commands:
-                logging.info(f"\t{" ".join(command)}")
+                logging.info(f"\t{' '.join(command)}")
             choice = ask_choice("Do you want me to execute the commands listed above?",
                                 ["Yes, open the terminal windows for me",
                                         "No, just keep running the demo in the background"],

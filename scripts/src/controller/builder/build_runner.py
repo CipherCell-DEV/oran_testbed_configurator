@@ -80,7 +80,7 @@ class BuildRunner:
         os.chdir(self.setup_cfg.environment.build_dir)
 
         already_build_natively = False
-        for ue in self.setup_cfg.ue:
+        for ue in self.setup_cfg.ue.ues:
             if ue.build_type == BuildType.DOCKER:
                 if not UEDockerBuildRunner(self.setup_cfg, ue).build():
                     return False

@@ -7,10 +7,10 @@ from model.utils_config import BuildType
 
 
 class GNBImplementation(Enum):
-    SRS = 1
+    SRS = "srs"
 
 
-ALLOWED_IMPLEMENTATION_LIST = {'srs': GNBImplementation.SRS}
+ALLOWED_IMPLEMENTATION_LIST = {str(GNBImplementation.SRS.value): GNBImplementation.SRS}
 
 
 @dataclass

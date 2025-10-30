@@ -1,8 +1,11 @@
 import logging
 import os
+from dataclasses import dataclass, field
 from pprint import pformat
-from typing import List, Optional
+from typing import Optional
 
+from model.core_config import CoreImplementation
+from model.dialog_cfg import DialogConfig
 from model.core_config import Core5GCfg
 from model.gnb_config import GNBCfg
 from model.ric_config import NearRtRICCFG
@@ -43,16 +46,19 @@ class EnvironmentCfg:
                 f"    tag_appendix={self.tag_appendix}")
 
 
+@dataclass
 class SetupConfiguration:
+    dialog: Optional[DialogConfig] = None
     environment: Optional[EnvironmentCfg] = None
     near_rt_ric: Optional[NearRtRICCFG] = None
     core_5g: Optional[Core5GCfg] = None
     gnb: Optional[GNBCfg] = None
     programs: Optional[ProgramDescriptionCfg] = None
-    ue: List[UECfg] = []
+    ue: UECfg = field(default_factory=lambda: None)
 
     def __str__(self):
         return (f"SetupConfiguration: \n"
+                f"{self.dialog}\n"
                 f"{self.environment}, \n"
                 f"{self.near_rt_ric}, \n"
                 f"{self.core_5g}, \n"
@@ -77,6 +83,8 @@ class SetupConfiguration:
         Things to be checked:
         # TODO: extend this
         - The UE names must be consistent between the sample_configuration.yml and demo_configuration.yml files
+        - If we build Open 5gc (not from the srs Project), then we need to run docker compose up 5gc mongodb.
+            Print a warning if the demo program does not mention mongodb in this case.
         """
         self._combine_cfg_data()
         if self.programs is not None:
@@ -84,10 +92,21 @@ class SetupConfiguration:
                 if group.group_type == ProgramGroupIdentifier.UE:
                     for program in group.programs:
                         valid = False
-                        for ue_instance in self.ue:
+                        for ue_instance in self.ue.ues:
                             if ue_instance.name == program.name:
                                 valid = True
                         if not valid:
                             logging.error(f"{program.name} is not a valid UE name. Please check both build and program configurations")
                             return False
+                if group.group_type == ProgramGroupIdentifier.CORE:
+                    if self.core_5g is not None:
+                        if self.core_5g.implementation.value == CoreImplementation.OPEN5GS:
+                            # Issue a warning if we do not consider mongodb for standalone 5g core
+                            mongo_db_mentioned = False
+                            for program in group.programs:
+                                for inst in program.command:
+                                    if inst.__contains__("mongodb"):
+                                        mongo_db_mentioned = True
+                            if not mongo_db_mentioned:
+                                logging.warning(f"Please check again whether mongodb is started by the 5gc command in the demo configuration!")
         return True
