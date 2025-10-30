@@ -143,7 +143,7 @@ class TrafficPlanGenerator:
     def _(self, config: Pause) -> ndarray[tuple[int], dtype[Any]]:
         return np.zeros(int(config.duration / self.__granularity), dtype=int)
 
-    def plot(self, traffic: dict = None, plot_single: bool = True):
+    def plot(self, traffic: dict = None, plot_single: bool = True, plot_cumulative: bool = True):
         def plot_traffic(name, trfc):
             time_axis = np.arange(0, trfc.size * self.__granularity, self.__granularity)[:len(trfc)]
             plt.step(time_axis, list(map(lambda x: x / 1000, trfc)), label=name)
@@ -157,7 +157,8 @@ class TrafficPlanGenerator:
         cumulative = cumulative_tpg.traffic['dummy']
 
         plt.figure(figsize=(12, 4))
-        plot_traffic('Cumulative', cumulative)
+        if plot_cumulative:
+            plot_traffic('Cumulative', cumulative)
         if plot_single:
             for ue_id, traffic_list in traffic.items():
                 plot_traffic(ue_id, traffic_list)
