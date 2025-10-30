@@ -6,14 +6,17 @@ import os
 
 class TrafficHandler(ABC):
 
-    def __init__(self, workdir: str, service_name: str, server_address: str, server_port: int = 5201):
+    def __init__(self, workdir: str, service_name: str, server_address: str, server_port: int = 5201,
+                 use_nist: bool = False):
         self.__service_name = service_name
         self.__workdir = workdir
         self._server_address = server_address
         self._server_port = server_port
+        self._use_nist = use_nist
         self.process = None
 
     def _execute_cmd(self, cmd: str) -> None:
+        # print(self.__service_name, ':', cmd)
         if not cmd.endswith('\n'):
             cmd += '\n'
         self.process.stdin.write(cmd)
@@ -66,8 +69,8 @@ class TrafficHandler(ABC):
 
     @property
     def _cmd_prefix(self) -> str:
-        if self.__service_name == 'ue1':
-            return 'ip netns exec ue1'
+        if self.__service_name.startswith('ue'):
+            return 'ip netns exec ue1'  # + self.__service_name TODO
         else:
             return ''
 
