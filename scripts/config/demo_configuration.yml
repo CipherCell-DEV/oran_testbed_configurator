@@ -7,7 +7,7 @@
 # gnome-terminal -- bash -c tmux attach-session -t ...
 
 # available terminals: all terminals listed in the terminals section below
-used_terminal: "gnome-terminal"
+used_terminal: "alacritty"
 terminals:
   - gnome-terminal:
       subprocess_prefix: ["gnome-terminal", "--", "bash", "-c"]
@@ -30,9 +30,12 @@ terminals:
   - lxterminal:
       subprocess_prefix: ["lxterminal", "-e", "bash", "-c"]
       subprocess_postfix: []
+  - alacritty:
+      subprocess_prefix: ["alacritty", "-e", "zsh", "-c", "\""]
+      subprocess_postfix: ["\"", "&"]
      
 # Supported options: [tmux|python]
-output_mode: "python"
+output_mode: "tmux"
 output_settings:
   log_dir: "run_logs" # This folder is relative to the log folder of the environment (see sample_configuration.yml)
   tmux:
@@ -111,17 +114,4 @@ programs:
         depends_on: ["custom_1", "custom_2"]
         # working_directory: "/home/technischeinfo/ORAN"
         command: ["echo", "My significance is unparalleled on this mortal realm"]
-          
-        
-        
-    
-        
-        
-        
-        
-        
-        
-        
-    
-    
 
