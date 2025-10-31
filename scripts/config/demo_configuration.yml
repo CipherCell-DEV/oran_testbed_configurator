@@ -5,13 +5,17 @@
 # We assume the following systax: [subprocess_prefix] [tmux attach-session -t .....] [subprocess_postfix]
 # Example for gnome terminal:
 # gnome-terminal -- bash -c tmux attach-session -t ...
+# NOTE: ensure that this call is not blocking!
 
 # available terminals: all terminals listed in the terminals section below
-used_terminal: "alacritty"
+used_terminal: "gnome-terminal"
 terminals:
   - gnome-terminal:
       subprocess_prefix: ["gnome-terminal", "--", "bash", "-c"]
       subprocess_postfix: []
+  - alacritty:
+      subprocess_prefix: ["alacritty", "-e", "zsh", "-c", "\""]
+      subprocess_postfix: ["\"", "&"]
   - xterm:
       subprocess_prefix: ["xterm", "-e", "bash", "-c"]
       subprocess_postfix: []
@@ -30,9 +34,6 @@ terminals:
   - lxterminal:
       subprocess_prefix: ["lxterminal", "-e", "bash", "-c"]
       subprocess_postfix: []
-  - alacritty:
-      subprocess_prefix: ["alacritty", "-e", "zsh", "-c", "\""]
-      subprocess_postfix: ["\"", "&"]
      
 # Supported options: [tmux|python]
 output_mode: "tmux"
@@ -102,16 +103,13 @@ programs:
     max_num_restart: 3
     ############################################## Add your own stuff here!
     program_list: 
-      - name: custom_1
-        depends_on: []
-        working_directory: "/home/technischeinfo/ORAN"
-        command: ["echo", "I am some very important program!"]
-      - name: custom_2
-        depends_on: []
-        # working_directory: "/home/technischeinfo/ORAN"
-        command: ["echo", "I am much more important than this other guy me!"]
-      - name: custom_3
-        depends_on: ["custom_1", "custom_2"]
-        # working_directory: "/home/technischeinfo/ORAN"
-        command: ["echo", "My significance is unparalleled on this mortal realm"]
-
+      - name: "xapp_simple"
+        depends_on: ["gnb", "5G_core", "ric", "ue1"]
+        command: ["docker", "compose", "exec", "python_xapp_runner", "./simple_xapp.py"]
+      - name: "simulate_traffic_ue1"
+        working_directory: "scripts/src" # relative to cwd
+        depends_on: ["5G_core", "gnb", "ric", "ue1"]
+        command: ["./run_trafficker.sh"] # can also add trafficker.py params here: command: ["./run_trafficker.sh", "--config=...", ....]
+        state_transitions:
+          stop_to_init: "Starting Traffic Generation"
+          init_to_running: "Netcat server successfully started and verified"

@@ -13,7 +13,10 @@ class NearRTRICDockerBuildRunner(DockerBuilderBase):
         super().__init__(setup_cfg)
 
     def build(self) -> bool:
+        result = False
+        curr_dir = os.getcwd()
         os.chdir(self.setup_cfg.environment.build_dir)
         if self.setup_cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC:
-            return self.docker_compose_build_helper('oran-sc-ric', ORAN_SC_RIC_CONTAINERS)
-        return False
+            result = self.docker_compose_build_helper('oran-sc-ric', ORAN_SC_RIC_CONTAINERS)
+        os.chdir(curr_dir)
+        return result
