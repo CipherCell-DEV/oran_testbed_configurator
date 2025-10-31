@@ -8,6 +8,7 @@ repositories/
 docker-compose.yml
 logs
 .venv
+.trafficker_venv
 patches/patched
 
 *__pycache__/
