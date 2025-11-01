@@ -19,8 +19,8 @@ from view.dialog import ask_choice
 
 
 class LiveView:
-    def __init__(self, runner : DemoRunner):
-        self._runner : DemoRunner = runner
+    def __init__(self, runner: DemoRunner):
+        self._runner: DemoRunner = runner
         self._is_display_active = False
 
         if self._runner.cfg.programs.output_mode.value == OutputMode.PYTHON.value:
@@ -51,7 +51,7 @@ class LiveView:
         refs = self._process_manager.get_view_ref_str()
         logging.info(f"The following tmux sessions are currently running: {', '.join(refs)}")
         tmux_terminal = self._runner.cfg.programs.get_used_terminal_data()
-        subprocess_commands = [] # commands to be run, unless user declines
+        subprocess_commands = []  # commands to be run, unless user declines
         display_instruction = False
         if tmux_terminal is not None:
             for ref in refs:
@@ -68,14 +68,20 @@ class LiveView:
                 logging.info(f"\t{' '.join(command)}")
             choice = ask_choice("Do you want me to execute the commands listed above?",
                                 ["Yes, open the terminal windows for me",
-                                        "No, just keep running the demo in the background"],
-                                        default=1)
+                                 "No, just keep running the demo in the background"],
+                                default=1)
             if choice == 1:
                 for command in subprocess_commands:
-                    subprocess.run(command,
-                                   timeout=GENERAL_SUBPROCESS_TIMEOUT,
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
+                    # TODO to open a terminal on macOS requires a osascript which can not easily seperated into prefix and postfix
+                    if command[0] == 'osascript':
+                        cmd = command[:2]
+                        osascript_command = '\n'.join(command[2:-1]).replace('{{command}}', command[-1])
+                        subprocess.run(cmd + [osascript_command])
+                    else:
+                        subprocess.run(command,
+                                       timeout=GENERAL_SUBPROCESS_TIMEOUT,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
             else:
                 display_instruction = True
         else:
@@ -84,7 +90,8 @@ class LiveView:
 
         if display_instruction:
             logging.info("The programs are now running inside tmux.")
-            logging.info("You can connect to the tmux session windows anytime by running the following commands in a terminal of your choice:")
+            logging.info(
+                "You can connect to the tmux session windows anytime by running the following commands in a terminal of your choice:")
             for ref in refs:
                 logging.info(f"\t tmux attach-session -t {ref}")
 
@@ -106,7 +113,7 @@ class LiveView:
             with Live(redirect_stderr=False, redirect_stdout=False) as live:
                 while self._is_display_active:
                     live.update(Group(*self._create_program_panels()))
-                    sleep(0.5) # avoid busy waiting
+                    sleep(0.5)  # avoid busy waiting
                 live.update("")
 
         else:

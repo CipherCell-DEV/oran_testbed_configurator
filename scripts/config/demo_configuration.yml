@@ -8,7 +8,7 @@
 # NOTE: ensure that this call is not blocking!
 
 # available terminals: all terminals listed in the terminals section below
-used_terminal: "gnome-terminal"
+used_terminal: "apple_terminal"
 terminals:
   - gnome-terminal:
       subprocess_prefix: ["gnome-terminal", "--", "bash", "-c"]
@@ -34,7 +34,15 @@ terminals:
   - lxterminal:
       subprocess_prefix: ["lxterminal", "-e", "bash", "-c"]
       subprocess_postfix: []
-     
+  - apple_iterm:
+      subprocess_prefix: ["osascript", "-e", "tell application \"iTerm\"",  "    create window with default profile", "    tell current session of current window", "       write text \"{{command}}\"", "    end tell", "end tell"]
+      subprocess_postfix: []
+  - apple_terminal:
+      subprocess_prefix: ["osascript", "-e", "tell application \"Terminal\"",  "    activate", "    do script \"{{command}}\"", "end tell"]
+      subprocess_postfix: []
+
+
+
 # Supported options: [tmux|python]
 output_mode: "tmux"
 output_settings:
