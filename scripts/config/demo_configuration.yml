@@ -16,6 +16,13 @@ terminals:
   - alacritty:
       subprocess_prefix: ["alacritty", "-e", "zsh", "-c", "\""]
       subprocess_postfix: ["\"", "&"]
+  - apple_iterm:
+      subprocess_prefix: [ "osascript", "-e", "tell application \"iTerm\"",  "    create window with default profile", "    tell current session of current window", "       write text \"{{command}}\"", "    end tell", "end tell" ]
+      subprocess_postfix: [ ]
+  - apple_terminal:
+      subprocess_prefix: [ "osascript", "-e", "tell application \"Terminal\"",  "    activate", "    do script \"{{command}}\"", "end tell" ]
+      subprocess_postfix: [ ]
+  # TODO: the terminals below are vibe coded. If you happen to use any of the below, please check if they are working
   - xterm:
       subprocess_prefix: ["xterm", "-e", "bash", "-c"]
       subprocess_postfix: []
@@ -33,12 +40,6 @@ terminals:
       subprocess_postfix: []
   - lxterminal:
       subprocess_prefix: ["lxterminal", "-e", "bash", "-c"]
-      subprocess_postfix: []
-  - apple_iterm:
-      subprocess_prefix: ["osascript", "-e", "tell application \"iTerm\"",  "    create window with default profile", "    tell current session of current window", "       write text \"{{command}}\"", "    end tell", "end tell"]
-      subprocess_postfix: []
-  - apple_terminal:
-      subprocess_prefix: ["osascript", "-e", "tell application \"Terminal\"",  "    activate", "    do script \"{{command}}\"", "end tell"]
       subprocess_postfix: []
 
 
@@ -58,7 +59,7 @@ output_settings:
 #   <name>: a name to reference the programs by in a readable way. Must be unique.
 #   <depends_on>: list of programs, which must run before this program can be started
 #   <command>: command to executed, including parameters (array of strings)
-#   <working_dir>: [Optional] the directory (absolute path), in which the command is to be started. If this is missing, the environment build directory is used instead
+#   <working_dir>: [Optional] the directory, in which the command is to be started. If this is missing, the environment build directory is used instead
 #   <state_transitions>: [Optional] A program has the states 'stopped', 'initializing' and 'running'. The transition from one stage into the other may be
 #                                  indicated by an expected output string.
 #                                  This field is optional, but if it is given, then it must have the sub fields 
