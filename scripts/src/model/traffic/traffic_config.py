@@ -63,6 +63,7 @@ class TrafficParameters:
     workdir: str  # Path to main docker-compose.yaml
     loop: bool  # Loop traffic infinitely
     use_nist: bool  # Use NIST Testbed or CipherCell Configurator
+    nist_vm: str
 
     @classmethod
     def load_yaml(cls, path: str) -> Optional['TrafficParameters']:
@@ -78,7 +79,8 @@ class TrafficParameters:
                 workdir=os.path.abspath(
                     os.path.join(os.path.dirname(path), data['parameters'].get('workdir', '../..'))),
                 loop=data['parameters'].get('loop', False),
-                use_nist=data['parameters'].get('use_nist', False)
+                use_nist=data['parameters'].get('use_nist', False),
+                nist_vm=data['parameters'].get('nist_vm_ssh', 'local'),
             )
         else:
             return None

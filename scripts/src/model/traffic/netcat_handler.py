@@ -7,11 +7,6 @@ from model.traffic.traffic_handler import TrafficServer, TrafficClient
 class NetcatServer(TrafficServer):
     """Netcat UDP server that listens for incoming traffic"""
 
-    def __init__(self, workdir: str, service_name: str, server_address: str, server_port: int = 5201,
-                 use_nist: bool = False):
-        super().__init__(workdir, service_name, server_address, server_port, use_nist)
-        self._server_running = False  # Use single underscore consistently
-
     @override
     def start_server(self) -> None:
         """Start the netcat server in a separate process"""

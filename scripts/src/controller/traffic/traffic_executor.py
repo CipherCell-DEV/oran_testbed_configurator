@@ -25,9 +25,9 @@ class TrafficExecutor:
             servers = {}  # UEs
             for ue_id, conn_info in parameters.user_equipments.items():
                 clients[ue_id] = client_class(parameters.workdir, parameters.core_service, conn_info['address'],
-                                              use_nist=parameters.use_nist)
+                                              use_nist=parameters.use_nist, nist_vm=parameters.nist_vm)
                 servers[ue_id] = server_class(parameters.workdir, conn_info['service'], conn_info['address'],
-                                              use_nist=parameters.use_nist)
+                                              use_nist=parameters.use_nist, nist_vm=parameters.nist_vm)
 
             for ue_id in parameters.user_equipments.keys():
                 servers[ue_id].start_session()
