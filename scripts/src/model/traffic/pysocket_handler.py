@@ -29,8 +29,9 @@ class PySocketReceiver(TrafficReceiver):
             self._script_path = self._copy_script_to_remote('pysocket_receiver.py')
 
         try:
-            self._execute_cmd(
-                f'{self._cmd_prefix} python3 {self._script_path} --host {self._server_address} --port {self._server_port} --udp &')
+            udp_flag = '--udp' if self._parameters.use_udp else ''
+            self._execute_cmd(f'{self._cmd_prefix} python3 {self._script_path} '
+                              f'--host {self._server_address} --port {self._server_port} {udp_flag} &')
             time.sleep(0.3)
             self._server_running = self._exec_and_wait_for_marker(
                 f'{self._cmd_prefix} ss -lnp | grep ":{self._server_port}"', f':{self._server_port}')
@@ -53,7 +54,7 @@ class PySocketReceiver(TrafficReceiver):
             return
 
         try:
-            kill_cmd = f'{self._cmd_prefix} pkill -f "python3 server.py"'
+            kill_cmd = f'{self._cmd_prefix} pkill -f "python3 {self._script_path}"'
             self._execute_cmd(f'{kill_cmd}; echo "KILLED"')
 
             if not self._wait_for_marker('KILLED'):
@@ -85,8 +86,9 @@ class PySocketSender(TrafficSender):
         if self._parameters.use_nist and self._parameters.nist_vm != 'local':
             self._script_path = self._copy_script_to_remote('pysocket_sender.py')
 
-        self._execute_cmd(
-            f'{self._cmd_prefix} python3 {self._script_path} --port {self._server_port} --udp {self._server_address}')
+        udp_flag = '--udp' if self._parameters.use_udp else ''
+        self._execute_cmd(f'{self._cmd_prefix} python3 {self._script_path} '
+                          f'--port {self._server_port} {udp_flag} {self._server_address}')
 
     @override
     def send_traffic(self, packet_size: int, timeout: int = 100) -> bool:

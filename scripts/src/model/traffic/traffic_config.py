@@ -64,6 +64,7 @@ class TrafficParameters:
     loop: bool  # Loop traffic infinitely
     use_nist: bool  # Use NIST Testbed or CipherCell Configurator
     nist_vm: str
+    use_udp: bool
 
     @classmethod
     def load_yaml(cls, path: str) -> Optional['TrafficParameters']:
@@ -81,6 +82,7 @@ class TrafficParameters:
                 loop=data['parameters'].get('loop', False),
                 use_nist=data['parameters'].get('use_nist', False),
                 nist_vm=data['parameters'].get('nist_vm_ssh', 'local'),
+                use_udp=data['parameters'].get('use_udp', False),
             )
         else:
             return None

@@ -21,7 +21,7 @@ class NetcatReceiver(TrafficReceiver):
         if self.process.poll() is not None:
             raise RuntimeError("Shell process has died, cannot start server")
 
-        server_cmd = f'{self._cmd_prefix} nc -u -k -l -p {self._server_port}'
+        server_cmd = f'{self._cmd_prefix} nc {"-u" if self._parameters.use_udp else ""} -k -l -p {self._server_port}'
 
         try:
             print(f"Starting netcat server on port {self._server_port}")
@@ -31,7 +31,7 @@ class NetcatReceiver(TrafficReceiver):
             time.sleep(0.5)
 
             # Verify server is running by checking if port is listening
-            verify_cmd = f'{self._cmd_prefix} ss -ulnp | grep ":{self._server_port} "'
+            verify_cmd = f'{self._cmd_prefix} ss -lnp | grep ":{self._server_port} "'
             self._execute_cmd(f'{verify_cmd}; echo "VERIFY_DONE:$?"')
 
             start_time = time.time()
@@ -117,7 +117,7 @@ class NetcatSender(TrafficSender):
             raise RuntimeError("No active session. Call start_session() first.")
 
         netcat_cmd = (f'{self._cmd_prefix} dd if=/dev/urandom bs={packet_size} count=1 | '
-                     f'nc -u -q 0 {self._server_address} {self._server_port}')
+                     f'nc {"-u" if self._parameters.use_udp else ""} -q 0 {self._server_address} {self._server_port}')
         cmd = f'{netcat_cmd}; echo "EXIT_CODE:$?"'
 
         try:
