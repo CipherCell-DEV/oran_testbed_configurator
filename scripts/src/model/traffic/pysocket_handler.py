@@ -25,7 +25,7 @@ class PySocketReceiver(TrafficReceiver):
         if self.process.poll() is not None:
             raise RuntimeError("Shell process has died, cannot start server")
 
-        if self._use_nist and self._nist_vm != 'local':
+        if self._parameters.use_nist and self._parameters.nist_vm != 'local':
             self._script_path = self._copy_script_to_remote('pysocket_receiver.py')
 
         try:
@@ -82,7 +82,7 @@ class PySocketSender(TrafficSender):
     def start_session(self) -> None:
         super().start_session()
 
-        if self._use_nist and self._nist_vm != 'local':
+        if self._parameters.use_nist and self._parameters.nist_vm != 'local':
             self._script_path = self._copy_script_to_remote('pysocket_sender.py')
 
         self._execute_cmd(

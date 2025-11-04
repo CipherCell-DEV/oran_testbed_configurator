@@ -10,10 +10,7 @@ from model.traffic.traffic_config import TrafficParameters
 class TrafficHandler(ABC):
 
     def __init__(self, parameters: TrafficParameters, service_name: str, server_address: str, server_port: int = 5301):
-        self.__workdir = parameters.workdir
-        self._use_nist = parameters.use_nist
-        self._nist_vm = parameters.nist_vm
-
+        self._parameters = parameters
         self.__service_name = service_name
         self._server_address = server_address
         self._server_port = server_port
@@ -29,16 +26,16 @@ class TrafficHandler(ABC):
 
     def start_session(self) -> None:
         """Start a persistent bash session in the UE container"""
-        if self._use_nist:
-            if self._nist_vm == 'local':
+        if self._parameters.use_nist:
+            if self._parameters.nist_vm == 'local':
                 cmd = ['bash']
             else:
-                cmd = ['ssh', self._nist_vm]
+                cmd = ['ssh', self._parameters.nist_vm]
         else:
             compose_files = ['docker-compose.yml', 'docker-compose.yaml', 'compose.yml', 'compose.yaml']
-            compose_file_exists = any(os.path.isfile(os.path.join(self.__workdir, f)) for f in compose_files)
+            compose_file_exists = any(os.path.isfile(os.path.join(self._parameters.workdir, f)) for f in compose_files)
             if not compose_file_exists:
-                raise FileNotFoundError(f"No docker-compose file found in {self.__workdir}")
+                raise FileNotFoundError(f"No docker-compose file found in {self._parameters.workdir}")
 
             cmd = ['docker', 'compose', 'exec', '-T', self.__service_name, 'bash']
 
@@ -48,7 +45,7 @@ class TrafficHandler(ABC):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            cwd=self.__workdir
+            cwd=self._parameters.workdir
         )
         self.initialize_shell()
 
@@ -77,15 +74,16 @@ class TrafficHandler(ABC):
         if not os.path.exists(script_path):
             raise FileNotFoundError(f"Template script not found: {script_path}")
 
-        if self._nist_vm.startswith('root@'):
+        if self._parameters.nist_vm.startswith('root@'):
             target_dir = '/root'
         else:
-            target_dir = f'/home/{self._nist_vm.split("@")[-1] if "@" in self._nist_vm else self._nist_vm}'
+            nist_vm = self._parameters.nist_vm
+            target_dir = f'/home/{nist_vm.split("@")[-1] if "@" in nist_vm else nist_vm}'
 
         target_path = f'{target_dir}/{file_name}'
 
         try:
-            scp_cmd = ['scp', script_path, f"{self._nist_vm}:{target_path}"]
+            scp_cmd = ['scp', script_path, f"{self._parameters.nist_vm}:{target_path}"]
             result = subprocess.run(scp_cmd, capture_output=True, text=True)
 
             if result.returncode != 0:
@@ -99,7 +97,7 @@ class TrafficHandler(ABC):
     @property
     def _cmd_prefix(self) -> str:
         if self.__service_name.startswith('ue'):
-            return ('sudo ' if self._use_nist else '') + 'ip netns exec ' + self.__service_name
+            return ('sudo ' if self._parameters.use_nist else '') + 'ip netns exec ' + self.__service_name
         else:
             return ''
 
