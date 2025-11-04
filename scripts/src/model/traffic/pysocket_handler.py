@@ -1,10 +1,18 @@
+import os
 import time
 from typing import override
 
+from model.traffic.traffic_config import TrafficParameters
 from model.traffic.traffic_handler import TrafficReceiver, TrafficSender
 
 
 class PySocketReceiver(TrafficReceiver):
+
+    @override
+    def __init__(self, parameters: TrafficParameters, service_name: str, server_address: str):
+        super().__init__(parameters, service_name, server_address)
+        self._script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..',
+                                                         'patches', 'templates', 'traffic', 'pysocket_receiver.py'))
 
     @override
     def start_receiver(self) -> None:
@@ -17,9 +25,12 @@ class PySocketReceiver(TrafficReceiver):
         if self.process.poll() is not None:
             raise RuntimeError("Shell process has died, cannot start server")
 
+        if self._use_nist and self._nist_vm != 'local':
+            self._script_path = self._copy_script_to_remote('pysocket_receiver.py')
+
         try:
             self._execute_cmd(
-                f'{self._cmd_prefix} python3 server.py --host {self._server_address} --port {self._server_port} --udp &')
+                f'{self._cmd_prefix} python3 {self._script_path} --host {self._server_address} --port {self._server_port} --udp &')
             time.sleep(0.3)
             self._server_running = self._exec_and_wait_for_marker(
                 f'{self._cmd_prefix} ss -lnp | grep ":{self._server_port}"', f':{self._server_port}')
@@ -45,9 +56,7 @@ class PySocketReceiver(TrafficReceiver):
             kill_cmd = f'{self._cmd_prefix} pkill -f "python3 server.py"'
             self._execute_cmd(f'{kill_cmd}; echo "KILLED"')
 
-            if self._wait_for_marker('KILLED'):
-                print("PySocket server stopped")
-            else:
+            if not self._wait_for_marker('KILLED'):
                 print('Failed to stop PySocket server')
             self._server_running = False
 
@@ -64,10 +73,20 @@ class PySocketReceiver(TrafficReceiver):
 class PySocketSender(TrafficSender):
 
     @override
+    def __init__(self, parameters: TrafficParameters, service_name: str, server_address: str):
+        super().__init__(parameters, service_name, server_address)
+        self._script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..',
+                                                         'patches', 'templates', 'traffic', 'pysocket_sender.py'))
+
+    @override
     def start_session(self) -> None:
         super().start_session()
+
+        if self._use_nist and self._nist_vm != 'local':
+            self._script_path = self._copy_script_to_remote('pysocket_sender.py')
+
         self._execute_cmd(
-            f'{self._cmd_prefix} python3 client.py --port {self._server_port} --udp {self._server_address}')
+            f'{self._cmd_prefix} python3 {self._script_path} --port {self._server_port} --udp {self._server_address}')
 
     @override
     def send_traffic(self, packet_size: int, timeout: int = 100) -> bool:
