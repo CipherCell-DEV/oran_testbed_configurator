@@ -17,9 +17,9 @@ class TrafficHandler(ABC):
         self.__nist_vm = nist_vm
         self.process = None
 
-    def _execute_cmd(self, cmd: str, no_newline: bool = False) -> None:
-        print(self.__service_name, ':', cmd)
-        if not no_newline and not cmd.endswith('\n'):
+    def _execute_cmd(self, cmd: str) -> None:
+        # print(self.__service_name + ': ' + cmd.strip())
+        if not cmd.endswith('\n'):
             cmd += '\n'
         self.process.stdin.write(cmd)
         self.process.stdin.flush()
@@ -65,7 +65,7 @@ class TrafficHandler(ABC):
                 self.process.terminate()
             finally:
                 self.process = None
-                print("Closed container session")
+                print("Closed session")
 
     @property
     def _cmd_prefix(self) -> str:
@@ -74,14 +74,19 @@ class TrafficHandler(ABC):
         else:
             return ''
 
-    def _wait_for_marker(self, markers: str | list[str], timeout: int = 2) -> bool:
+    def _exec_and_wait_for_marker(self, cmd: str, marker: str, delay_before_check: float = 0.3, timeout: int = 2) -> bool:
+        self._execute_cmd(cmd)
+        time.sleep(delay_before_check)
+        return self._wait_for_marker(marker, timeout)
+
+    def _wait_for_marker(self, marker: str, timeout: int = 2) -> bool:
         start_time = time.time()
         while time.time() - start_time < timeout:
             import select
             ready, _, _ = select.select([self.process.stdout], [], [], 0.1)
             if ready:
                 line = self.process.stdout.readline().strip()
-                if line and ((isinstance(markers, str) and markers in line) or all(marker in line for marker in markers)):
+                if line and marker in line:
                     return True
         return False
 
