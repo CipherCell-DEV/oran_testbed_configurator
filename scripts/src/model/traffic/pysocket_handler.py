@@ -7,7 +7,7 @@ from model.traffic.traffic_handler import TrafficServer, TrafficClient
 class PySocketServer(TrafficServer):
 
     @override
-    def start_server(self) -> None:
+    def start_receiver(self) -> None:
         if self._server_running:
             print("PySocket server is already running")
             return
@@ -34,7 +34,7 @@ class PySocketServer(TrafficServer):
             raise
 
     @override
-    def stop_server(self) -> None:
+    def stop_receiver(self) -> None:
         if not self._server_running:
             print("PySocket server is not running")
             return

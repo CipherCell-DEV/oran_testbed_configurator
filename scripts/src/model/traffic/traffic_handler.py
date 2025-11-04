@@ -100,11 +100,11 @@ class TrafficServer(TrafficHandler, ABC):
         self._server_running = False
 
     @abstractmethod
-    def start_server(self) -> None:
+    def start_receiver(self) -> None:
         pass
 
     @abstractmethod
-    def stop_server(self) -> None:
+    def stop_receiver(self) -> None:
         pass
 
 

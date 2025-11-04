@@ -8,12 +8,12 @@ class PingServer(TrafficServer):
     """Ping server that does nothing - no server needed for ping"""
 
     @override
-    def start_server(self) -> None:
-        super().start_server()
+    def start_receiver(self) -> None:
+        super().start_receiver()
 
     @override
-    def stop_server(self) -> None:
-        super().stop_server()
+    def stop_receiver(self) -> None:
+        super().stop_receiver()
 
 
 class PingClient(TrafficClient):

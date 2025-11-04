@@ -8,7 +8,7 @@ class NetcatServer(TrafficServer):
     """Netcat UDP server that listens for incoming traffic"""
 
     @override
-    def start_server(self) -> None:
+    def start_receiver(self) -> None:
         """Start the netcat server in a separate process"""
         if self._server_running:
             print("Netcat server is already running")
@@ -68,7 +68,7 @@ class NetcatServer(TrafficServer):
             raise
 
     @override
-    def stop_server(self) -> None:
+    def stop_receiver(self) -> None:
         """Stop the netcat server"""
         if not self._server_running:
             print("Netcat server is not running")
