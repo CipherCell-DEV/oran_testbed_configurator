@@ -4,7 +4,7 @@ import os
 from controller.traffic.traffic_executor import TrafficExecutor
 from controller.traffic.traffic_parser import TrafficConfigParser
 from controller.traffic.traffic_plan_generator import TrafficPlanGenerator
-from model.traffic.pysocket_handler import PySocketServer, PySocketClient
+from model.traffic.pysocket_handler import PySocketReceiver, PySocketSender
 from model.traffic.traffic_config import TrafficParameters
 
 if __name__ == '__main__':
@@ -21,4 +21,4 @@ if __name__ == '__main__':
     generator.plot()
 
     executor = TrafficExecutor(generator.traffic)
-    executor.execute(parameters, receiver_class=PySocketServer, sender_class=PySocketClient)
+    executor.execute(parameters, receiver_class=PySocketReceiver, sender_class=PySocketSender)

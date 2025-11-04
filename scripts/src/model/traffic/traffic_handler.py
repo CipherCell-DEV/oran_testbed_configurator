@@ -4,17 +4,20 @@ from abc import abstractmethod, ABC
 import os
 from typing import override
 
+from model.traffic.traffic_config import TrafficParameters
+
 
 class TrafficHandler(ABC):
 
-    def __init__(self, workdir: str, service_name: str, server_address: str, server_port: int = 5201,
-                 use_nist: bool = False, nist_vm: str = 'local'):
+    def __init__(self, parameters: TrafficParameters, service_name: str, server_address: str, server_port: int = 5201):
+        self.__workdir = parameters.workdir
+        self._use_nist = parameters.use_nist
+        self.__nist_vm = parameters.nist_vm
+
         self.__service_name = service_name
-        self.__workdir = workdir
         self._server_address = server_address
         self._server_port = server_port
-        self._use_nist = use_nist
-        self.__nist_vm = nist_vm
+
         self.process = None
 
     def _execute_cmd(self, cmd: str) -> None:
@@ -65,7 +68,6 @@ class TrafficHandler(ABC):
                 self.process.terminate()
             finally:
                 self.process = None
-                print("Closed session")
 
     @property
     def _cmd_prefix(self) -> str:
@@ -94,9 +96,8 @@ class TrafficHandler(ABC):
 class TrafficReceiver(TrafficHandler, ABC):
 
     @override
-    def __init__(self, workdir: str, service_name: str, server_address: str, server_port: int = 5201,
-                 use_nist: bool = False, nist_vm: str = 'local'):
-        super().__init__(workdir, service_name, server_address, server_port, use_nist, nist_vm)
+    def __init__(self, parameters: TrafficParameters, service_name: str, server_address: str, server_port: int = 5201):
+        super().__init__(parameters, service_name, server_address, server_port)
         self._server_running = False
 
     @abstractmethod

@@ -9,7 +9,6 @@ class PySocketReceiver(TrafficReceiver):
     @override
     def start_receiver(self) -> None:
         if self._server_running:
-            print("PySocket server is already running")
             return
 
         if not self.process:
@@ -36,7 +35,6 @@ class PySocketReceiver(TrafficReceiver):
     @override
     def stop_receiver(self) -> None:
         if not self._server_running:
-            print("PySocket server is not running")
             return
 
         if not self.process:

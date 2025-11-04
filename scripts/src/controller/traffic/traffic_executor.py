@@ -25,25 +25,20 @@ class TrafficExecutor:
             # handling all incoming traffic from the Core.
             sender = {}
             receivers = {}
-            receiver = receiver_class(parameters.workdir, parameters.core_service, parameters.core_address,
-                                      use_nist=parameters.use_nist, nist_vm=parameters.nist_vm) \
-                if parameters.direction == Direction.ueToCore else None
+            receiver = receiver_class(parameters, parameters.core_service, parameters.core_address) if parameters.direction == Direction.ueToCore else None
             for ue_id, conn_info in parameters.user_equipments.items():
                 if parameters.direction == Direction.ueToCore:
                     server_address = parameters.core_address
                     client_service = conn_info['service']
+
+                    receivers[ue_id] = receiver  # Only a single server in Core for receiving UL traffic from UEs.
                 else:
                     server_address = conn_info['address']
                     client_service = parameters.core_service
 
-                sender[ue_id] = sender_class(parameters.workdir, client_service, server_address,
-                                             use_nist=parameters.use_nist, nist_vm=parameters.nist_vm)
+                    receivers[ue_id] = receiver_class(parameters, conn_info['service'], server_address)
 
-                if parameters.direction == Direction.coreToUE:
-                    receivers[ue_id] = receiver_class(parameters.workdir, conn_info['service'], server_address,
-                                                      use_nist=parameters.use_nist, nist_vm=parameters.nist_vm)
-                else:
-                    receivers[ue_id] = receiver
+                sender[ue_id] = sender_class(parameters, client_service, server_address)
 
             for ue_id in parameters.user_equipments.keys():
                 receivers[ue_id].start_session()
