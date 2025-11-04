@@ -91,7 +91,7 @@ class TrafficHandler(ABC):
         return False
 
 
-class TrafficServer(TrafficHandler, ABC):
+class TrafficReceiver(TrafficHandler, ABC):
 
     @override
     def __init__(self, workdir: str, service_name: str, server_address: str, server_port: int = 5201,
@@ -108,7 +108,7 @@ class TrafficServer(TrafficHandler, ABC):
         pass
 
 
-class TrafficClient(TrafficHandler, ABC):
+class TrafficSender(TrafficHandler, ABC):
 
     @abstractmethod
     def send_traffic(self, packet_size: int, timeout: int = 100) -> None:

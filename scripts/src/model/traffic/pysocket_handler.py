@@ -1,10 +1,10 @@
 import time
 from typing import override
 
-from model.traffic.traffic_handler import TrafficServer, TrafficClient
+from model.traffic.traffic_handler import TrafficReceiver, TrafficSender
 
 
-class PySocketServer(TrafficServer):
+class PySocketReceiver(TrafficReceiver):
 
     @override
     def start_receiver(self) -> None:
@@ -63,7 +63,7 @@ class PySocketServer(TrafficServer):
         return self._server_running
 
 
-class PySocketClient(TrafficClient):
+class PySocketSender(TrafficSender):
 
     @override
     def start_session(self) -> None:

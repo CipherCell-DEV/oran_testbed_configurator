@@ -1,10 +1,10 @@
 import time
 from typing import override
 
-from model.traffic.traffic_handler import TrafficServer, TrafficClient
+from model.traffic.traffic_handler import TrafficReceiver, TrafficSender
 
 
-class NetcatServer(TrafficServer):
+class NetcatReceiver(TrafficReceiver):
     """Netcat UDP server that listens for incoming traffic"""
 
     @override
@@ -104,7 +104,7 @@ class NetcatServer(TrafficServer):
         return self._server_running
 
 
-class NetcatClient(TrafficClient):
+class NetcatSender(TrafficSender):
     """Netcat UDP client that sends random data packets"""
 
     @override

@@ -2,9 +2,9 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Type
 
-from model.traffic.netcat_handler import NetcatServer, NetcatClient
+from model.traffic.netcat_handler import NetcatReceiver, NetcatSender
 from model.traffic.traffic_config import TrafficParameters, Direction
-from model.traffic.traffic_handler import TrafficServer, TrafficClient
+from model.traffic.traffic_handler import TrafficReceiver, TrafficSender
 
 
 class TrafficExecutor:
@@ -14,8 +14,8 @@ class TrafficExecutor:
 
     def execute(self,
                 parameters: TrafficParameters,
-                receiver_class: Type[TrafficServer] = NetcatServer,
-                sender_class: Type[TrafficClient] = NetcatClient):
+                receiver_class: Type[TrafficReceiver] = NetcatReceiver,
+                sender_class: Type[TrafficSender] = NetcatSender):
         if parameters.direction == Direction.bidirectional:
             print('Generating bidirectional traffic is currently not supported')
         else:
