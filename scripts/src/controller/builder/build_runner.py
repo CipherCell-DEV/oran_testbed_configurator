@@ -77,17 +77,21 @@ class BuildRunner:
         Returns: None
         """
         logging.info("Running UE build process...")
+        curr_dir = os.getcwd()
         os.chdir(self.setup_cfg.environment.build_dir)
 
         already_build_natively = False
         for ue in self.setup_cfg.ue.ues:
             if ue.build_type == BuildType.DOCKER:
                 if not UEDockerBuildRunner(self.setup_cfg, ue).build():
+                    os.chdir(curr_dir)
                     return False
             elif ue.build_type == BuildType.NATIVE and not already_build_natively:
                 already_build_natively = True
                 if not UENativeBuilder(self.setup_cfg, ue).build():
+                    os.chdir(curr_dir)
                     return False
+        os.chdir(curr_dir)
         return True
 
     def push_images(self, images_to_push: list[str]) -> bool:

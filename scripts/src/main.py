@@ -3,6 +3,7 @@ import sys
 import pathlib
 
 from controller.component_checkout_manager import ComponentCheckoutManager
+from view.live_console_view import LiveView
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.resolve()))
 
@@ -10,14 +11,13 @@ import os
 
 from model.dialog_cfg import DialogConfig
 from model.setup_configuration import SetupConfiguration
-from model.utils_config import FILE_DIR, DEFAULT_CFG_FILE
+from model.utils_config import FILE_DIR, DEFAULT_CFG_FILE, DEFAULT_DEMO_CFG_FILE
 
 from controller.builder.build_runner import BuildRunner
 from controller.parser.config_parser import ConfigParser
 from controller.demo_runner import DemoRunner
 from controller.patcher.firmware_patcher import FirmwarePatcher
 from view.dialog import setup_logging, print_start_dialog, run_dialog, parse_command_line_arguments
-from view.live_console_viewer import LiveConsoleViewer
 
 
 def patch_firmware(setup_cfg: SetupConfiguration):
@@ -71,8 +71,13 @@ def run_demo(setup_cfg: SetupConfiguration):
     print("\n***********Run Demo***********\n")
     demo_runner = DemoRunner(setup_cfg)
     demo_runner.create_programs()
-    live_view = LiveConsoleViewer(demo_runner=demo_runner)
-    live_view.start_live_display_loop()
+    view = LiveView(demo_runner)
+    view.setup()
+    view.start_programs()
+    view.connect_view()
+
+    #live_view = LiveConsoleViewer(demo_runner=demo_runner)
+    #live_view.start_live_display_loop()
 
 
 def checkout_repositories(setup_cfg: SetupConfiguration):
@@ -102,6 +107,12 @@ if __name__ == "__main__":
     else:
         dialog_cfg = run_dialog()
         config = ConfigParser.parse_config_file(DEFAULT_CFG_FILE)
+
+    if cmd_line_cfg.run_demo:
+        demo_config = ConfigParser.parse_program_setup_config(DEFAULT_DEMO_CFG_FILE, config.environment.build_dir)
+        config.programs = demo_config
+        if not config.verify_consistency():
+            logging.error("Cannot run demo due to mismatching configuration!")
 
     checkout_repositories(config)
     config.dialog = dialog_cfg

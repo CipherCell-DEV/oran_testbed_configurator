@@ -7,9 +7,11 @@ from controller.parser.core_5g_config_parser import Core5GConfigParser
 from controller.parser.gnb_config_parser import GNBConfigParser
 from controller.parser.near_rt_ric_config_parser import NearRTRICConfigParser
 from controller.parser.ue_config_parser import UEConfigParser
+from model.program_descr_config import ProgramDescriptionCfg
 from model.setup_configuration import EnvironmentCfg, SetupConfiguration, \
     ComponentIdentifiers
 from model.utils_config import FILE_DIR
+from controller.parser.program_config_parser import ProgramConfigParser
 
 
 class ConfigParser:
@@ -76,3 +78,16 @@ class ConfigParser:
                     raise KeyError(f"Unknown configuration section: '{config_entry}'")
 
         return setup_config
+
+    @staticmethod
+    def parse_program_setup_config(file_path: str, env_build_path: str) -> ProgramDescriptionCfg:
+        """Parses the yaml demo file, which lists a set of programs to be executed.
+        Each program may have a specified working directory.
+        In case the working directory is not specified, the environment build path is used instead.
+        """
+        with open(file_path, "r") as f:
+            parsed_config = yaml.safe_load(f)
+            program_config = ProgramConfigParser.parse_program_cfg(file_path, parsed_config, env_build_path)
+            if not program_config.check_validity():
+                logging.error("Failed to validate program setup configuration")
+            return program_config

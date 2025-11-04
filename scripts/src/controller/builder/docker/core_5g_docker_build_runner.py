@@ -10,12 +10,18 @@ class Core5GDockerBuildRunner(DockerBuilderBase):
         super().__init__(setup_cfg)
 
     def build(self) -> bool:
+        curr_dir = os.getcwd()
         os.chdir(self.setup_cfg.environment.build_dir)  # TODO is this necessary?
         if self.setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
-            return self.docker_compose_build_helper('5gc', ["docker", "compose", "build", '5gc'])
+            result = self.docker_compose_build_helper('5gc', ["docker", "compose", "build", '5gc'])
+            os.chdir(curr_dir)
+            return result
         if self.setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
-            return self.docker_compose_build_helper('5gc', ["docker", "compose", "build", '5gc', 'mongodb'])
+            result = self.docker_compose_build_helper('5gc', ["docker", "compose", "build", '5gc', 'mongodb'])
+            os.chdir(curr_dir)
+            return result
         else:
             logging.error(
                 "The selected 5G Core implementation is not supported. Currently, only SRS 5G Core is supported.")
+        os.chdir(curr_dir)
         return False

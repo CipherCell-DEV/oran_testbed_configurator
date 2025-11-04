@@ -64,7 +64,7 @@ class FolderManager:
             FolderManager.create_folder(sc_ric_path, folder)
 
     @staticmethod
-    def create_log_dir(setup_cfg: SetupConfiguration):
+    def create_build_log_dir(setup_cfg: SetupConfiguration):
         """Create log directory if it doesn't exist."""
         if setup_cfg.environment.log_dir:
             os.makedirs(setup_cfg.environment.log_dir, exist_ok=True)

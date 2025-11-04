@@ -74,7 +74,7 @@ class UEInstCfg:
     implementation: Optional[UEImplementation] = None
     commit: str = "latest"
     name: Optional[str] = None
-    build_type = BuildType = BuildType.DOCKER
+    build_type : BuildType = BuildType.DOCKER
     ip: Optional[ipaddress.IPv4Address] = None
     srate: Optional[int] = None
     usim: Optional[USIMCfg] = None
@@ -88,7 +88,8 @@ class UEInstCfg:
                 f"    build_type={self.build_type}, \n"
                 f"    ip={self.ip}, \n"
                 f"    srate={self.srate}, \n"
-                f"{self.usim}")
+                f"    usim={self.usim}, \n"
+                f"    gateway={self.gateway}")
 
 
 @dataclass
