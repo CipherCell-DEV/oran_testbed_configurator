@@ -31,17 +31,16 @@ class TrafficExecutor:
             for ue_id, conn_info in parameters.user_equipments.items():
                 if parameters.direction == Direction.ueToCore:
                     server_address = parameters.core_address
-                    server_service = parameters.core_service
                     client_service = conn_info['service']
                 else:
                     server_address = conn_info['address']
-                    server_service = conn_info['service']
                     client_service = parameters.core_service
 
                 sender[ue_id] = sender_class(parameters.workdir, client_service, server_address,
                                              use_nist=parameters.use_nist, nist_vm=parameters.nist_vm)
+
                 if parameters.direction == Direction.coreToUE:
-                    receivers[ue_id] = receiver_class(parameters.workdir, server_service, server_address,
+                    receivers[ue_id] = receiver_class(parameters.workdir, conn_info['service'], server_address,
                                                       use_nist=parameters.use_nist, nist_vm=parameters.nist_vm)
                 else:
                     receivers[ue_id] = receiver
