@@ -1,7 +1,7 @@
+import os
 import subprocess
 import time
 from abc import abstractmethod, ABC
-import os
 from typing import override
 
 from model.traffic.traffic_config import TrafficParameters
@@ -9,10 +9,10 @@ from model.traffic.traffic_config import TrafficParameters
 
 class TrafficHandler(ABC):
 
-    def __init__(self, parameters: TrafficParameters, service_name: str, server_address: str, server_port: int = 5201):
+    def __init__(self, parameters: TrafficParameters, service_name: str, server_address: str, server_port: int = 5301):
         self.__workdir = parameters.workdir
         self._use_nist = parameters.use_nist
-        self.__nist_vm = parameters.nist_vm
+        self._nist_vm = parameters.nist_vm
 
         self.__service_name = service_name
         self._server_address = server_address
@@ -30,10 +30,10 @@ class TrafficHandler(ABC):
     def start_session(self) -> None:
         """Start a persistent bash session in the UE container"""
         if self._use_nist:
-            if self.__nist_vm == 'local':
+            if self._nist_vm == 'local':
                 cmd = ['bash']
             else:
-                cmd = ['ssh', self.__nist_vm]
+                cmd = ['ssh', self._nist_vm]
         else:
             compose_files = ['docker-compose.yml', 'docker-compose.yaml', 'compose.yml', 'compose.yaml']
             compose_file_exists = any(os.path.isfile(os.path.join(self.__workdir, f)) for f in compose_files)
@@ -69,6 +69,33 @@ class TrafficHandler(ABC):
             finally:
                 self.process = None
 
+    def _copy_script_to_remote(self, file_name: str) -> str:
+        script_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..',
+                                   'patches', 'templates', 'traffic', file_name)
+        script_path = os.path.abspath(script_path)
+
+        if not os.path.exists(script_path):
+            raise FileNotFoundError(f"Template script not found: {script_path}")
+
+        if self._nist_vm.startswith('root@'):
+            target_dir = '/root'
+        else:
+            target_dir = f'/home/{self._nist_vm.split("@")[-1] if "@" in self._nist_vm else self._nist_vm}'
+
+        target_path = f'{target_dir}/{file_name}'
+
+        try:
+            scp_cmd = ['scp', script_path, f"{self._nist_vm}:{target_path}"]
+            result = subprocess.run(scp_cmd, capture_output=True, text=True)
+
+            if result.returncode != 0:
+                raise RuntimeError(f"Failed to copy script to remote host: {result.stderr}")
+
+        except Exception as e:
+            raise RuntimeError(f"Error copying script to remote host: {e}")
+
+        return target_path
+
     @property
     def _cmd_prefix(self) -> str:
         if self.__service_name.startswith('ue'):
@@ -76,7 +103,8 @@ class TrafficHandler(ABC):
         else:
             return ''
 
-    def _exec_and_wait_for_marker(self, cmd: str, marker: str, delay_before_check: float = 0.3, timeout: int = 2) -> bool:
+    def _exec_and_wait_for_marker(self, cmd: str, marker: str, delay_before_check: float = 0.3,
+                                  timeout: int = 2) -> bool:
         self._execute_cmd(cmd)
         time.sleep(delay_before_check)
         return self._wait_for_marker(marker, timeout)
@@ -96,7 +124,7 @@ class TrafficHandler(ABC):
 class TrafficReceiver(TrafficHandler, ABC):
 
     @override
-    def __init__(self, parameters: TrafficParameters, service_name: str, server_address: str, server_port: int = 5201):
+    def __init__(self, parameters: TrafficParameters, service_name: str, server_address: str, server_port: int = 5301):
         super().__init__(parameters, service_name, server_address, server_port)
         self._server_running = False
 
