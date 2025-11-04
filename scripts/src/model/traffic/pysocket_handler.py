@@ -103,6 +103,7 @@ class PySocketSender(TrafficSender):
             print(f"PySocket client failed: {e}")
             return False
 
+    @override
     def close_session(self):
         if self.process:
             try:

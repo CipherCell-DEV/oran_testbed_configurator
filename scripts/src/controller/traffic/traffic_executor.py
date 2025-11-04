@@ -17,7 +17,8 @@ class TrafficExecutor:
                 receiver_class: Type[TrafficReceiver] = NetcatReceiver,
                 sender_class: Type[TrafficSender] = NetcatSender):
         if parameters.direction == Direction.bidirectional:
-            print('Generating bidirectional traffic is currently not supported')
+            print('Generating bidirectional traffic is currently not supported. You can use the ping sender / receiver'
+                  'for this.')
         else:
             # For UL: Clients are connections from each UE to the Core. There is only one server handling all incoming
             # traffic from the UEs.
@@ -25,7 +26,8 @@ class TrafficExecutor:
             # handling all incoming traffic from the Core.
             sender = {}
             receivers = {}
-            receiver = receiver_class(parameters, parameters.core_service, parameters.core_address) if parameters.direction == Direction.ueToCore else None
+            receiver = receiver_class(parameters, parameters.core_service,
+                                      parameters.core_address) if parameters.direction == Direction.ueToCore else None
             for ue_id, conn_info in parameters.user_equipments.items():
                 if parameters.direction == Direction.ueToCore:
                     server_address = parameters.core_address
