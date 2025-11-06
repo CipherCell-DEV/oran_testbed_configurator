@@ -21,7 +21,7 @@ class NetcatReceiver(TrafficReceiver):
         if self.process.poll() is not None:
             raise RuntimeError("Shell process has died, cannot start server")
 
-        server_cmd = f'{self._cmd_prefix} nc {"-u" if self._parameters.use_udp else ""} -k -l -p {self._server_port}'
+        server_cmd = f'{self._cmd_prefix} nc {"-u " if self._parameters.use_udp else ""}-k -l -p {self._server_port}'
 
         try:
             print(f"Starting netcat server on port {self._server_port}")
