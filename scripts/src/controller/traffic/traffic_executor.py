@@ -64,8 +64,6 @@ class TrafficExecutor:
                             rest_duration = (start_time + (parameters.granularity / 1000)) - time.time()
                             if rest_duration > 0:
                                 time.sleep(rest_duration)
-                            if rest_duration <= 0:
-                                print(rest_duration)
                     stop = not parameters.loop
 
             finally:
