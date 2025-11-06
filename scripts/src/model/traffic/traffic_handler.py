@@ -19,7 +19,6 @@ class TrafficHandler(ABC):
         self.process = None
 
     def _execute_cmd(self, cmd: str) -> None:
-        # print(self.__service_name + ': ' + cmd.strip())
         if not cmd.endswith('\n'):
             cmd += '\n'
         self.process.stdin.write(cmd)
