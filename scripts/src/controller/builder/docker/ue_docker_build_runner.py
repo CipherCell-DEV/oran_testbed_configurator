@@ -13,5 +13,8 @@ class UEDockerBuildRunner(DockerBuilderBase):
 
     def build(self) -> bool:
         logging.info("Building UE using Docker...")
+        curr_dir = os.getcwd()
         os.chdir(self.setup_cfg.environment.build_dir)
-        return self.docker_compose_build_helper('ue', ["docker", "compose", "build", self._ue.name])
+        result = self.docker_compose_build_helper('ue', ["docker", "compose", "build", self._ue.name])
+        os.chdir(curr_dir)
+        return result
