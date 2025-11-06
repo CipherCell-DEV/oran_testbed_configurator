@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from numpy import dtype, ndarray
 
 from model.traffic.traffic_config import Pause, TrafficParameters, OverlapTrafficConfig, TrafficSequenceConfig, \
-    DistributedTrafficConfig, RandomTrafficConfig, PeriodicTrafficConfig, DistributionType, Direction
+    DistributedTrafficConfig, RandomTrafficConfig, PeriodicTrafficConfig, DistributionType
 
 
 class TrafficPlanGenerator:
