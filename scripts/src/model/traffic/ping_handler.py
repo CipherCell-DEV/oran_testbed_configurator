@@ -9,11 +9,11 @@ class PingReceiver(TrafficReceiver):
 
     @override
     def start_receiver(self) -> None:
-        super().start_receiver()
+        pass
 
     @override
     def stop_receiver(self) -> None:
-        super().stop_receiver()
+        pass
 
 
 class PingSender(TrafficSender):
