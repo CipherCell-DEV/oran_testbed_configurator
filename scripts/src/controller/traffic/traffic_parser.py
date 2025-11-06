@@ -9,16 +9,19 @@ from model.traffic.traffic_config import TrafficSequenceConfig, OverlapTrafficCo
 class TrafficConfigParser:
 
     @staticmethod
-    def load_yaml(path: str) -> Optional['TrafficSequenceConfig']:
+    def load_yaml(path: str) -> dict:
         with open(path, 'r') as f:
             data = yaml.safe_load(f)
         if 'traffic' not in data:
             print('Config file needs to contain traffic config!')
-            return None
-        god = TrafficSequenceConfig([])
-        for part in data['traffic']:
-            god.sequence.append(TrafficConfigParser.__parse_dict(part))
-        return god
+            return {}
+        traffic_by_ue = {}
+        for ue_id, traffic in data['traffic'].items():
+            for part in traffic:
+                if ue_id not in traffic_by_ue:
+                    traffic_by_ue[ue_id] = TrafficSequenceConfig([])
+                traffic_by_ue[ue_id].sequence.append(TrafficConfigParser.__parse_dict(part))
+        return traffic_by_ue
 
     @staticmethod
     def __parse_dict(source: dict):

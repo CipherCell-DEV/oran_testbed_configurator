@@ -7,32 +7,38 @@ from matplotlib import pyplot as plt
 from numpy import dtype, ndarray
 
 from model.traffic.traffic_config import Pause, TrafficParameters, OverlapTrafficConfig, TrafficSequenceConfig, \
-    DistributedTrafficConfig, RandomTrafficConfig, PeriodicTrafficConfig, DistributionType, Direction
+    DistributedTrafficConfig, RandomTrafficConfig, PeriodicTrafficConfig, DistributionType
 
 
 class TrafficPlanGenerator:
 
     def __init__(self, parameters: TrafficParameters):
-        self.__traffic = np.zeros(0, dtype=int)
+        self.__traffic = {}
         self.__granularity = parameters.granularity
+        self.__parameters = parameters
 
-    def from_plan(self, sequence_config: TrafficSequenceConfig):
-        for config in sequence_config.sequence:
-            self.__append_traffic(self.__generate_traffic(config))
+    def from_plan(self, sequence_config: dict):
+        for ue_id, traffic in sequence_config.items():
+            for config in traffic.sequence:
+                self.__append_traffic(ue_id, self.__generate_traffic(config))
 
     @property
     def traffic(self):
         return self.__traffic.copy()
 
-    def __append_traffic(self, appended_traffic: ndarray[tuple[int], dtype[Any]]):
-        self.__traffic = np.append(self.__traffic, appended_traffic)
+    def __append_traffic(self, ue_id: str, appended_traffic: ndarray[tuple[int], dtype[Any]]):
+        if ue_id not in self.__traffic:
+            self.__traffic[ue_id] = np.zeros(0, dtype=int)
+        self.__traffic[ue_id] = np.append(self.__traffic[ue_id], appended_traffic)
 
-    def __overlap_traffic(self, overlapped_traffic: ndarray[tuple[int], dtype[Any]], offset_ms: int):
+    def __overlap_traffic(self, ue_id: str, overlapped_traffic: ndarray[tuple[int], dtype[Any]], offset_ms: int):
+        if ue_id not in self.__traffic:
+            self.__traffic[ue_id] = np.zeros(0, dtype=int)
         offset_slots = int(offset_ms / self.__granularity)
-        new_size = max(self.__traffic.size, offset_slots + overlapped_traffic.size)
-        old_traffic = np.pad(self.__traffic, (0, new_size - self.__traffic.size), mode='constant')
+        new_size = max(self.__traffic[ue_id].size, offset_slots + overlapped_traffic.size)
+        old_traffic = np.pad(self.__traffic[ue_id], (0, new_size - self.__traffic[ue_id].size), mode='constant')
         new_traffic = np.pad(overlapped_traffic, (offset_slots, new_size - offset_slots - overlapped_traffic.size))
-        self.__traffic = old_traffic + new_traffic
+        self.__traffic[ue_id] = old_traffic + new_traffic
 
     @singledispatchmethod
     def __generate_traffic(self, config) -> ndarray[
@@ -122,33 +128,45 @@ class TrafficPlanGenerator:
 
     @__generate_traffic.register
     def _(self, config: TrafficSequenceConfig) -> ndarray[tuple[int], dtype[Any]]:
-        params = TrafficParameters(100, '', '', '', '', Direction.coreToUE, '', False)
-        tpg = TrafficPlanGenerator(params)
+        tpg = TrafficPlanGenerator(self.__parameters)
         for tconfig in config.sequence:
-            tpg.__append_traffic(tpg.__generate_traffic(tconfig))
-        return tpg.traffic
+            tpg.__append_traffic('dummy', tpg.__generate_traffic(tconfig))
+        return tpg.traffic['dummy']
 
     @__generate_traffic.register
     def _(self, config: OverlapTrafficConfig) -> ndarray[tuple[int], dtype[Any]]:
-        params = TrafficParameters(100, '', '', '', '', Direction.coreToUE, '', False)
-        tpg = TrafficPlanGenerator(params)
+        tpg = TrafficPlanGenerator(self.__parameters)
         for (offset, tconfig) in config.overlaps:
-            tpg.__overlap_traffic(tpg.__generate_traffic(tconfig), offset)
-        return tpg.traffic
+            tpg.__overlap_traffic('dummy', tpg.__generate_traffic(tconfig), offset)
+        return tpg.traffic['dummy']
 
     @__generate_traffic.register
     def _(self, config: Pause) -> ndarray[tuple[int], dtype[Any]]:
         return np.zeros(int(config.duration / self.__granularity), dtype=int)
 
-    def plot(self, traffic: ndarray[tuple[int], dtype[Any]] = None):
+    def plot(self, traffic: dict = None, plot_single: bool = True, plot_cumulative: bool = True):
+        def plot_traffic(name, trfc):
+            time_axis = np.arange(0, trfc.size * self.__granularity, self.__granularity)[:len(trfc)]
+            plt.step(time_axis, list(map(lambda x: x / 1000, trfc)), label=name)
+
         if traffic is None:
             traffic = self.__traffic
-        time_axis = np.arange(0, traffic.size * self.__granularity, self.__granularity)[:len(traffic)]
+
+        cumulative_tpg = TrafficPlanGenerator(self.__parameters)
+        for trfc in traffic.values():
+            cumulative_tpg.__overlap_traffic('dummy', trfc, 0)
+        cumulative = cumulative_tpg.traffic['dummy']
+
         plt.figure(figsize=(12, 4))
-        plt.step(time_axis, list(map(lambda x: x / 1000, traffic)), where='post')
+        if plot_cumulative:
+            plot_traffic('Cumulative', cumulative)
+        if plot_single:
+            for ue_id, traffic_list in traffic.items():
+                plot_traffic(ue_id, traffic_list)
         plt.xlabel('Time (ms)')
         plt.ylabel('Instantaneous Traffic (in kB)')
         plt.title('Traffic Over Time')
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
+        plt.legend()
         plt.show()

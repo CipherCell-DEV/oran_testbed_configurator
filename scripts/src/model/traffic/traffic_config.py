@@ -58,11 +58,13 @@ class TrafficParameters:
     granularity: int  # ms
     core_service: str
     core_address: str  # IP Address
-    ue_service: str
-    ue_address: str  # IP Address
+    user_equipments: dict
     direction: Direction
     workdir: str  # Path to main docker-compose.yaml
     loop: bool  # Loop traffic infinitely
+    use_nist: bool  # Use NIST Testbed or CipherCell Configurator
+    nist_vm: str
+    use_udp: bool
 
     @classmethod
     def load_yaml(cls, path: str) -> Optional['TrafficParameters']:
@@ -73,12 +75,14 @@ class TrafficParameters:
                 granularity=parse_time(data['parameters'].get('granularity', '100ms')),
                 core_service=data['parameters']['core'].get('service', '5gc'),
                 core_address=data['parameters']['core'].get('address', '10.45.1.1'),
-                ue_service=data['parameters']['ue'].get('service', 'ue1'),
-                ue_address=data['parameters']['ue'].get('address', '10.45.1.2'),
+                user_equipments=data['parameters'].get('user-equipments', {}),
                 direction=Direction(data['parameters'].get('direction', 'core->ue')),
                 workdir=os.path.abspath(
                     os.path.join(os.path.dirname(path), data['parameters'].get('workdir', '../..'))),
-                loop=data['parameters'].get('loop', False)
+                loop=data['parameters'].get('loop', False),
+                use_nist=data['parameters'].get('use_nist', False),
+                nist_vm=data['parameters'].get('nist_vm_ssh', 'local'),
+                use_udp=data['parameters'].get('use_udp', False),
             )
         else:
             return None

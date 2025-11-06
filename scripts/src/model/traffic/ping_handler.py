@@ -1,22 +1,22 @@
 import time
 from typing import override
 
-from model.traffic.traffic_handler import TrafficServer, TrafficClient
+from model.traffic.traffic_handler import TrafficReceiver, TrafficSender
 
 
-class PingServer(TrafficServer):
+class PingReceiver(TrafficReceiver):
     """Ping server that does nothing - no server needed for ping"""
 
     @override
-    def start_server(self) -> None:
-        super().start_server()
+    def start_receiver(self) -> None:
+        pass
 
     @override
-    def stop_server(self) -> None:
-        super().stop_server()
+    def stop_receiver(self) -> None:
+        pass
 
 
-class PingClient(TrafficClient):
+class PingSender(TrafficSender):
     """Ping client that sends ICMP packets"""
 
     @override
