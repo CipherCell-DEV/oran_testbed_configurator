@@ -127,14 +127,14 @@ class TrafficPlanGenerator:
 
     @__generate_traffic.register
     def _(self, config: TrafficSequenceConfig) -> ndarray[tuple[int], dtype[Any]]:
-        tpg = TrafficPlanGenerator(TrafficParameters(100, '', '', '', '', Direction.coreToUE, '', False))
+        tpg = TrafficPlanGenerator(TrafficParameters.dummy())
         for tconfig in config.sequence:
             tpg.__append_traffic('dummy', tpg.__generate_traffic(tconfig))
         return tpg.traffic['dummy']
 
     @__generate_traffic.register
     def _(self, config: OverlapTrafficConfig) -> ndarray[tuple[int], dtype[Any]]:
-        tpg = TrafficPlanGenerator(TrafficParameters(100, '', '', '', '', Direction.coreToUE, '', False))
+        tpg = TrafficPlanGenerator(TrafficParameters.dummy())
         for (offset, tconfig) in config.overlaps:
             tpg.__overlap_traffic('dummy', tpg.__generate_traffic(tconfig), offset)
         return tpg.traffic['dummy']
@@ -151,7 +151,7 @@ class TrafficPlanGenerator:
         if traffic is None:
             traffic = self.__traffic
 
-        cumulative_tpg = TrafficPlanGenerator(TrafficParameters(100, '', '', '', '', Direction.coreToUE, '', False))
+        cumulative_tpg = TrafficPlanGenerator(TrafficParameters.dummy())
         for trfc in traffic.values():
             cumulative_tpg.__overlap_traffic('dummy', trfc, 0)
         cumulative = cumulative_tpg.traffic['dummy']

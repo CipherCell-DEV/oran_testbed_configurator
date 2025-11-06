@@ -87,6 +87,10 @@ class TrafficParameters:
         else:
             return None
 
+    @classmethod
+    def dummy(cls) -> 'TrafficParameters':
+        return TrafficParameters(0, '', '', {}, Direction.bidirectional, '', False, False, '', False)
+
 
 @dataclass
 class BaseTrafficConfig:
