@@ -11,8 +11,11 @@ class PySocketReceiver(TrafficReceiver):
     @override
     def __init__(self, parameters: TrafficParameters, service_name: str, server_address: str):
         super().__init__(parameters, service_name, server_address)
-        self._script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..',
-                                                         'patches', 'templates', 'traffic', 'pysocket_receiver.py'))
+        if parameters.use_nist:
+            self._script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..',
+                                                             'patches', 'templates', 'traffic', 'pysocket_receiver.py'))
+        else:
+            self._script_path = '/trafficker/pysocket_receiver.py'
 
     @override
     def start_receiver(self) -> None:
@@ -76,8 +79,11 @@ class PySocketSender(TrafficSender):
     @override
     def __init__(self, parameters: TrafficParameters, service_name: str, server_address: str):
         super().__init__(parameters, service_name, server_address)
-        self._script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..',
-                                                         'patches', 'templates', 'traffic', 'pysocket_sender.py'))
+        if parameters.use_nist:
+            self._script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..',
+                                                             'patches', 'templates', 'traffic', 'pysocket_sender.py'))
+        else:
+            self._script_path = '/trafficker/pysocket_sender.py'
 
     @override
     def start_session(self) -> None:

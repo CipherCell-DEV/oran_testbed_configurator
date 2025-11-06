@@ -50,7 +50,6 @@ class TrafficHandler(ABC):
         self.initialize_shell()
 
     def initialize_shell(self):
-        init_timeout = 2
         self._execute_cmd('echo READY')
         if not self._wait_for_marker('READY'):
             print('Initializing shell timed out')
@@ -97,7 +96,8 @@ class TrafficHandler(ABC):
     @property
     def _cmd_prefix(self) -> str:
         if self.__service_name.startswith('ue'):
-            return ('sudo ' if self._parameters.use_nist else '') + 'ip netns exec ' + self.__service_name
+            return (('sudo ' if self._parameters.use_nist else '') + 'ip netns exec '
+                    + (self.__service_name if self._parameters.use_nist else 'ue1'))  # FIXME: Temporary workound
         else:
             return ''
 
