@@ -117,7 +117,7 @@ class NetcatSender(TrafficSender):
             raise RuntimeError("No active session. Call start_session() first.")
 
         netcat_cmd = (f'{self._cmd_prefix} dd if=/dev/urandom bs={packet_size} count=1 | '
-                     f'nc {"-u" if self._parameters.use_udp else ""} -q 0 {self._server_address} {self._server_port}')
+                     f'nc {"-u " if self._parameters.use_udp else ""}-q 0 {self._server_address} {self._server_port}')
         cmd = f'{netcat_cmd}; echo "EXIT_CODE:$?"'
 
         try:
