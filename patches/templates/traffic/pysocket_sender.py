@@ -5,20 +5,20 @@ import sys
 
 
 def run_tcp(host, port):
-    print(f"[TCP] Connecting to {host}:{port} ...", flush=True)
+    print(f"Connecting to {host}:{port} ...", flush=True)
     with socket.create_connection((host, port)) as sock:
-        print("[TCP] Connected. Waiting for commands (packet sizes)...", flush=True)
+        print("Connected. Waiting for commands (packet sizes)...", flush=True)
         for line in sys.stdin:
             line = line.strip()
             if not line:
                 continue
             if line.lower() in ("exit", "quit", "stop"):
-                print("[TCP] Exiting on command.", flush=True)
+                print("Exiting on command.", flush=True)
                 break
             try:
                 size = int(line)
                 if size <= 0:
-                    print("Packet size must be positive.")
+                    print("Packet size must be positive, skipping.")
                     continue
             except ValueError:
                 print(f"Ignoring invalid input: {line}")
@@ -27,32 +27,31 @@ def run_tcp(host, port):
             payload = os.urandom(size)
             try:
                 sock.sendall(payload)
-                print(f"[TCP] Sent {size} bytes.", flush=True)
             except BrokenPipeError:
-                print("[TCP] Connection closed by server.", flush=True)
+                print("Connection closed by server.", flush=True)
                 break
             except Exception as e:
-                print(f"[TCP] Send error: {e}", flush=True)
+                print(f"Send error: {e}", flush=True)
                 break
 
 
 def run_udp(host, port):
-    print(f"[UDP] Target {host}:{port}. Waiting for commands (packet sizes)...", flush=True)
+    print(f"Target {host}:{port}. Waiting for commands (packet sizes)...", flush=True)
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         for line in sys.stdin:
             line = line.strip()
             if not line:
                 continue
             if line.lower() in ("exit", "quit", "stop"):
-                print("[UDP] Exiting on command.", flush=True)
+                print("Exiting on command.", flush=True)
                 break
             try:
                 size = int(line)
                 if size <= 0:
-                    print("Packet size must be positive.")
+                    print("Packet size must be positive, skipping.")
                     continue
                 if size > 65500:
-                    print('Packet size must be < 65.5 kB when using UDP. Sending 65.5 kB now')
+                    print('Packet size must be < 65.5 kB when using UDP. Sending 65.5 kB now.')
                     size = 65500
             except ValueError:
                 print(f"Ignoring invalid input: {line}")
@@ -60,7 +59,7 @@ def run_udp(host, port):
 
             payload = os.urandom(size)
             sock.sendto(payload, (host, port))
-            print(f"[UDP] Sent {size} bytes.", flush=True)
+            print(f"Sent {size} bytes.", flush=True)
 
 
 if __name__ == "__main__":
