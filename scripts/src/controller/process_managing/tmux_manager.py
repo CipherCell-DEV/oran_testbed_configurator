@@ -175,20 +175,22 @@ class TmuxManager(ProcessManager):
                     logging.error(f"Invalid session name for program {state.program.name} detected!")
                     continue
                 pane_nr = int(paneid.split(".")[-1])
-                program_pane = self._sessions[sess_nr].panes[pane_nr]
-                program_pane.send_keys("C-c")
+                # We CANNOT use the line below! The reference program_pane does not refer to an up-to-date reference
+                # do not use: program_pane = self._sessions[sess_nr].panes[pane_nr]
+                self._sessions[sess_nr].panes[pane_nr].send_keys("C-c")
                 state.cur_num_restarts = state.cur_num_restarts + 1
                 # Wait until program is stopped
                 seconds_waited = 0
                 idle_command = os.path.basename(self._server.show_environment()['SHELL'])
                 while seconds_waited < GENERAL_SUBPROCESS_TIMEOUT:
-                    if program_pane.pane_current_command == idle_command:
+                    if self._sessions[sess_nr].panes[pane_nr].pane_current_command == idle_command:
                         logging.info(f"Program {state.program.name} has stopped. Restarting ...")
                         state.change_state_to(ProgramState.STOPPED)
-                        program_pane.send_keys(" ".join(state.program.command))
+                        self._sessions[sess_nr].panes[pane_nr].send_keys(" ".join(state.program.command))
                         break
                     sleep(CHECKUP_PERIOD)
                     seconds_waited = seconds_waited + CHECKUP_PERIOD
+                logging.error(f"Failed to restart program {state.program.name}. Please try to restart it manually.")
                 return True
         logging.error(f"Program name {state.program.name} not found!")
         return False
