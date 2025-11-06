@@ -27,6 +27,10 @@ class TrafficHandler(ABC):
 
     def start_session(self) -> None:
         """Start a persistent bash session in the UE container"""
+        # Skip if session is already established
+        if self.process is not None:
+            return
+
         if self._parameters.use_nist:
             if self._parameters.nist_vm == 'local':
                 cmd = ['bash']
