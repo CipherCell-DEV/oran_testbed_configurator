@@ -117,6 +117,6 @@ class PySocketSender(TrafficSender):
             try:
                 self._execute_cmd('exit')
                 time.sleep(0.1)
-            except:
-                pass
+            except Exception as e:
+                print(f"Exception occurred while closing PySocketSender session: {e}")
         super().close_session()

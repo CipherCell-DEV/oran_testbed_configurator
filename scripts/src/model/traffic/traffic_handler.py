@@ -1,4 +1,5 @@
 import os
+import select
 import subprocess
 import time
 from abc import abstractmethod, ABC
@@ -60,12 +61,27 @@ class TrafficHandler(ABC):
             try:
                 self._execute_cmd('exit')
                 self.process.wait(timeout=2)
-            except:
+            except Exception:
                 self.process.terminate()
             finally:
                 self.process = None
 
     def _copy_script_to_remote(self, file_name: str) -> str:
+        """
+        Copies a script file from the local filesystem to a remote host using SCP.
+        Resolves the absolute path of the script file based on the provided file name,
+        checks for its existence, determines the appropriate target directory on the
+        remote host (based on the user in `self._parameters.nist_vm`), and copies the
+        file to the remote host using SCP.
+        Parameters:
+            file_name (str): The name of the script file to copy (should exist in the
+                local 'patches/templates/traffic' directory).
+        Returns:
+            str: The absolute path to the script file on the remote host.
+        Raises:
+            FileNotFoundError: If the local script file does not exist.
+            RuntimeError: If the SCP command fails or any other error occurs during copying.
+        """
         script_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..',
                                    'patches', 'templates', 'traffic', file_name)
         script_path = os.path.abspath(script_path)
@@ -97,12 +113,25 @@ class TrafficHandler(ABC):
     def _cmd_prefix(self) -> str:
         if self.__service_name.startswith('ue'):
             return (('sudo ' if self._parameters.use_nist else '') + 'ip netns exec '
-                    + (self.__service_name if self._parameters.use_nist else 'ue1'))  # FIXME: Temporary workound
+                    + (self.__service_name if self._parameters.use_nist else 'ue1'))  # FIXME: Temporary workaround
         else:
             return ''
 
     def _exec_and_wait_for_marker(self, cmd: str, marker: str, delay_before_check: float = 0.3,
                                   timeout: int = 2) -> bool:
+        """
+        Execute a command and wait for a specific marker string to appear in the process output.
+        Args:
+            cmd (str): The command to execute.
+            marker (str): The string to look for in the process output, indicating successful execution or readiness.
+            delay_before_check (float, optional): Time in seconds to wait after executing the command before
+                                                  checking for the marker. Defaults to 0.3.
+            timeout (int, optional): Maximum time in seconds to wait for the marker to appear. Defaults to 2.
+        Returns:
+            bool: True if the marker is found within the timeout period, False otherwise.
+        Behavior:
+            The method writes the command to the process, waits for a short delay, and then checks the process output for the specified marker string.
+        """
         self._execute_cmd(cmd)
         time.sleep(delay_before_check)
         return self._wait_for_marker(marker, timeout)
@@ -110,7 +139,6 @@ class TrafficHandler(ABC):
     def _wait_for_marker(self, marker: str, timeout: int = 2) -> bool:
         start_time = time.time()
         while time.time() - start_time < timeout:
-            import select
             ready, _, _ = select.select([self.process.stdout], [], [], 0.1)
             if ready:
                 line = self.process.stdout.readline().strip()
