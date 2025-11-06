@@ -1,23 +1,25 @@
 parameters:
   core:
-    service: 5gc  # Name of the 5G Core docker service
-    address: 10.45.0.1
+    service: 5gc  # Name of the 5G Core docker service. Irrelevant if using NIST Deployment.
+    address: 10.45.1.1  # IP Address in the deployment.
   user-equipments:
+    # You can list as much UEs as you like, they just need to run and be connected.
     ue1:
-      service: ue1  # Name of the UE docker service
-      address: 10.45.0.101
+      service: ue1  # Name of the UE docker service. Irrelevant if using NIST Deployment.
+      address: 10.45.1.2
     ue2:
-      service: ue2  # Name of the UE docker service
-      address: 10.45.0.102
+      service: ue2  # Name of the UE docker service. Irrelevant if using NIST Deployment.
+      address: 10.45.1.3
   direction: DL  # Direction of traffic. Either DL (Download), UL (Upload) or BI (Bidirectional) (currently not supported)
   workdir: ../../repositories/  # The directory of the main docker-compose file.
   granularity: 100ms  # The granularity of time intervals, i.e. the timespan of one slot in the traffic array.
                       # Anything under 100 ms is probably less than the RTT between UE and gNB and thus not sensible.
   loop: false  # Whether to repeat the pattern forever.
-  use_nist: true  # Whether the trafficker is used with the NIST O-RAN Testbed or the CipherCell Configurator (default).
-  nist_vm_ssh: root@132.231.14.134  # Needs to be able to execute commands as root without authentication
-  use_udp: true  # Whether to try to use UDP instead of TCP for generating traffic. Using UDP limits the amount of data
-                 # that can be sent in one packet (gets sent every 100 ms on each device) to 65 kB.
+  use_nist: false  # Whether the trafficker is used with the NIST O-RAN Testbed or the CipherCell Configurator (default).
+  nist_vm_ssh: root@132.231.14.134  # User needs to be able to execute commands as root without authentication.
+                                    # If trafficker is started on the same machine as the deployment, use 'local' here.
+  use_udp: false  # Whether to use UDP instead of TCP for generating traffic. Using UDP limits the amount of data that
+                  # can be sent in one packet (sent every 100 ms (granularity) on each device) to 65 kB. Default: false.
 
 
 
