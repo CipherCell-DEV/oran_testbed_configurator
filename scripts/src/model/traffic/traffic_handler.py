@@ -96,7 +96,7 @@ class TrafficHandler(ABC):
             target_dir = '/root'
         else:
             nist_vm = self._parameters.nist_vm
-            target_dir = f'/home/{nist_vm.split("@")[-1] if "@" in nist_vm else nist_vm}'
+            target_dir = f'/home/{nist_vm.split("@")[0] if "@" in nist_vm else nist_vm}'
 
         target_path = f'{target_dir}/{file_name}'
 
