@@ -15,6 +15,7 @@ class TrafficPlanGenerator:
     def __init__(self, parameters: TrafficParameters):
         self.__traffic = {}
         self.__granularity = parameters.granularity
+        self.__parameters = parameters
 
     def from_plan(self, sequence_config: dict):
         for ue_id, traffic in sequence_config.items():
@@ -127,14 +128,14 @@ class TrafficPlanGenerator:
 
     @__generate_traffic.register
     def _(self, config: TrafficSequenceConfig) -> ndarray[tuple[int], dtype[Any]]:
-        tpg = TrafficPlanGenerator(TrafficParameters.dummy())
+        tpg = TrafficPlanGenerator(self.__parameters)
         for tconfig in config.sequence:
             tpg.__append_traffic('dummy', tpg.__generate_traffic(tconfig))
         return tpg.traffic['dummy']
 
     @__generate_traffic.register
     def _(self, config: OverlapTrafficConfig) -> ndarray[tuple[int], dtype[Any]]:
-        tpg = TrafficPlanGenerator(TrafficParameters.dummy())
+        tpg = TrafficPlanGenerator(self.__parameters)
         for (offset, tconfig) in config.overlaps:
             tpg.__overlap_traffic('dummy', tpg.__generate_traffic(tconfig), offset)
         return tpg.traffic['dummy']
@@ -151,7 +152,7 @@ class TrafficPlanGenerator:
         if traffic is None:
             traffic = self.__traffic
 
-        cumulative_tpg = TrafficPlanGenerator(TrafficParameters.dummy())
+        cumulative_tpg = TrafficPlanGenerator(self.__parameters)
         for trfc in traffic.values():
             cumulative_tpg.__overlap_traffic('dummy', trfc, 0)
         cumulative = cumulative_tpg.traffic['dummy']

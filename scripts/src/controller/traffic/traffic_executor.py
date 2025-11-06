@@ -64,7 +64,7 @@ class TrafficExecutor:
                             rest_duration = (start_time + (parameters.granularity / 1000)) - time.time()
                             if rest_duration > 0:
                                 time.sleep(rest_duration)
-                    stop = not parameters.loop
+                        stop = not parameters.loop
 
             finally:
                 for ue_id in parameters.user_equipments.keys():
