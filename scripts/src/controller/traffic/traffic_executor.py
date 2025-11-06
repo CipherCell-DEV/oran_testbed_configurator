@@ -50,8 +50,8 @@ class TrafficExecutor:
 
             try:
                 stop = False
-                while not stop:
-                    with ThreadPoolExecutor(max_workers=len(sender)) as executor:
+                with ThreadPoolExecutor(max_workers=len(sender)) as executor:
+                    while not stop:
                         for values in zip(*self.traffic_plan.values()):
                             start_time = time.time()
                             step = dict(zip(self.traffic_plan.keys(), values))
