@@ -67,7 +67,8 @@ class DemoRunner:
     def _create_core(self):
         """Create the 5G Core program."""
         program = None
-        if self._cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
+        if (self._cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS or
+                self._cfg.core_5g.implementation == CoreImplementation.OPEN5GS):
             cores = self._cfg.programs.get_core_programs()
             if len(cores) == 0:
                 logging.warning("No core will be started.")
