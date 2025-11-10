@@ -45,7 +45,7 @@ terminals:
 
 
 
-# Supported options:linux [tmux|python]
+# Supported options: [tmux|python]
 output_mode: "tmux"
 output_settings:
   log_dir: "run_logs" # This folder is relative to the log folder of the environment (see sample_configuration.yml)
