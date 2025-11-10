@@ -1,4 +1,5 @@
 import logging
+import shutil
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, List
@@ -178,15 +179,32 @@ class ProgramDescriptionCfg:
 
     def _set_terminal_by_name_pref(self, name_prefix : str) -> List[TerminalDescription]:
         suitable_terms: List[TerminalDescription] = []
+        found_default: bool = False
         for term in self.terminal_descriptions:
             if term.name.startswith(name_prefix):
                 suitable_terms.append(term)
         if len(suitable_terms) == 0:
-            logging.warning(f"No matching {name_prefix} terminal found. Use Terminal {self.terminal_descriptions[0].name} instead!")
-            self._used_terminal = self.terminal_descriptions[0]
+            logging.warning(f"No matching {name_prefix} terminals in configuration!")
         else:
-            logging.info(f"Found {name_prefix} terminal {suitable_terms[0].name}")
+            logging.info(f"Found {len(suitable_terms)} terminal candidates")
+        # choose terminal from list which is installed on the system
+        if get_operating_system() is OperatingSystem.LINUX:
+            for term in suitable_terms:
+                if len(term.subproc_prefix) > 0:
+                    if shutil.which(term.subproc_prefix[0]) is not None:
+                        self._used_terminal = term
+                        logging.info(f"Using installed {term.name} terminal as default ({term.subproc_prefix[0]}).")
+                        found_default = True
+                        break
+        if get_operating_system() is OperatingSystem.MACOS:
+            # todo: check if program called inside osascript is installed
+            logging.info(f"Using {suitable_terms[0].name} terminal as default.")
             self._used_terminal = suitable_terms[0]
+            found_default = True
+
+        if not found_default:
+            logging.warning(f"Use terminal {self.terminal_descriptions[0].name} as default terminal. Could not verify whether it is supported or installed on your system.")
+
         return suitable_terms
 
 
@@ -220,10 +238,10 @@ class ProgramDescriptionCfg:
         else:
             # fix mismatching terminal
             if used_os is OperatingSystem.LINUX and not self._used_terminal.name.startswith("linux_"):
-                logging.warning(f"Terminal {self.terminal_descriptions[0].name} is not a Linux terminal!")
+                logging.warning(f"Terminal {self._used_terminal.name} is not a Linux terminal!")
                 self._set_terminal_by_name_pref("linux_")
             if used_os is OperatingSystem.MACOS and not self._used_terminal.name.startswith("apple_"):
-                logging.warning(f"Terminal {self.terminal_descriptions[0].name} is not a mac terminal!")
+                logging.warning(f"Terminal {self._used_terminal.name} is not a mac terminal!")
                 self._set_terminal_by_name_pref("apple_")
 
         for term in self.terminal_descriptions:

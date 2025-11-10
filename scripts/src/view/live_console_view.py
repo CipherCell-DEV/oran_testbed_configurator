@@ -1,4 +1,5 @@
 import logging
+import shutil
 import signal
 import subprocess
 from email.headerregistry import Group
@@ -48,18 +49,33 @@ class LiveView:
         exit(0)
 
     @staticmethod
-    def _run_open_terminal_command(commands: List[List[str]]):
+    def _run_open_terminal_command(commands: List[List[str]]) -> bool:
+        detect_failure: bool = False
         for command in commands:
             # TODO to open a terminal on macOS requires a osascript which can not easily seperated into prefix and postfix
             if command[0] == 'osascript':
                 cmd = command[:2]
                 osascript_command = '\n'.join(command[2:-1]).replace('{{command}}', command[-1])
-                subprocess.run(cmd + [osascript_command])
+                try:
+                    subprocess.run(cmd + [osascript_command])
+                except Exception as e:
+                    detect_failure = True
+                    logging.exception(e)
+                    logging.error(f"Failed to execute command {cmd + [osascript_command]}")
             else:
-                subprocess.run(command,
-                               timeout=GENERAL_SUBPROCESS_TIMEOUT,
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
+                if shutil.which(command[0]) is None:
+                    logging.warning(f"{command[0]} is not installed! Opening the terminal may fail!")
+                try:
+                    subprocess.run(command,
+                                   timeout=GENERAL_SUBPROCESS_TIMEOUT,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
+                except Exception as e:
+                    detect_failure = True
+                    logging.exception(e)
+                    logging.error(f"Failed to execute command {' '.join(command)}")
+        return not detect_failure
+
 
     def _reselect_terminal(self, ref_strings: List[str]) -> bool:
         all_programs = self._process_manager.demo_runner.cfg.programs.get_terminal_name_list()
@@ -73,8 +89,7 @@ class LiveView:
             return False
         else:
             commands = self._construct_terminal_command(all_programs[choice - 1], ref_strings)
-            self._run_open_terminal_command(commands)
-            return True
+            return self._run_open_terminal_command(commands)
 
 
     def _construct_terminal_command(self, terminal_name : str, ref_strings: List[str]) -> List[List[str]]:
@@ -113,7 +128,7 @@ class LiveView:
                                  "No, choose other terminal instead"],
                                 default=1)
             if choice == 1:
-                self._run_open_terminal_command(commands)
+                display_instruction = not self._run_open_terminal_command(commands)
 
             elif choice == 2:
                 display_instruction = True

@@ -9,7 +9,7 @@
 
 # available terminals: all terminals listed in the terminals section below
 # naming convention: operating-system_name, e.g. linux_gnome, apple_iterm, windows_cmd, ...
-default_terminal: "apple_terminal"
+default_terminal: "linux_alacritty"
 terminals:
   - linux_gnome:
       subprocess_prefix: ["gnome-terminal", "--", "bash", "-c"]
