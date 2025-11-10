@@ -78,4 +78,5 @@ WORKDIR /open5gs
 COPY config/open5gs-5gc.yml open5gs-5gc.yml.in
 COPY config/open5gs_entrypoint.sh config/add_users.py config/setup_tun.py subscriber_db.cs[v] ./
 
-ENTRYPOINT [ "./open5gs_entrypoint.sh" ]
+ENTRYPOINT ["bash", "./open5gs_entrypoint.sh"]
+

@@ -21,11 +21,13 @@ near_rt_ric:
       rtmgr_sim_ip: 10.0.2.15
       xapp_runner_ip: 10.0.2.20
 
-    #implementation: "Open5GS"
-    #commit: "2b6369e9d997eb8eb158e3803e3ae4f4d207cd4d"
+
+#    implementation: "Open5GS_SRS"
+ #   commit: "11c9bbabb69873752500d676f55e0034f6caa5c5"
+
 5gc:
-    implementation: "Open5GS_SRS"
-    commit: "11c9bbabb69873752500d676f55e0034f6caa5c5"
+    implementation: "Open5GS"
+    commit: "2b6369e9d997eb8eb158e3803e3ae4f4d207cd4d"
     build_type: "docker"
     network:
       5gc_ip: 10.53.1.2

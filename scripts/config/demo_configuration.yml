@@ -72,9 +72,9 @@ programs:
     program_list: 
       - name: "5G_core"
         depends_on: []
-        command: ["docker", "compose", "up", "5gc"]
+        command: ["docker", "compose", "up", "5gc", "mongodb"]
         state_transitions:
-          stop_to_init: "open5gs_5gc"
+          stop_to_init: "Configuration: 'open5gs-5gc.yml'"
           init_to_running: "UDR initialize...done"
   run_ric:
     restart_timeout_s: 30
