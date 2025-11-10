@@ -47,43 +47,80 @@ class LiveView:
         self._process_manager.cleanup_and_shutdown()
         exit(0)
 
+    @staticmethod
+    def _run_open_terminal_command(commands: List[List[str]]):
+        for command in commands:
+            # TODO to open a terminal on macOS requires a osascript which can not easily seperated into prefix and postfix
+            if command[0] == 'osascript':
+                cmd = command[:2]
+                osascript_command = '\n'.join(command[2:-1]).replace('{{command}}', command[-1])
+                subprocess.run(cmd + [osascript_command])
+            else:
+                subprocess.run(command,
+                               timeout=GENERAL_SUBPROCESS_TIMEOUT,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+
+    def _reselect_terminal(self, ref_strings: List[str]) -> bool:
+        all_programs = self._process_manager.demo_runner.cfg.programs.get_terminal_name_list()
+        all_programs.append("None")
+        choice = ask_choice("Which terminal do you want to use:",
+                            all_programs,
+                            1)
+        logging.info(f"Terminal choice: {choice}: {all_programs[choice - 1]}")
+        if choice == len(all_programs):
+            # no terminal chosen
+            return False
+        else:
+            commands = self._construct_terminal_command(all_programs[choice - 1], ref_strings)
+            self._run_open_terminal_command(commands)
+            return True
+
+
+    def _construct_terminal_command(self, terminal_name : str, ref_strings: List[str]) -> List[List[str]]:
+        """
+        Constructs terminal commands to open the tmux windows for the given terminal.
+        ref_strings are passed from the process control to the view layer for identification or other purposes
+            (depends on process manager). This helper function expects tmux session names here.
+        """
+        terminal = self._process_manager.demo_runner.cfg.programs.get_terminal_by_name(terminal_name)
+        subprocess_commands = []
+        if terminal is not None:
+            for ref in ref_strings:
+                curr_command = []
+                if terminal.subproc_prefix is not None:
+                    curr_command.extend(terminal.subproc_prefix)
+                curr_command.append(f"tmux attach-session -t {ref}")
+                if terminal.subprocess_postfix is not None:
+                    curr_command.extend(terminal.subprocess_postfix)
+                subprocess_commands.append(curr_command)
+        return subprocess_commands
+
     def _ask_for_open_tmux(self):
         refs = self._process_manager.get_view_ref_str()
         logging.info(f"The following tmux sessions are currently running: {', '.join(refs)}")
         tmux_terminal = self._runner.cfg.programs.get_used_terminal_data()
-        subprocess_commands = []  # commands to be run, unless user declines
         display_instruction = False
         if tmux_terminal is not None:
-            for ref in refs:
-                curr_command = []
-                if tmux_terminal.subproc_prefix is not None:
-                    curr_command.extend(tmux_terminal.subproc_prefix)
-                curr_command.append(f"tmux attach-session -t {ref}")
-                if tmux_terminal.subprocess_postfix is not None:
-                    curr_command.extend(tmux_terminal.subprocess_postfix)
-                subprocess_commands.append(curr_command)
-            logging.info(f"Currently selected terminal: {self._runner.cfg.programs.get_used_terminal_data().name}")
+            commands = self._construct_terminal_command(tmux_terminal.name, refs)
+            logging.info(f"Currently selected terminal: {tmux_terminal.name}")
             logging.info("About to execute the following commands to attach to tmux sessions:")
-            for command in subprocess_commands:
+            for command in commands:
                 logging.info(f"\t{' '.join(command)}")
             choice = ask_choice("Do you want me to execute the commands listed above?",
                                 ["Yes, open the terminal windows for me",
-                                 "No, just keep running the demo in the background"],
+                                 "No, just keep running the demo in the background",
+                                 "No, choose other terminal instead"],
                                 default=1)
             if choice == 1:
-                for command in subprocess_commands:
-                    # TODO to open a terminal on macOS requires a osascript which can not easily seperated into prefix and postfix
-                    if command[0] == 'osascript':
-                        cmd = command[:2]
-                        osascript_command = '\n'.join(command[2:-1]).replace('{{command}}', command[-1])
-                        subprocess.run(cmd + [osascript_command])
-                    else:
-                        subprocess.run(command,
-                                       timeout=GENERAL_SUBPROCESS_TIMEOUT,
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
-            else:
+                self._run_open_terminal_command(commands)
+
+            elif choice == 2:
                 display_instruction = True
+
+            elif choice == 3:
+                display_instruction = not self._reselect_terminal(refs)
+
         else:
             logging.info(f"No terminal is configured. Will not open tmux windows for you.")
             display_instruction = True

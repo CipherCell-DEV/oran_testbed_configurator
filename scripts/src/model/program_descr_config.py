@@ -333,3 +333,20 @@ class ProgramDescriptionCfg:
     def get_used_terminal_data(self) -> TerminalDescription | None:
         return self._used_terminal
 
+    def get_terminal_by_name(self, t_name : str) -> TerminalDescription | None:
+        if self._used_terminal is not None and self._used_terminal.name == t_name:
+            return self._used_terminal
+        else:
+            term = None
+            for t  in self.terminal_descriptions:
+                if t.name == t_name:
+                    term = t
+                    break
+            return term
+
+    def get_terminal_name_list(self) -> List[str]:
+        ret = []
+        for t in self.terminal_descriptions:
+            ret.append(t.name)
+        return ret
+
