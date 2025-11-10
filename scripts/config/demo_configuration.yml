@@ -8,8 +8,8 @@
 # NOTE: ensure that this call is not blocking!
 
 # available terminals: all terminals listed in the terminals section below
-# naming convention: operating-system_name, e.g. linux_gnome, apple_iterm, windows_cmd, ...
-default_terminal: "linux_alacritty"
+# !!!! naming convention: operating-system_name, e.g. linux_gnome, apple_iterm, windows_cmd, ... !!!!
+default_terminal: "linux_gnome"
 terminals:
   - linux_gnome:
       subprocess_prefix: ["gnome-terminal", "--", "bash", "-c"]

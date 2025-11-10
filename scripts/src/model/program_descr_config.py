@@ -177,9 +177,10 @@ class ProgramDescriptionCfg:
             ret_str += group.__str__()
         return ret_str
 
-    def _set_terminal_by_name_pref(self, name_prefix : str) -> List[TerminalDescription]:
+    def _set_terminal_by_name_pref(self, name_prefix : str, preferred_terminal: TerminalDescription = None) -> None:
         suitable_terms: List[TerminalDescription] = []
         found_default: bool = False
+        # get all terminals from demo config which start with linux_
         for term in self.terminal_descriptions:
             if term.name.startswith(name_prefix):
                 suitable_terms.append(term)
@@ -187,25 +188,72 @@ class ProgramDescriptionCfg:
             logging.warning(f"No matching {name_prefix} terminals in configuration!")
         else:
             logging.info(f"Found {len(suitable_terms)} terminal candidates")
-        # choose terminal from list which is installed on the system
+
+        # for linux we check, whether the terminal command is installed on the system
         if get_operating_system() is OperatingSystem.LINUX:
+            installed_terms = []
             for term in suitable_terms:
                 if len(term.subproc_prefix) > 0:
                     if shutil.which(term.subproc_prefix[0]) is not None:
+                        installed_terms.append(term)
+            # if we have no preference, use first installed terminal we find
+            if preferred_terminal is None:
+                if len(installed_terms) > 0:
+                    logging.info(
+                        f"Using installed terminal {installed_terms[0].name} ({installed_terms[0].subproc_prefix[0]})")
+                    self._used_terminal = installed_terms[0]
+                    found_default = True
+                else:
+                    logging.warning(
+                        f"None of the {name_prefix} terminals in the demo configuration are installed on your system!")
+            # check if the preferred terminal in the demo configuration is installed
+            else:
+                for term in installed_terms:
+                    if term.name == preferred_terminal.name:
                         self._used_terminal = term
-                        logging.info(f"Using installed {term.name} terminal as default ({term.subproc_prefix[0]}).")
+                        logging.info(f"Using installed terminal {term.name} ({term.subproc_prefix[0]})")
                         found_default = True
                         break
-        if get_operating_system() is OperatingSystem.MACOS:
-            # todo: check if program called inside osascript is installed
-            logging.info(f"Using {suitable_terms[0].name} terminal as default.")
-            self._used_terminal = suitable_terms[0]
-            found_default = True
+                if not found_default:
+                    logging.warning(f"Configured default terminal {preferred_terminal.name} is not installed!")
+                    # try to find other installed terminal
+                    if len(installed_terms) > 0:
+                        logging.info(
+                            f"Using installed terminal {installed_terms[0].name} ({installed_terms[0].subproc_prefix[0]}) instead!")
+                        self._used_terminal = installed_terms[0]
+                        found_default = True
+
+        else:
+            # TODO: how to 'cleanly' check whether terminal opened by osascript command is installed?
+            for term in suitable_terms:
+                if term.name == preferred_terminal.name:
+                    self._used_terminal = term
+                    logging.info(f"Using configured terminal {term.name}.")
+                    found_default = True
+                    break
+            if not found_default:
+                logging.warning(f"Configured default terminal {preferred_terminal.name} is not suitable for this device!")
+
+            if len(suitable_terms) > 0:
+                logging.info(f"Using {suitable_terms[0].name} terminal as default.")
+                self._used_terminal = suitable_terms[0]
+                found_default = True
 
         if not found_default:
-            logging.warning(f"Use terminal {self.terminal_descriptions[0].name} as default terminal. Could not verify whether it is supported or installed on your system.")
-
-        return suitable_terms
+            if preferred_terminal is not None:
+                logging.warning(
+                    f"Configured default terminal {preferred_terminal.name} is most likely not supported on your system."
+                    f" Failed to find suitable alternatives.")
+                self._used_terminal = preferred_terminal
+            elif len(suitable_terms) > 0:
+                self._used_terminal = suitable_terms[0]
+                logging.warning(f"Using {suitable_terms[0].name} terminal as default. Can not verify if it is install on your system.")
+            elif len(self.terminal_descriptions) > 0:
+                self._used_terminal = self.terminal_descriptions[0]
+                logging.warning(f"No suitable terminal found! Defaulting to {self.terminal_descriptions[0].name}")
+            else:
+                logging.error(f"No suitable terminal found!")
+                self._used_terminal = None
 
 
     def _check_valid_terminal(self) -> bool:
@@ -219,36 +267,19 @@ class ProgramDescriptionCfg:
         except ValueError:
             logging.warning(f"Failed to determine Operating System!")
 
-        if self._used_terminal is None or self._used_terminal == "":
-            # try to find OS compatible terminal
-            logging.warning(f"{self.config_file_path}: No default terminal provided!")
-            if used_os is None:
-                logging.warning(f"Use terminal {self.terminal_descriptions[0].name} as default.")
-                self._used_terminal = self.terminal_descriptions[0]
-                return True
-            if used_os is OperatingSystem.WINDOWS:
-                self._set_terminal_by_name_pref("windows_")
-                return True
-            if used_os is OperatingSystem.LINUX:
-                self._set_terminal_by_name_pref("linux_")
-                return True
-            if used_os is OperatingSystem.MACOS:
-                self._set_terminal_by_name_pref("apple_")
-                return True
-        else:
-            # fix mismatching terminal
-            if used_os is OperatingSystem.LINUX and not self._used_terminal.name.startswith("linux_"):
-                logging.warning(f"Terminal {self._used_terminal.name} is not a Linux terminal!")
-                self._set_terminal_by_name_pref("linux_")
-            if used_os is OperatingSystem.MACOS and not self._used_terminal.name.startswith("apple_"):
-                logging.warning(f"Terminal {self._used_terminal.name} is not a mac terminal!")
-                self._set_terminal_by_name_pref("apple_")
-
-        for term in self.terminal_descriptions:
-            if term.name == self._used_terminal.name:
-                return True
-        logging.error(f"{self.config_file_path}: Used terminal is not in terminal list!")
-        return False
+        if used_os is None:
+            logging.warning(f"Use terminal {self.terminal_descriptions[0].name} as default terminal.")
+            self._used_terminal = self.terminal_descriptions[0]
+            return True
+        if used_os is OperatingSystem.WINDOWS:
+            self._set_terminal_by_name_pref("windows_", self._used_terminal)
+            return True
+        if used_os is OperatingSystem.LINUX:
+            self._set_terminal_by_name_pref("linux_", self._used_terminal)
+            return True
+        if used_os is OperatingSystem.MACOS:
+            self._set_terminal_by_name_pref("apple_", self._used_terminal)
+            return True
 
 
     def _check_output_settings(self) -> bool:
