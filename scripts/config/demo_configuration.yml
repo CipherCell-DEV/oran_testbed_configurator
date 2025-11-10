@@ -3,48 +3,49 @@
 # info on the installed terminal. This is used in a python subprocess.run call to open a window attached 
 # to a tmux session.
 # We assume the following systax: [subprocess_prefix] [tmux attach-session -t .....] [subprocess_postfix]
-# Example for gnome terminal:
+# Example for linux gnome terminal:
 # gnome-terminal -- bash -c tmux attach-session -t ...
 # NOTE: ensure that this call is not blocking!
 
 # available terminals: all terminals listed in the terminals section below
-used_terminal: "apple_terminal"
+# naming convention: operating-system_name, e.g. linux_gnome, apple_iterm, windows_cmd, ...
+default_terminal: "apple_terminal"
 terminals:
-  - gnome-terminal:
+  - linux_gnome:
       subprocess_prefix: ["gnome-terminal", "--", "bash", "-c"]
       subprocess_postfix: []
-  - alacritty:
+  - linux_alacritty:
       subprocess_prefix: ["alacritty", "-e", "zsh", "-c", "\""]
       subprocess_postfix: ["\"", "&"]
-  - apple_iterm:
-      subprocess_prefix: [ "osascript", "-e", "tell application \"iTerm\"",  "    create window with default profile", "    tell current session of current window", "       write text \"{{command}}\"", "    end tell", "end tell" ]
-      subprocess_postfix: [ ]
   - apple_terminal:
       subprocess_prefix: [ "osascript", "-e", "tell application \"Terminal\"",  "    activate", "    do script \"{{command}}\"", "end tell" ]
       subprocess_postfix: [ ]
+  - apple_iterm:
+      subprocess_prefix: [ "osascript", "-e", "tell application \"iTerm\"",  "    create window with default profile", "    tell current session of current window", "       write text \"{{command}}\"", "    end tell", "end tell" ]
+      subprocess_postfix: [ ]
   # TODO: the terminals below are vibe coded. If you happen to use any of the below, please check if they are working
-  - xterm:
+  - linux_xterm:
       subprocess_prefix: ["xterm", "-e", "bash", "-c"]
       subprocess_postfix: []
-  - xcfe4-terminal:
+  - linux_xcfe4:
       subprocess_prefix: ["xfce4-terminal", "--command=bash", "-c"]
       subprocess_postfix: []
-  - konsole:
+  - linux_konsole:
       subprocess_prefix: ["konsole", "-e", "bash", "-c"]
       subprocess_postfix: []
-  - kitty:
+  - linux_kitty:
       subprocess_prefix: ["kitty", "bash", "-c"]
       subprocess_postfix: []
-  - tilix:
+  - linux_tilix:
       subprocess_prefix: ["tilix", "-e", "bash", "-c"]
       subprocess_postfix: []
-  - lxterminal:
+  - linux_lxterminal:
       subprocess_prefix: ["lxterminal", "-e", "bash", "-c"]
       subprocess_postfix: []
 
 
 
-# Supported options: [tmux|python]
+# Supported options:linux [tmux|python]
 output_mode: "tmux"
 output_settings:
   log_dir: "run_logs" # This folder is relative to the log folder of the environment (see sample_configuration.yml)

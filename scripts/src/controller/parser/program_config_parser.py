@@ -22,7 +22,18 @@ class ProgramConfigParser:
                     else:
                         cfg.terminal_descriptions.append(t_data)
         if TerminalIdentifiers.USED_TERMINAL.value in params:
-            cfg.used_terminal = params[TerminalIdentifiers.USED_TERMINAL.value]
+            used_term_name = params[TerminalIdentifiers.USED_TERMINAL.value]
+            terminal_valid = False
+            if len(cfg.terminal_descriptions) > 0:
+                for terminal in cfg.terminal_descriptions:
+                    if terminal.name == used_term_name:
+                        cfg._used_terminal = terminal
+                        terminal_valid = True
+                        break
+            if not terminal_valid:
+                logging.warning(f"Terminal {used_term_name} not found in terminal list!")
+                cfg._used_terminal = None
+
 
     @staticmethod
     def _parse_output_data(params: dict, cfg: ProgramDescriptionCfg) -> None:

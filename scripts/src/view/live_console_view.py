@@ -62,7 +62,7 @@ class LiveView:
                 if tmux_terminal.subprocess_postfix is not None:
                     curr_command.extend(tmux_terminal.subprocess_postfix)
                 subprocess_commands.append(curr_command)
-            logging.info(f"Currently selected terminal: {self._runner.cfg.programs.used_terminal}")
+            logging.info(f"Currently selected terminal: {self._runner.cfg.programs.get_used_terminal_data().name}")
             logging.info("About to execute the following commands to attach to tmux sessions:")
             for command in subprocess_commands:
                 logging.info(f"\t{' '.join(command)}")

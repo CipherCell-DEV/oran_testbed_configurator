@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, List
 
+from controller.utils import get_operating_system, OperatingSystem
+
 """The demo execution script may use python console panels or tmux to display its output"""
 
 
@@ -23,7 +25,7 @@ class ProgramGroupIdentifier(Enum):
 
 
 class TerminalIdentifiers(Enum):
-    USED_TERMINAL = "used_terminal"
+    USED_TERMINAL = "default_terminal"
     TERMINALS = "terminals"
     SUBPROC_PREFIX = "subprocess_prefix"
     SUBPROC_POSTFIX = "subprocess_postfix"
@@ -151,7 +153,7 @@ class ProgramDescriptionCfg:
         self.session_prefix: Optional[str] = None # used for tmux output
         self.panes_per_session: int = 0 # used for tmux output
         self.show_num_lines: int = 0 # used for python output
-        self.used_terminal: Optional[TerminalDescription] = None
+        self._used_terminal: Optional[TerminalDescription] = None
         self.terminal_descriptions: List[TerminalDescription] = []
         self.program_groups: List[ProgramDescrGroup] = []
 
@@ -163,7 +165,7 @@ class ProgramDescriptionCfg:
         ret_str = (f"ProgramConfig:{self.config_file_path}\n"
                   f"output_mode={self.output_mode.value}\n"
                   f"log_dir={self.log_dir}\n" 
-                  f"used_terminal={self.used_terminal}\n" 
+                  f"used_terminal={self._used_terminal}\n" 
                   f"terminals:\n"
                   f"{term_str}"
                   f"session_prefix={self.session_prefix}\n"
@@ -174,13 +176,58 @@ class ProgramDescriptionCfg:
             ret_str += group.__str__()
         return ret_str
 
+    def _set_terminal_by_name_pref(self, name_prefix : str) -> List[TerminalDescription]:
+        suitable_terms: List[TerminalDescription] = []
+        for term in self.terminal_descriptions:
+            if term.name.startswith(name_prefix):
+                suitable_terms.append(term)
+        if len(suitable_terms) == 0:
+            logging.warning(f"No matching {name_prefix} terminal found. Use Terminal {self.terminal_descriptions[0].name} instead!")
+            self._used_terminal = self.terminal_descriptions[0]
+        else:
+            logging.info(f"Found {name_prefix} terminal {suitable_terms[0].name}")
+            self._used_terminal = suitable_terms[0]
+        return suitable_terms
+
 
     def _check_valid_terminal(self) -> bool:
-        if self.used_terminal is None or self.used_terminal == "":
-            logging.error(f"{self.config_file_path}: Used terminal is empty")
+        if self.terminal_descriptions is None or len(self.terminal_descriptions) == 0:
+            logging.error("No terminals are defined in the demo configuration!")
             return False
+
+        used_os = None
+        try:
+            used_os = get_operating_system()
+        except ValueError:
+            logging.warning(f"Failed to determine Operating System!")
+
+        if self._used_terminal is None or self._used_terminal == "":
+            # try to find OS compatible terminal
+            logging.warning(f"{self.config_file_path}: No default terminal provided!")
+            if used_os is None:
+                logging.warning(f"Use terminal {self.terminal_descriptions[0].name} as default.")
+                self._used_terminal = self.terminal_descriptions[0]
+                return True
+            if used_os is OperatingSystem.WINDOWS:
+                self._set_terminal_by_name_pref("windows_")
+                return True
+            if used_os is OperatingSystem.LINUX:
+                self._set_terminal_by_name_pref("linux_")
+                return True
+            if used_os is OperatingSystem.MACOS:
+                self._set_terminal_by_name_pref("apple_")
+                return True
+        else:
+            # fix mismatching terminal
+            if used_os is OperatingSystem.LINUX and not self._used_terminal.name.startswith("linux_"):
+                logging.warning(f"Terminal {self.terminal_descriptions[0].name} is not a Linux terminal!")
+                self._set_terminal_by_name_pref("linux_")
+            if used_os is OperatingSystem.MACOS and not self._used_terminal.name.startswith("apple_"):
+                logging.warning(f"Terminal {self.terminal_descriptions[0].name} is not a mac terminal!")
+                self._set_terminal_by_name_pref("apple_")
+
         for term in self.terminal_descriptions:
-            if term.name == self.used_terminal:
+            if term.name == self._used_terminal.name:
                 return True
         logging.error(f"{self.config_file_path}: Used terminal is not in terminal list!")
         return False
@@ -284,8 +331,5 @@ class ProgramDescriptionCfg:
         return ret
 
     def get_used_terminal_data(self) -> TerminalDescription | None:
-        if self.used_terminal is not None:
-            for t in self.terminal_descriptions:
-                if t.name == self.used_terminal:
-                    return t
-        return None
+        return self._used_terminal
+
