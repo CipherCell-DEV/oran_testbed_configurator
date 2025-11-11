@@ -17,6 +17,10 @@ docker_enable_watch = re.compile(r'w Enable Watch')
 
 
 class OutputBuffer:
+    """
+    Buffer used to store the last few lines of the output of running programs.
+    These lines are used by the Python Live Display to show the live program output.
+    """
     def __init__(self, capacity : int):
         self._capacity :int = capacity
         self._buffer = collections.deque(maxlen = self._capacity)
@@ -33,6 +37,12 @@ class OutputBuffer:
 
 
 class OutputPipe:
+    """
+    This class manages the output of running programs.
+    The output of all running programs is first piped into /tmp/<program name>.
+    Afterward, all lines are read and processed.
+    This class is used by the OutputPipeListenerThread
+    """
     def __init__(self, data : ProgramStateData, log_location_path: str, buffer : OutputBuffer | None = None):
         self.program_state_data : ProgramStateData = data
         self.pipe_name : str = self.get_pipe_path(data.program.name) # temporary program output
@@ -69,6 +79,14 @@ class OutputPipe:
 
 
 class OutputPipeListenerThread:
+    """
+    Output Processing Thread. Analyzes all lines of program output.
+    Line processing does the following:
+    - Check if output line would trigger a state change and if so, initiate state change
+    - Print output line into log file (under logs/run_logs/<program name>,
+      may be different if you modified log paths in the config files)
+    - If needed, store output line in a buffer (for e.g. for Python Live Display)
+    """
     def __init__(self, output_pipes : OutputPipe):
         self.output_pipes = output_pipes
         self.thread = None

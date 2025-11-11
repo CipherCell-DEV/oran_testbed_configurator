@@ -20,9 +20,17 @@ class SubProcRunnerThread:
         self._process: subprocess.Popen | None = None
 
     def _runner_thread_funct(self):
+        """
+        Thread function starting the program as a subprocess.
+        As each program may be dependent on other programs, this threads waits for all
+        preconditions until it starts the program.
+        """
         while self.running:
             if not self.program_state.are_preconditions_met():
+                # If program record does not list all preconditions as RUNNING, we wait
                 with self._record.cv_finished_programs:
+                    # In edge cases this thread may hang when closing this software.
+                    # Ensure that there will eventually be a timeout
                     self._record.cv_finished_programs.wait(GENERAL_SUBPROCESS_TIMEOUT)
                     if not self.program_state.are_preconditions_met():
                         continue
@@ -194,7 +202,7 @@ class SubprocessManager(ProcessManager):
         for program_nr in range(len(self._program_starter_threads)):
             cur_program = self._program_starter_threads[program_nr]
             # create thread, which parses all program output lines
-            # we buffer the output such that a  view can access and render them
+            # we buffer the output such that a view can access and render them
             output_piping = OutputPipe(cur_program.program_state, self.demo_runner.cfg.programs.log_dir,
                                        self._output_buffers[cur_program.program_state.program.name])
             output_processing = OutputPipeListenerThread(output_piping)
@@ -214,6 +222,12 @@ class SubprocessManager(ProcessManager):
 
 
     def get_view_ref_str(self, **kwargs) -> List[str]:
+        """
+        Expected keyed argument: "name" : <program name>
+        Python subprocesses are shown using python live views. These live views need to request the latest
+        output string from the process manager. This functions returns the last few lines of output concatenated to
+        a single string.
+        """
         for k, val in kwargs.items():
             if k == "name":
                 return [self._output_buffers[val].get_combined_string()]
