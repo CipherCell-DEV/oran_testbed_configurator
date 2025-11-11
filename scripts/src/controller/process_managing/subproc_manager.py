@@ -153,9 +153,6 @@ class SubprocessManager(ProcessManager):
         except Exception as e:
             logging.error(f"Error stopping containers: {e}")
 
-        # stop reading from program output and state transition processing
-        super().cleanup_and_shutdown()
-
         # Stop program runner threads which may still be running
         # First set bool for outer loop
         logging.info(f"Stopping program starters...")
@@ -177,6 +174,9 @@ class SubprocessManager(ProcessManager):
                     logging.debug(f"Proces kill result: {val}")
                 except subprocess.TimeoutExpired:
                     logging.error(f"Failed to stop spawned subprocess for {thread.program_state.program.name}")
+
+        # stop reading from program output and state transition processing
+        super().cleanup_and_shutdown()
 
 
     def setup_program_data(self):
