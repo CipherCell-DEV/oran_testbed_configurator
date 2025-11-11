@@ -92,7 +92,7 @@ class SubprocessManager(ProcessManager):
     # region private_override
     def _handle_restart(self, *args) -> bool:
         # expect (self, SubProcRunnerThread)
-        if len(args) != 2:
+        if len(args) < 1:
             logging.error(f"Invalid number of arguments for restart handler function! ({len(args)})")
             return False
         if not isinstance(args[0], SubProcRunnerThread):
@@ -211,7 +211,7 @@ class SubprocessManager(ProcessManager):
 
             # start a thread which checks all state changes
             state_check = Thread(target=self._state_checker_thread_func,
-                                 args=[cur_program.program_state, self._handle_restart, cur_program])
+                                 args=[cur_program.program_state, cur_program])
             state_check.start()
             self._state_checkers.append(state_check)
 
