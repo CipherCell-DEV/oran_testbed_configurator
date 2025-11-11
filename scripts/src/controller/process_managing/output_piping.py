@@ -2,8 +2,10 @@ import collections
 import logging
 import os
 import re
+import shutil
 import textwrap
 import threading
+from pathlib import Path
 from threading import Thread
 
 from controller.process_managing.program_state_monitor import ProgramStateData
@@ -58,6 +60,8 @@ class OutputPipe:
         try:
             # Delete old log file contents
             open(self.log_file_name, 'w').close()
+            # create folder for temporary pipe files
+            os.makedirs(self._get_pipe_folder(), exist_ok=True)
             os.mkfifo(self.pipe_name)
             logging.debug(f"Named pipe created at: {self.pipe_name}")
             self.pipe_created = True
@@ -68,14 +72,28 @@ class OutputPipe:
             logging.error(f"Error: {e}. Failed to create a named pipe for output processing")
             self.pipe_created = False
 
+    @staticmethod
+    def _get_pipe_folder() -> str:
+        if get_operating_system().value is not OperatingSystem.WINDOWS.value:
+            return os.path.join("/tmp", "oran_deploy_manager")
+        else:
+            # TODO: Pipes are not supported on windows the way they are on unix. Look into win32pipe or win32file
+            return os.path.abspath(os.path.join(os.sep, "tmp"))
 
     @staticmethod
     def get_pipe_path(program_name : str) -> str:
         if get_operating_system().value is not OperatingSystem.WINDOWS.value:
-            return os.path.join("/tmp", program_name)
+            return os.path.join(OutputPipe._get_pipe_folder(), program_name)
         else:
             # TODO: Pipes are not supported on windows the way they are on unix. Look into win32pipe or win32file
-            return os.path.abspath(os.path.join(os.sep, "tmp", program_name))
+            return os.path.abspath(os.path.join(OutputPipe._get_pipe_folder(), program_name))
+
+    @staticmethod
+    def delete_tmp_pipe_files():
+        temp_dir = Path(OutputPipe._get_pipe_folder())
+        if temp_dir.exists():
+            logging.info(f"Deleting temporary pipe files in {temp_dir}")
+            shutil.rmtree(temp_dir)
 
 
 class OutputPipeListenerThread:

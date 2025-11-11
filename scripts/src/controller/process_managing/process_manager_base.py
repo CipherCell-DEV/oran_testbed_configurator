@@ -9,6 +9,7 @@ from controller.process_managing.output_piping import OutputPipeListenerThread
 from controller.process_managing.program_state_monitor import ProgramRecord, ProgramStateData
 from controller.utils import GENERAL_SUBPROCESS_TIMEOUT
 from model.utils_config import ProgramState
+from controller.process_managing.output_piping import OutputPipe
 
 CHECKUP_PERIOD = 2
 
@@ -127,3 +128,5 @@ class ProcessManager(ABC):
         logging.info("Stopping logging threads ...")
         for thread in self._output_listener_threads:
             thread.stop_thread()
+
+        OutputPipe.delete_tmp_pipe_files()
