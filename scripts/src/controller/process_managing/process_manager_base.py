@@ -14,6 +14,11 @@ CHECKUP_PERIOD = 2
 
 
 class ProcessManager(ABC):
+    """
+    Abstract base class for all process managers.
+    A process manager starts all programs as defined in the demo configuration.
+    Programs are run in the background, e.g. on tmux servers or as background processes.
+    """
     def __init__(self, runner: DemoRunner):
         self.demo_runner = runner
         self._setup_completed: bool = False
@@ -34,10 +39,13 @@ class ProcessManager(ABC):
     def _state_checker_thread_func(self, state : ProgramStateData, *args):
         """
         Monitor state changes until RUNNING state is reached.
-        Restarts programs if they time out
+        A state communicates state changes by a condition variable.
+        Restarts programs if they time out.
+        Restart logic is implemented by child classes.
         """
         while not self._stop_watchdogs:
             with state.cv_state_change:
+                # Upon state change, state calls notify_all(), which ends waiting here
                 if state.cv_state_change.wait(state.program.timeout):
                     logging.debug(f"State change: {state.program.name} -> {state.program_state.name}")
                     if state.program_state.value == ProgramState.RUNNING.value:
@@ -79,11 +87,20 @@ class ProcessManager(ABC):
     def start_programs(self):
         """
         Start thread, which prints the name of each process having reached state RUNNING.
+        TODO: The record checker thread is used for debugging purposes only, maybe remove it later on for better performance.
         """
         self._record_checker = Thread(target=self._record_checker_thread_func)
         self._record_checker.start()
 
     def get_view_ref_str(self, **kwargs) -> List[str]:
+        """
+        General function called by the View layer. It is used to give the View layer
+        additional data it needs to display the running programs.
+        The exact usage and behaviour of this function is dependent on the underlying process manager.
+        E.g. the View layer for tmux shows the running processes by attaching a new terminal windows to
+            the process manager sessions. To be able to reference these sessions, this function could
+            return the session names.
+        """
         raise NotImplementedError("Base class does not implement get_view_ref_str")
 
     def cleanup_and_shutdown(self):
