@@ -2,7 +2,6 @@ import logging
 import shutil
 import signal
 import subprocess
-from email.headerregistry import Group
 
 from time import sleep
 from typing import Optional, List
@@ -12,7 +11,7 @@ from rich.panel import Panel
 from rich.console import Group
 
 from controller.demo_runner import DemoRunner
-from controller.process_managing.process_manager_base import GENERAL_SUBPROCESS_TIMEOUT
+from controller.process_managing.process_manager_base import GENERAL_SUBPROCESS_TIMEOUT, CHECKUP_PERIOD
 from controller.process_managing.subproc_manager import SubprocessManager
 from controller.process_managing.tmux_manager import TmuxManager
 from model.program_descr_config import OutputMode
@@ -172,5 +171,5 @@ class LiveView:
             logging.error(f"Invalid output mode {self._runner.cfg.programs.output_mode} for live view runner!")
 
         # now wait until we end
-        while True:
-            sleep(3000)
+        while self._is_display_active:
+            sleep(CHECKUP_PERIOD)

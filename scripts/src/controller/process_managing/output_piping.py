@@ -76,7 +76,7 @@ class OutputPipeListenerThread:
 
     def _pipe_thread_funct(self):
         buffer_output = self.output_pipes.buffer is not None
-        with open(self.output_pipes.pipe_name, 'r') as pipe:
+        with os.fdopen(os.open(self.output_pipes.pipe_name, os.O_RDONLY | os.O_NONBLOCK), 'r') as pipe:
             logging.debug(f"Listening to pipe {self.output_pipes.pipe_name} ...")
             while self.running:
                 for line in pipe:
