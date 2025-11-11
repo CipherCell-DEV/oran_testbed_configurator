@@ -1,7 +1,10 @@
 import logging
+import shutil
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, List
+
+from controller.utils import get_operating_system, OperatingSystem
 
 """The demo execution script may use python console panels or tmux to display its output"""
 
@@ -23,7 +26,7 @@ class ProgramGroupIdentifier(Enum):
 
 
 class TerminalIdentifiers(Enum):
-    USED_TERMINAL = "used_terminal"
+    USED_TERMINAL = "default_terminal"
     TERMINALS = "terminals"
     SUBPROC_PREFIX = "subprocess_prefix"
     SUBPROC_POSTFIX = "subprocess_postfix"
@@ -151,7 +154,7 @@ class ProgramDescriptionCfg:
         self.session_prefix: Optional[str] = None # used for tmux output
         self.panes_per_session: int = 0 # used for tmux output
         self.show_num_lines: int = 0 # used for python output
-        self.used_terminal: Optional[TerminalDescription] = None
+        self._used_terminal: Optional[TerminalDescription] = None
         self.terminal_descriptions: List[TerminalDescription] = []
         self.program_groups: List[ProgramDescrGroup] = []
 
@@ -163,7 +166,7 @@ class ProgramDescriptionCfg:
         ret_str = (f"ProgramConfig:{self.config_file_path}\n"
                   f"output_mode={self.output_mode.value}\n"
                   f"log_dir={self.log_dir}\n" 
-                  f"used_terminal={self.used_terminal}\n" 
+                  f"used_terminal={self._used_terminal}\n" 
                   f"terminals:\n"
                   f"{term_str}"
                   f"session_prefix={self.session_prefix}\n"
@@ -174,16 +177,109 @@ class ProgramDescriptionCfg:
             ret_str += group.__str__()
         return ret_str
 
+    def _set_terminal_by_name_pref(self, name_prefix : str, preferred_terminal: TerminalDescription = None) -> None:
+        suitable_terms: List[TerminalDescription] = []
+        found_default: bool = False
+        # get all terminals from demo config which start with linux_
+        for term in self.terminal_descriptions:
+            if term.name.startswith(name_prefix):
+                suitable_terms.append(term)
+        if len(suitable_terms) == 0:
+            logging.warning(f"No matching {name_prefix} terminals in configuration!")
+        else:
+            logging.info(f"Found {len(suitable_terms)} terminal candidates")
+
+        # for linux we check, whether the terminal command is installed on the system
+        if get_operating_system() is OperatingSystem.LINUX:
+            installed_terms = []
+            for term in suitable_terms:
+                if len(term.subproc_prefix) > 0:
+                    if shutil.which(term.subproc_prefix[0]) is not None:
+                        installed_terms.append(term)
+            # if we have no preference, use first installed terminal we find
+            if preferred_terminal is None:
+                if len(installed_terms) > 0:
+                    logging.info(
+                        f"Using installed terminal {installed_terms[0].name} ({installed_terms[0].subproc_prefix[0]})")
+                    self._used_terminal = installed_terms[0]
+                    found_default = True
+                else:
+                    logging.warning(
+                        f"None of the {name_prefix} terminals in the demo configuration are installed on your system!")
+            # check if the preferred terminal in the demo configuration is installed
+            else:
+                for term in installed_terms:
+                    if term.name == preferred_terminal.name:
+                        self._used_terminal = term
+                        logging.info(f"Using installed terminal {term.name} ({term.subproc_prefix[0]})")
+                        found_default = True
+                        break
+                if not found_default:
+                    logging.warning(f"Configured default terminal {preferred_terminal.name} is not installed!")
+                    # try to find other installed terminal
+                    if len(installed_terms) > 0:
+                        logging.info(
+                            f"Using installed terminal {installed_terms[0].name} ({installed_terms[0].subproc_prefix[0]}) instead!")
+                        self._used_terminal = installed_terms[0]
+                        found_default = True
+
+        else:
+            # TODO: how to 'cleanly' check whether terminal opened by osascript command is installed?
+            for term in suitable_terms:
+                if term.name == preferred_terminal.name:
+                    self._used_terminal = term
+                    logging.info(f"Using configured terminal {term.name}.")
+                    found_default = True
+                    break
+            if not found_default:
+                logging.warning(f"Configured default terminal {preferred_terminal.name} is not suitable for this device!")
+
+            if len(suitable_terms) > 0:
+                logging.info(f"Using {suitable_terms[0].name} terminal as default.")
+                self._used_terminal = suitable_terms[0]
+                found_default = True
+
+        if not found_default:
+            if preferred_terminal is not None:
+                logging.warning(
+                    f"Configured default terminal {preferred_terminal.name} is most likely not supported on your system."
+                    f" Failed to find suitable alternatives.")
+                self._used_terminal = preferred_terminal
+            elif len(suitable_terms) > 0:
+                self._used_terminal = suitable_terms[0]
+                logging.warning(f"Using {suitable_terms[0].name} terminal as default. Can not verify if it is install on your system.")
+            elif len(self.terminal_descriptions) > 0:
+                self._used_terminal = self.terminal_descriptions[0]
+                logging.warning(f"No suitable terminal found! Defaulting to {self.terminal_descriptions[0].name}")
+            else:
+                logging.error(f"No suitable terminal found!")
+                self._used_terminal = None
+
 
     def _check_valid_terminal(self) -> bool:
-        if self.used_terminal is None or self.used_terminal == "":
-            logging.error(f"{self.config_file_path}: Used terminal is empty")
+        if self.terminal_descriptions is None or len(self.terminal_descriptions) == 0:
+            logging.error("No terminals are defined in the demo configuration!")
             return False
-        for term in self.terminal_descriptions:
-            if term.name == self.used_terminal:
-                return True
-        logging.error(f"{self.config_file_path}: Used terminal is not in terminal list!")
-        return False
+
+        used_os = None
+        try:
+            used_os = get_operating_system()
+        except ValueError:
+            logging.warning(f"Failed to determine Operating System!")
+
+        if used_os is None:
+            logging.warning(f"Use terminal {self.terminal_descriptions[0].name} as default terminal.")
+            self._used_terminal = self.terminal_descriptions[0]
+            return True
+        if used_os is OperatingSystem.WINDOWS:
+            self._set_terminal_by_name_pref("windows_", self._used_terminal)
+            return True
+        if used_os is OperatingSystem.LINUX:
+            self._set_terminal_by_name_pref("linux_", self._used_terminal)
+            return True
+        if used_os is OperatingSystem.MACOS:
+            self._set_terminal_by_name_pref("apple_", self._used_terminal)
+            return True
 
 
     def _check_output_settings(self) -> bool:
@@ -284,8 +380,22 @@ class ProgramDescriptionCfg:
         return ret
 
     def get_used_terminal_data(self) -> TerminalDescription | None:
-        if self.used_terminal is not None:
-            for t in self.terminal_descriptions:
-                if t.name == self.used_terminal:
-                    return t
-        return None
+        return self._used_terminal
+
+    def get_terminal_by_name(self, t_name : str) -> TerminalDescription | None:
+        if self._used_terminal is not None and self._used_terminal.name == t_name:
+            return self._used_terminal
+        else:
+            term = None
+            for t  in self.terminal_descriptions:
+                if t.name == t_name:
+                    term = t
+                    break
+            return term
+
+    def get_terminal_name_list(self) -> List[str]:
+        ret = []
+        for t in self.terminal_descriptions:
+            ret.append(t.name)
+        return ret
+
