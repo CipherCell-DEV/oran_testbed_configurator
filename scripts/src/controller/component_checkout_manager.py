@@ -3,7 +3,7 @@ import os.path
 
 from model.core_config import CoreImplementation
 from model.gnb_config import GNBImplementation
-from model.component_repositories import ORAN_SC_RIC_REPO, SRS_RAN_REPO, SRS_RAN_4G_REPO, OPEN5GS_REPO
+from model.component_repositories import ORAN_SC_RIC_REPO, FLEX_RIC_REPO, SRS_RAN_REPO, SRS_RAN_4G_REPO, OPEN5GS_REPO
 from model.ric_config import RICImplementation
 from model.setup_configuration import SetupConfiguration
 
@@ -43,9 +43,11 @@ class ComponentCheckoutManager:
         if self._setup_cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC:
             self._clone_repository(repo=ORAN_SC_RIC_REPO, name="ORAN SC RIC", folder='oran-sc-ric',
                                    commit=self._setup_cfg.near_rt_ric.commit)
-
-        if self._setup_cfg.near_rt_ric.implementation == RICImplementation.FLEX_RIC:
-            logging.error(f"Flex-RIC currently not supported")
+        elif self._setup_cfg.near_rt_ric.implementation == RICImplementation.FLEX_RIC:
+            self._clone_repository(repo=FLEX_RIC_REPO, name="flexric", folder='flexric',
+                                   commit=self._setup_cfg.near_rt_ric.commit)
+        else:
+            logging.error("Unknown RIC implementation")
             exit(1)
 
     def checkout_5g_core(self):
