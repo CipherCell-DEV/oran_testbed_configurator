@@ -18,5 +18,7 @@ class NearRTRICDockerBuildRunner(DockerBuilderBase):
         os.chdir(self.setup_cfg.environment.build_dir)
         if self.setup_cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC:
             result = self.docker_compose_build_helper('oran-sc-ric', ORAN_SC_RIC_CONTAINERS)
+        if self.setup_cfg.near_rt_ric.implementation == RICImplementation.FLEX_RIC:
+            result = self.docker_compose_build_helper('flexric', ["docker", "compose", "build", "flexric"])
         os.chdir(curr_dir)
         return result
