@@ -28,6 +28,7 @@ class NearRTRICPatcher(SinglePatcherBase):
             if self._setup_cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC or \
                     self._setup_cfg.near_rt_ric.implementation == RICImplementation.FLEX_RIC:
                 if self._setup_cfg.near_rt_ric.build_type == BuildType.DOCKER:
+                    self.patch_config_file()
                     return self.patch_docker_compose()
                 else:
                     logging.error("Native build patching for ORAN SC RIC and Flexric not supported")
