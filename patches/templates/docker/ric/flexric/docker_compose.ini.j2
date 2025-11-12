@@ -1,0 +1,21 @@
+version: "3.9"
+services:
+  flexric:
+    build: ./flexric
+    container_name: flexric
+    networks:
+      ric_network:
+        ipv4_address: {{ e2term.ip }}
+    user: root
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+networks:
+    ric_network:
+        ipam:
+            driver: default
+            config:
+                - subnet: {{ ric.subnet }}

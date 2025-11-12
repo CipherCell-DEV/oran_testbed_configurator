@@ -7,11 +7,11 @@ from model.utils_config import BuildType
 
 class RICImplementation(Enum):
     ORAN_SC_RIC = "oran_sc_ric"
-    FLEX_RIC = "flex_ric"
+    FLEX_RIC = "flexric"
 
 
 # TODO harmonize identifier names
-ALLOWED_IMPLEMENTATION_LIST = {'oran-sc-ric': RICImplementation.ORAN_SC_RIC, 'flex-ric': RICImplementation.FLEX_RIC}
+ALLOWED_IMPLEMENTATION_LIST = {'oran-sc-ric': RICImplementation.ORAN_SC_RIC, 'flexric': RICImplementation.FLEX_RIC}
 
 
 class RICRelease(Enum):

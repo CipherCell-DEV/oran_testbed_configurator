@@ -83,10 +83,11 @@ programs:
     program_list: 
       - name: "ric"
         depends_on: ["5G_core"]
-        command: ["docker", "compose", "up", "dbaas", "rtmgr_sim", "submgr", "e2term", "appmgr", "e2mgr", "python_xapp_runner"]
+        command: ["docker", "compose", "up", "flexric"]
+        #command: ["docker", "compose", "up", "dbaas", "rtmgr_sim", "submgr", "e2term", "appmgr", "e2mgr", "python_xapp_runner"]
         state_transitions:
-          stop_to_init: "Running"
-          init_to_running: "RMR is ready now ..."
+          stop_to_init: "Setting the config -c file to /usr/local/etc/flexric/flexric.conf"
+          init_to_running: "Initializing Task Manager with 2 threads"
   run_gnb:
     restart_timeout_s: 30
     max_num_restart: 3
