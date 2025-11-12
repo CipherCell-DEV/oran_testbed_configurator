@@ -98,7 +98,7 @@ class NearRTRICPatcher(SinglePatcherBase):
                 config[service]['ip'] = config[service]['ip'].replace('dummy', str(ip_value))
                 config[service]['image'] = self._patcher_utils.replace_tag_and_image(config[service]['image'])
 
-        if self._setup_cfg.near_rt_ric.implementation == RICImplementation.FLEX_RIC:
+        elif self._setup_cfg.near_rt_ric.implementation == RICImplementation.FLEX_RIC:
             config = {'e2term': {
                 "ip": getattr(self._setup_cfg.near_rt_ric.ip_config, 'e2term_ip')
             }, 'ric': {
