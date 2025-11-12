@@ -6,6 +6,9 @@ environment:
   tag_appendix: latest
   push_local_images: false
 
+  #implementation: "flexric"
+  #commit: "1f04cc558ebc8da9de6a620762bc02f5db4ecb4a"
+
 near_rt_ric:
   implementation: "oran-sc-ric"
   commit: "e44a7ce239b3c908e842163f1d57cbb4ba43fd0a"
