@@ -6,12 +6,12 @@ environment:
   tag_appendix: latest
   push_local_images: false
 
-  #implementation: "flexric"
-  #commit: "1f04cc558ebc8da9de6a620762bc02f5db4ecb4a"
 
 near_rt_ric:
-  implementation: "oran-sc-ric"
-  commit: "e44a7ce239b3c908e842163f1d57cbb4ba43fd0a"
+  implementation: "flexric"
+  commit: "1f04cc558ebc8da9de6a620762bc02f5db4ecb4a"
+  #implementation: "oran-sc-ric"
+  #commit: "e44a7ce239b3c908e842163f1d57cbb4ba43fd0a"
   build_type: "docker"
   release: 'i'
   network:
@@ -25,12 +25,11 @@ near_rt_ric:
       xapp_runner_ip: 10.0.2.20
 
 
-#    implementation: "Open5GS_SRS"
- #   commit: "11c9bbabb69873752500d676f55e0034f6caa5c5"
-
 5gc:
-    implementation: "Open5GS"
-    commit: "2b6369e9d997eb8eb158e3803e3ae4f4d207cd4d"
+    #implementation: "Open5GS"
+    #commit: "2b6369e9d997eb8eb158e3803e3ae4f4d207cd4d"
+    implementation: "Open5GS_SRS"
+    commit: "11c9bbabb69873752500d676f55e0034f6caa5c5"
     build_type: "docker"
     network:
       5gc_ip: 10.53.1.2
@@ -60,6 +59,7 @@ ue:
             netns: ue1
             ip_devname: tun_srsue
             ip_netmask: 255.255.255.0
+
 gnb:
   implementation: "srs"
   commit: "11c9bbabb69873752500d676f55e0034f6caa5c5"

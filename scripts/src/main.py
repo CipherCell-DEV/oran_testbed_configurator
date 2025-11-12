@@ -109,10 +109,8 @@ if __name__ == "__main__":
         config = ConfigParser.parse_config_file(DEFAULT_CFG_FILE)
 
     if cmd_line_cfg.run_demo:
-        demo_config = ConfigParser.parse_program_setup_config(DEFAULT_DEMO_CFG_FILE, config.environment.build_dir)
-        config.programs = demo_config
-        if not config.verify_consistency():
-            logging.error("Cannot run demo due to mismatching configuration!")
+        config.programs = ConfigParser.parse_program_setup_config(DEFAULT_DEMO_CFG_FILE, config.environment.build_dir)
+        config.verify_consistency()
 
     checkout_repositories(config)
     config.dialog = dialog_cfg
