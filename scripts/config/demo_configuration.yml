@@ -77,7 +77,7 @@ programs:
         state_transitions:
           stop_to_init: "Running"
           init_to_running: "RMR is ready now ..."
-      - name: "ric" # Since we only start one ric, the name here could be the same as above (ric). We choose a different name here, as the xapp program below is implementation dependent.
+      - name: "ric" 
         implementation: "flexric"
         depends_on: [ "5G_core" ]
         command: [ "docker", "compose", "up", "flexric" ]
@@ -120,7 +120,7 @@ programs:
     ############################################## Add your own stuff here!
     program_list:
       - name: "xapp_simple"
-        depends_on: ["gnb", "5G_core", "ric", "ue1"] # depends on oran ric (program name ric) , not flex ric (program name flex_ric)
+        depends_on: ["gnb", "5G_core", "ric", "ue1"] 
         command: ["docker", "compose", "exec", "python_xapp_runner", "./simple_xapp.py"]
       # TODO: Ask Alex how to run traffic properly (also for multiple users)
       #- name: "simulate_traffic_ue1"
