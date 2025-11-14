@@ -58,7 +58,7 @@ class FolderManager:
 
     @staticmethod
     def create_project_build_folders(setup_cfg: SetupConfiguration):
-        oran_sc_ric_images = ["appmgr", "submgr", "e2term", "rtmgr_sim", "e2mgr", "ric_plt_frame_py"]
+        oran_sc_ric_images = ["appmgr", "submgr", "e2term", "rtmgr_sim", "e2mgr", "ric-plt-xapp-frame-py"]
         for folder in oran_sc_ric_images:
             sc_ric_path = os.path.join(setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images", folder)
             FolderManager.create_folder(sc_ric_path, folder)

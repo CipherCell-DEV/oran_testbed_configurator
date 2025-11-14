@@ -1,13 +1,13 @@
 # We want to open a terminal window to show the running tmux sessions (if tmux is set as output_mode)
 # As there is no platform independent way to do this (tell me if you think otherwise!), we need additional
-# info on the installed terminal. This is used in a python subprocess.run call to open a window attached 
+# info on the installed terminal. This is used in a python subprocess.run call to open a window attached
 # to a tmux session.
 # We assume the following systax: [subprocess_prefix] [tmux attach-session -t .....] [subprocess_postfix]
 # Example for linux gnome terminal:
 # gnome-terminal -- bash -c tmux attach-session -t ...
 # NOTE: ensure that this call is not blocking!
 
-# available terminals: all terminals listed in the terminals section below
+# available terminals: all terminals listed in the terminals section below, feel free to add more
 # !!!! naming convention: operating-system_name, e.g. linux_gnome, apple_iterm, windows_cmd, ... !!!!
 default_terminal: "linux_gnome"
 terminals:
@@ -23,26 +23,6 @@ terminals:
   - apple_iterm:
       subprocess_prefix: [ "osascript", "-e", "tell application \"iTerm\"",  "    create window with default profile", "    tell current session of current window", "       write text \"{{command}}\"", "    end tell", "end tell" ]
       subprocess_postfix: [ ]
-  # TODO: the terminals below are vibe coded. If you happen to use any of the below, please check if they are working
-#  - linux_xterm:
-#      subprocess_prefix: ["xterm", "-e", "bash", "-c"]
-#      subprocess_postfix: []
-#  - linux_xcfe4:
-#      subprocess_prefix: ["xfce4-terminal", "--command=bash", "-c"]
-#      subprocess_postfix: []
-#  - linux_konsole:
-#      subprocess_prefix: ["konsole", "-e", "bash", "-c"]
-#      subprocess_postfix: []
-#  - linux_kitty:
-#      subprocess_prefix: ["kitty", "bash", "-c"]
-#      subprocess_postfix: []
-#  - linux_tilix:
-#      subprocess_prefix: ["tilix", "-e", "bash", "-c"]
-#      subprocess_postfix: []
-#  - linux_lxterminal:
-#      subprocess_prefix: ["lxterminal", "-e", "bash", "-c"]
-#      subprocess_postfix: []
-
 
 
 # Supported options: [tmux|python]
@@ -51,40 +31,56 @@ output_settings:
   log_dir: "run_logs" # This folder is relative to the log folder of the environment (see sample_configuration.yml)
   tmux:
     session_prefix: "oran_demo_"
-    panes_per_session: 4 
+    panes_per_session: 4
   python:
     show_num_lines: 10 # Lines per panel on the python live display
 
 
 # Each program has the following parameters
-#   <name>: a name to reference the programs by in a readable way. Must be unique.
+#   <name>: a name to reference the programs by in a readable way. Within the run_ue and run_misc sections the program names must be unique.
+#   <implementation>: the implementation type. Must correspond to the enums defined in model/xxx_config.py. Is optional (and currently unused) for run_misc type programs.
 #   <depends_on>: list of programs, which must run before this program can be started
 #   <command>: command to executed, including parameters (array of strings)
 #   <working_dir>: [Optional] the directory, in which the command is to be started. If this is missing, the environment build directory is used instead
 #   <state_transitions>: [Optional] A program has the states 'stopped', 'initializing' and 'running'. The transition from one stage into the other may be
 #                                  indicated by an expected output string.
-#                                  This field is optional, but if it is given, then it must have the sub fields 
+#                                  This field is optional, but if it is given, then it must have the sub fields
 #                                  stop_to_init: "str" and init_to_running: "str"
-#  
+#
 programs:
   run_core:
     restart_timeout_s: 30
     max_num_restart: 3
-    program_list: 
+    program_list:
       - name: "5G_core"
+        implementation: "open5gs" # Must be one of CoreImplementation(Enum) (core_config.py)
         depends_on: []
         command: ["docker", "compose", "up", "5gc", "mongodb"]
         state_transitions:
           stop_to_init: "Configuration: 'open5gs-5gc.yml'"
           init_to_running: "UDR initialize...done"
+      - name: "5G_core" # Since we only start one core, the names here may be the same
+        implementation: "open5gs_srs" # Must be one of CoreImplementation (core_config.py)
+        depends_on: []
+        command: [ "docker", "compose", "up", "5gc"]
+        state_transitions:
+          stop_to_init: "open5gs_5gc"
+          init_to_running: "UDR initialize...done"
   run_ric:
     restart_timeout_s: 30
     max_num_restart: 3
-    program_list: 
+    program_list:
       - name: "ric"
+        implementation: "oran_sc_ric" # Must be one of RICImplementation(Enum) (ric_config.py)
         depends_on: ["5G_core"]
-        command: ["docker", "compose", "up", "flexric"]
-        #command: ["docker", "compose", "up", "dbaas", "rtmgr_sim", "submgr", "e2term", "appmgr", "e2mgr", "python_xapp_runner"]
+        command: ["docker", "compose", "up", "dbaas", "rtmgr_sim", "submgr", "e2term", "appmgr", "e2mgr", "python_xapp_runner"]
+        state_transitions:
+          stop_to_init: "Running"
+          init_to_running: "RMR is ready now ..."
+      - name: "ric" 
+        implementation: "flexric"
+        depends_on: [ "5G_core" ]
+        command: [ "docker", "compose", "up", "flexric" ]
         state_transitions:
           stop_to_init: "Setting the config -c file to /usr/local/etc/flexric/flexric.conf"
           init_to_running: "Initializing Task Manager with 2 threads"
@@ -93,6 +89,7 @@ programs:
     max_num_restart: 3
     program_list:
       - name: "gnb"
+        implementation: "srs" # Must be one of GNBImplementation(Enum) (gnb_config.py)
         depends_on: ["ric"]
         command: ["docker", "compose", "up", "gnb"]
         state_transitions:
@@ -103,24 +100,33 @@ programs:
     max_num_restart: 3
     program_list:
       - name: "ue1"
+        implementation: "srs_4g" # Must be one of UEImplementation(Enum) (ue_config.py)
         depends_on: ["gnb"]
         command: ["docker", "compose", "up", "--force-recreate", "ue1"]
         state_transitions:
           stop_to_init: "Attaching to ue"
           init_to_running: "PDU Session Establishment successful."
         ############################################ Add more UEs here. Currently not supported.
+      - name: "ue2"
+        implementation: "srs_4g"
+        depends_on: [ "gnb" ]
+        command: [ "docker", "compose", "up", "--force-recreate", "ue2" ]
+        state_transitions:
+          stop_to_init: "Attaching to ue"
+          init_to_running: "PDU Session Establishment successful."
   run_misc:
     restart_timeout_s: 20
     max_num_restart: 3
     ############################################## Add your own stuff here!
-    program_list: 
+    program_list:
       - name: "xapp_simple"
-        depends_on: ["gnb", "5G_core", "ric", "ue1"]
+        depends_on: ["gnb", "5G_core", "ric", "ue1"] 
         command: ["docker", "compose", "exec", "python_xapp_runner", "./simple_xapp.py"]
-      - name: "simulate_traffic_ue1"
-        working_directory: "scripts/src" # relative to cwd
-        depends_on: ["5G_core", "gnb", "ric", "ue1"]
-        command: ["./run_trafficker.sh"] # can also add trafficker.py params here: command: ["./run_trafficker.sh", "--config=...", ....]
-        state_transitions:
-          stop_to_init: "Starting Traffic Generation"
-          init_to_running: "Netcat server successfully started and verified"
+      # TODO: Ask Alex how to run traffic properly (also for multiple users)
+      #- name: "simulate_traffic_ue1"
+      #  working_directory: "scripts/src" # relative to cwd
+      #  depends_on: ["5G_core", "gnb", "ric", "ue1"]
+      #  command: ["./run_trafficker.sh"] # can also add trafficker.py params here: command: ["./run_trafficker.sh", "--config=...", ....]
+      #  state_transitions:
+      #    stop_to_init: "Starting Traffic Generation"
+      #    init_to_running: "Netcat server successfully started and verified"

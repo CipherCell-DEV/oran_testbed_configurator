@@ -5,6 +5,10 @@ from enum import Enum
 from typing import Optional, List
 
 from controller.utils import get_operating_system, OperatingSystem
+from model.core_config import CoreImplementation
+from model.gnb_config import GNBImplementation
+from model.ric_config import RICImplementation
+from model.ue_config import UEImplementation
 
 """The demo execution script may use python console panels or tmux to display its output"""
 
@@ -53,6 +57,7 @@ class ProgramIdentifiers(Enum):
     PROGRAM_STATE_TRANSITIONS = "state_transitions"
     PROGRAM_TRANSITION_STOP_INIT = "stop_to_init"
     PROGRAM_TRANSITION_INIT_RUN = "init_to_running"
+    PROGRAM_IMPLEMENTATION = "implementation"
 
 
 """Dataclasses and functions"""
@@ -98,10 +103,57 @@ class ProgramDescription:
         self.transition_init_run: Optional[str] = None
         self.timeout : int = 0 # in seconds
         self.max_num_restarts : int = 0
+        self.implementation_str: Optional[str] = None
+        self.core_implementation: Optional[CoreImplementation] = None
+        self.ric_implementation: Optional[RICImplementation] = None
+        self.ue_implementation: Optional[UEImplementation] = None
+        self.gnb_implementation: Optional[GNBImplementation] = None
+
+
+    def set_core_implementation(self, implementation: str) -> CoreImplementation | None:
+        if self.core_implementation is None:
+            for enum in CoreImplementation:
+                if enum.value == implementation:
+                    self.core_implementation = enum
+            return self.core_implementation
+        else:
+            logging.warning("CoreImplementation is already set")
+            return None
+
+    def set_gnb_implementation(self, implementation: str) -> GNBImplementation | None:
+        if self.gnb_implementation is None:
+            for enum in GNBImplementation:
+                if enum.value == implementation:
+                    self.gnb_implementation = enum
+            return self.gnb_implementation
+        else:
+            logging.warning("GNBImplementation is already set")
+            return None
+
+    def set_ric_implementation(self, implementation: str) -> RICImplementation | None:
+        if self.ric_implementation is None:
+            for enum in RICImplementation:
+                if enum.value == implementation:
+                    self.ric_implementation = enum
+            return self.ric_implementation
+        else:
+            logging.warning("RICImplementation is already set")
+            return None
+
+    def set_ue_implementation(self, implementation: str) -> UEImplementation | None:
+        if self.ue_implementation is None:
+            for enum in UEImplementation:
+                if enum.value == implementation:
+                    self.ue_implementation = enum
+            return self.ue_implementation
+        else:
+            logging.warning("UEImplementation is already set")
+            return None
 
 
     def __str__(self) -> str:
         ret_str = f"name={self.name}\n"
+        ret_str += f"    implementation={self.implementation_str}\n"
         ret_str += f"    depends_on={self.depends_on_names}\n"
         ret_str += f"    command={self.command}\n"
         ret_str += f"    working_directory={self.working_directory}\n"
@@ -112,10 +164,37 @@ class ProgramDescription:
         return ret_str
 
 
-    def update_group_data(self, timeout : int, max_num_restarts : int):
-        """Some program attributes are defined per program group"""
+    def update_group_data(self, timeout : int, max_num_restarts : int, group_type : ProgramGroupIdentifier):
+        """
+        Some program attributes are defined per program group. Handle those assignments here:
+        - Group attributes like timeout thresholds
+        - Implementation type
+        """
+        resolution_failure = False
         self.timeout = timeout
         self.max_num_restarts = max_num_restarts
+        match group_type:
+            case ProgramGroupIdentifier.CORE:
+                self.core_implementation = self.set_core_implementation(self.implementation_str)
+                if self.core_implementation is None:
+                    resolution_failure = True
+            case ProgramGroupIdentifier.RIC:
+                self.ric_implementation = self.set_ric_implementation(self.implementation_str)
+                if self.ric_implementation is None:
+                    resolution_failure = True
+            case ProgramGroupIdentifier.GNB:
+                self.gnb_implementation = self.set_gnb_implementation(self.implementation_str)
+                if self.gnb_implementation is None:
+                    resolution_failure = True
+            case ProgramGroupIdentifier.UE:
+                self.ue_implementation = self.set_ue_implementation(self.implementation_str)
+                if self.ue_implementation is None:
+                    resolution_failure = True
+            case _:
+                if self.implementation_str is not None:
+                    logging.warning(f"Implementation type of {self.name} '{self.implementation_str}' is being ignored.'")
+        if resolution_failure:
+            logging.error(f"{self.name}: Implementation '{self.implementation_str}' is not a valid implementation!")
 
 class ProgramDescrGroup:
     """
@@ -145,7 +224,6 @@ class ProgramDescriptionCfg:
     """
     Contains all programs/commands to be deployed.
     Individual programs may depend on other programs.
-    Each individual program must have a unique name.
     """
     def __init__(self):
         self.config_file_path: Optional[str] = None
@@ -304,8 +382,12 @@ class ProgramDescriptionCfg:
 
 
     def _check_program(self) -> bool:
-        all_program_names = [str]
+        # Check if program names are unique enough:
+        # The program names of the run_ue and run_misc groups must be unique. Also, no name may appear in multiple sections.
+        # Check if timeout interval and amount are sane
+        all_program_names = []
         for group in self.program_groups:
+            group_program_names = []
             if (group.restart_timeout is None) or (group.restart_timeout <= 0):
                 logging.error(f"{self.config_file_path}: {group.restart_timeout} restart time is invalid!")
                 return False
@@ -325,7 +407,18 @@ class ProgramDescriptionCfg:
                 if program.transition_init_run is None or len(program.transition_init_run) == 0:
                     if program.transition_stop_to_init is None or len(program.transition_stop_to_init) == 0:
                         logging.debug(f"{program.name}: Partial transition definition (missing stop_to_init)")
-                all_program_names.append(program.name)
+                # Program name must be unique within the groups run_ue and run_misc
+                if group.group_type is ProgramGroupIdentifier.UE or group.group_type is ProgramGroupIdentifier.MISC:
+                    if group_program_names.__contains__(program.name):
+                        logging.error(f"{program.name} ({group.group_name}): Program name is already defined in this group!")
+                        return False
+                    else:
+                        group_program_names.append(program.name)
+                else:
+                    # dont care for multiples, ignore them
+                    if not group_program_names.__contains__(program.name):
+                        group_program_names.append(program.name)
+            all_program_names.extend(group_program_names)
         if len(all_program_names) != len(set(all_program_names)):
             logging.error(f"{self.config_file_path}: All program names must be unique!")
             return False
@@ -354,22 +447,14 @@ class ProgramDescriptionCfg:
 
 
     def get_ric_programs(self) -> List[ProgramDescription]:
-        ret = self._get_programs_of_group(ProgramGroupIdentifier.RIC)
-        if len(ret) > 1:
-            logging.warning(f"{self.config_file_path}: More than one ric program defined!")
-        return ret
+        return self._get_programs_of_group(ProgramGroupIdentifier.RIC)
 
     def get_core_programs(self) -> List[ProgramDescription]:
-        ret = self._get_programs_of_group(ProgramGroupIdentifier.CORE)
-        if len(ret) > 1:
-            logging.warning(f"{self.config_file_path}: More than one core program defined!")
-        return ret
+        return self._get_programs_of_group(ProgramGroupIdentifier.CORE)
+
 
     def get_gnb_programs(self) -> List[ProgramDescription]:
-        ret = self._get_programs_of_group(ProgramGroupIdentifier.GNB)
-        if len(ret) > 1:
-            logging.warning(f"{self.config_file_path}: More than one gnb program defined!")
-        return ret
+        return self._get_programs_of_group(ProgramGroupIdentifier.GNB)
 
     def get_ue_programs(self) -> List[ProgramDescription]:
         ret = self._get_programs_of_group(ProgramGroupIdentifier.UE)
