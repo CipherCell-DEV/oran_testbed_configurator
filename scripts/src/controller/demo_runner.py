@@ -1,8 +1,6 @@
 import logging
 from typing import List, Optional
 
-from pkg_resources import non_empty_lines
-
 from model.core_config import CoreImplementation
 from model.gnb_config import GNBImplementation
 from model.ric_config import RICImplementation

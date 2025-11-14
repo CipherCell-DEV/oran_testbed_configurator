@@ -10,10 +10,6 @@ class RICImplementation(Enum):
     FLEX_RIC = "flexric"
 
 
-# TODO harmonize identifier names
-ALLOWED_IMPLEMENTATION_LIST = {'oran-sc-ric': RICImplementation.ORAN_SC_RIC, 'flexric': RICImplementation.FLEX_RIC}
-
-
 class RICRelease(Enum):
     RELEASE_i = 0,
     RELEASE_l = 1
@@ -64,6 +60,7 @@ class NearRTRICNetworkConfig:
 @dataclass
 class NearRtRICCFG:
     implementation: Optional[RICImplementation] = None
+    repository: str = ""
     commit: str = "latest"
     release: Optional[RICRelease] = None
     build_type = BuildType = BuildType.DOCKER
@@ -72,6 +69,7 @@ class NearRtRICCFG:
     def __str__(self):
         return (f"NearRtRICCFG: \n"
                 f"    implementation={self.implementation}, \n"
+                f"    repository={self.repository}, \n"
                 f"    commit={self.commit}, \n"
                 f"    release={self.release}, \n"
                 f"    build_type={self.build_type}, \n"
@@ -79,7 +77,6 @@ class NearRtRICCFG:
 
 
 class RICFieldIdentifiers:
-    IMPLEMENTATION = 'implementation'
     RELEASE = 'release'
     NETWORK = 'network'
 

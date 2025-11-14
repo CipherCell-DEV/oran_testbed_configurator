@@ -1,8 +1,10 @@
 import ipaddress
 import logging
+from typing import List
 
 from controller.parser.parser_utils import ParsingUtils
 from model.core_config import Core5GCfg, CoreFieldIdentifiers, ALLOWED_IMPLEMENTATION_LIST, Core5GNetworkCfg
+from model.setup_configuration import GeneralIdentifiers, ComponentIdentifiers
 
 
 class Core5GConfigParser:
@@ -31,15 +33,28 @@ class Core5GConfigParser:
         return core_network
 
     @staticmethod
-    def parse_5g_cfg(params: dict) -> Core5GCfg:
-        """ Parse the 5G Core Network configuration. """
-        logging.info("Parse 5GC Core Configuration")
-        cfg = Core5GCfg()
+    def parse_5g_cfgs(params: dict) -> List[Core5GCfg]:
+        """
+        Parse the 5G Cores implementations listed in the 5gc section of the build configuration.
+        The network section applies to all Core implementations.
+        """
+        logging.info("Parse 5GC Core Configurations")
 
-        cfg.build_type = ParsingUtils.parse_build_type(params, '5g Core')
-        cfg.implementation = ParsingUtils.parse_implementation(params, ALLOWED_IMPLEMENTATION_LIST, '5g Core')
-        cfg.commit = ParsingUtils.parse_commit(params, '5g Core')
+        # All cores share use the same network data
+        network = Core5GConfigParser._parse_5g_network_config(params)
 
-        cfg.network = Core5GConfigParser._parse_5g_network_config(params)
+        cores = []
 
-        return cfg
+        if GeneralIdentifiers.VENDOR in params:
+            for impl in params[GeneralIdentifiers.VENDOR]:
+                cfg = Core5GCfg()
+                cfg.network = network
+                cfg.build_type = ParsingUtils.parse_build_type(impl, ComponentIdentifiers.CFG_5GC)
+                cfg.implementation = ParsingUtils.parse_implementation(impl, ComponentIdentifiers.CFG_5GC)
+                cfg.commit = ParsingUtils.parse_commit(impl, ComponentIdentifiers.CFG_5GC)
+                cfg.repository = ParsingUtils.parse_repository(impl, ComponentIdentifiers.CFG_5GC)
+                cores.append(cfg)
+
+        if len(cores) == 0:
+            logging.warning("No 5G Cores are defined in the build config! Nothing to be built!")
+        return cores

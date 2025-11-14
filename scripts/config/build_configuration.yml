@@ -1,7 +1,7 @@
 environment:
   core_implementation: "open5gs"
-  gnb_implementation: "flexric"
-  ric_implementation: "srs"
+  gnb_implementation: "srs"
+  ric_implementation: "flexric"
   log_level: "INFO"
   log_dir: "logs"
   build_dir: "./repositories"

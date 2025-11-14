@@ -1,47 +1,62 @@
 import ipaddress
 import logging
+from typing import List
 
 from controller.parser.parser_utils import ParsingUtils
 from model.ric_config import NearRtRICCFG, RICFieldIdentifiers, RICRelease, DefaultValuesRIC, \
-    NearRTRICNetworkConfig, ALLOWED_IMPLEMENTATION_LIST
+    NearRTRICNetworkConfig
+from model.setup_configuration import GeneralIdentifiers, ComponentIdentifiers
 
 
 class NearRTRICConfigParser:
     @staticmethod
-    def parse_near_rt_ric_cfg(params: dict) -> NearRtRICCFG:
-        """ Parse the near-RT RIC configuration. """
+    def parse_near_rt_ric_cfgs(params: dict) -> List[NearRtRICCFG]:
+        """
+        Parse the near-RT RIC implementations listed in the near-RT RIC section of the build configuration.
+        The network section applies to all near-RT RIC implementations.
+        """
         logging.info("Parse near-RT RIC Configuration")
-        cfg = NearRtRICCFG()
+        rics = []
 
-        cfg.build_type = ParsingUtils.parse_build_type(params, 'Near-RT RIC')
-        cfg.implementation = ParsingUtils.parse_implementation(params, ALLOWED_IMPLEMENTATION_LIST, 'Near-RT RIC')
-        cfg.commit = ParsingUtils.parse_commit(params, 'Near-RT RIC')
-
-        if RICFieldIdentifiers.RELEASE in params:
-            if params[RICFieldIdentifiers.RELEASE] == 'i':
-                cfg.release = RICRelease.RELEASE_i
-            elif params[RICFieldIdentifiers.RELEASE] == 'l':
-                cfg.release = RICRelease.RELEASE_l
-            else:
-                raise ValueError(f"Unsupported Release: {params[RICFieldIdentifiers.RELEASE]}")
-        else:
-            cfg.release = DefaultValuesRIC.DEFAULT_RELEASE
-            logging.warning(f"No sc ric release defined use default release i")
-
+        # All ric vendor implementations share the  same network data
         if RICFieldIdentifiers.NETWORK in params:
-            cfg.ip_config = NearRTRICConfigParser._parse_network_config(params['network'])
+            ric_network = NearRTRICConfigParser._parse_network_config(params['network'])
         else:
+            ric_network = NearRTRICNetworkConfig()
             logging.warning("No IP address specified -> Apply default network config")
-            cfg.ip_config = NearRTRICNetworkConfig()
-            cfg.ip_config.subnet = DefaultValuesRIC.DEFAULT_NETWORK_CONFIG['subnet']
-            cfg.ip_config.dbaas_ip = DefaultValuesRIC.DEFAULT_NETWORK_CONFIG['dbaas_ip']
-            cfg.ip_config.e2term_ip = DefaultValuesRIC.DEFAULT_NETWORK_CONFIG['e2term_ip']
-            cfg.ip_config.e2mgr_ip = DefaultValuesRIC.DEFAULT_NETWORK_CONFIG['e2mgr_ip']
-            cfg.ip_config.submgr_ip = DefaultValuesRIC.DEFAULT_NETWORK_CONFIG['submgr_ip']
-            cfg.ip_config.rtmgr_sim_ip = DefaultValuesRIC.DEFAULT_NETWORK_CONFIG['rtmgr_sim_ip']
-            cfg.ip_config.xapp_runner_ip = DefaultValuesRIC.DEFAULT_NETWORK_CONFIG['xapp_runner_ip']
+            ric_network.subnet = DefaultValuesRIC.DEFAULT_NETWORK_CONFIG['subnet']
+            ric_network.dbaas_ip = DefaultValuesRIC.DEFAULT_NETWORK_CONFIG['dbaas_ip']
+            ric_network.e2term_ip = DefaultValuesRIC.DEFAULT_NETWORK_CONFIG['e2term_ip']
+            ric_network.e2mgr_ip = DefaultValuesRIC.DEFAULT_NETWORK_CONFIG['e2mgr_ip']
+            ric_network.submgr_ip = DefaultValuesRIC.DEFAULT_NETWORK_CONFIG['submgr_ip']
+            ric_network.rtmgr_sim_ip = DefaultValuesRIC.DEFAULT_NETWORK_CONFIG['rtmgr_sim_ip']
+            ric_network.xapp_runner_ip = DefaultValuesRIC.DEFAULT_NETWORK_CONFIG['xapp_runner_ip']
 
-        return cfg
+        # iterate over all implementations
+        if GeneralIdentifiers.VENDOR in params:
+            for impl in params[GeneralIdentifiers.VENDOR.name]:
+                cfg = NearRtRICCFG()
+                cfg.ip_config = ric_network
+                cfg.build_type = ParsingUtils.parse_build_type(impl, ComponentIdentifiers.CFG_NEAR_RT_RIC)
+                cfg.implementation = ParsingUtils.parse_implementation(impl, ComponentIdentifiers.CFG_NEAR_RT_RIC)
+                cfg.commit = ParsingUtils.parse_commit(impl, ComponentIdentifiers.CFG_NEAR_RT_RIC)
+                cfg.repository = ParsingUtils.parse_repository(impl, ComponentIdentifiers.CFG_NEAR_RT_RIC)
+
+                if RICFieldIdentifiers.RELEASE in impl:
+                    if impl[RICFieldIdentifiers.RELEASE] == 'i':
+                        cfg.release = RICRelease.RELEASE_i
+                    elif impl[RICFieldIdentifiers.RELEASE] == 'l':
+                        cfg.release = RICRelease.RELEASE_l
+                    else:
+                        raise ValueError(f"Unsupported Release: {impl[RICFieldIdentifiers.RELEASE]}")
+                else:
+                    cfg.release = DefaultValuesRIC.DEFAULT_RELEASE
+                    logging.warning(f"No sc ric release defined use default release i")
+                rics.append(cfg)
+
+        if len(rics) == 0:
+            logging.warning("No RICs are defined in the build config! Nothing to be built!")
+        return rics
 
     @staticmethod
     def _parse_network_config(ip_config: dict) -> NearRTRICNetworkConfig:
