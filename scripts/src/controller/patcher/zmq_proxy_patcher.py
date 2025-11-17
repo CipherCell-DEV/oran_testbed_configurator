@@ -35,39 +35,4 @@ class ZMQProxyPatcher(SinglePatcherBase):
         return yaml.safe_load(rendered)['services']
 
     def copy_config_files(self):
-        # TODO solve multiple UEs with different implementations
-        config_paths = [[self._patch_file_path, "patched", "config", "ue",
-                         str(self._setup_cfg.ue.ues[0].implementation.value)] for _ in self._setup_cfg.ue.ues]
-
-        template_paths = [
-            [self._patch_file_path, "templates", "docker", "ue", str(self._setup_cfg.ue.ues[0].implementation.value)],
-            [self._patch_file_path, "templates", "config", "ue", str(self._setup_cfg.ue.ues[0].implementation.value)]
-        ]
-        paths_src = config_paths + template_paths
-
-        # Destination Paths
-        build_dir = self._setup_cfg.environment.build_dir
-        config_dst = [[build_dir, "srsRAN_4G", "configs"] for _ in self._setup_cfg.ue.ues]
-        template_dst = [
-            [build_dir, "srsRAN_4G"],
-            [build_dir, "srsRAN_4G"]
-        ]
-        paths_dst = config_dst + template_dst
-
-        config_files = [f"{ue.name}_zmq.conf" for ue in self._setup_cfg.ue.ues]
-        file_name = config_files + ["Dockerfile", "ue_entrypoint.sh"]
-        super().copy_helper(paths_src, file_name, paths_dst, file_name)
-
-    def _get_usim_mode(self):
-        if self._setup_cfg.ue.ues[0].usim.mode == USIMMode.HARD:
-            return "hard"
-        elif self._setup_cfg.ue.ues[0].usim.mode == USIMMode.SOFT:
-            return "soft"
-
-    def _get_usim_algorithm(self):
-        if self._setup_cfg.ue.ues[0].usim.algo == USIMAlgo.XOR:
-            return "xor"  # NOT TESTED
-        elif self._setup_cfg.ue.ues[0].usim.algo == USIMAlgo.COMP:
-            return "comp"  # NOT TESTED
-        elif self._setup_cfg.ue.ues[0].usim.algo == USIMAlgo.MILENAGE:
-            return "milenage"
+        pass
