@@ -13,6 +13,7 @@ from model.ue_config import UECfg
 from model.utils_config import LogLevel
 from model.program_descr_config import ProgramDescriptionCfg
 from model.program_descr_config import ProgramGroupIdentifier
+from model.zmq_proxy_config import ZMQProxyCfg
 
 
 class ComponentIdentifiers:
@@ -21,6 +22,7 @@ class ComponentIdentifiers:
     CFG_UE = "ue"
     CFG_GNB = "gnb"
     CFG_ENVIRONMENT = "environment"
+    CFG_ZMQ_PROXY = "zmq_proxy"
 
 
 class GeneralIdentifiers:
@@ -53,6 +55,7 @@ class SetupConfiguration:
     near_rt_ric: Optional[NearRtRICCFG] = None
     core_5g: Optional[Core5GCfg] = None
     gnb: Optional[GNBCfg] = None
+    zmq_proxy: Optional[ZMQProxyCfg] = None
     programs: Optional[ProgramDescriptionCfg] = None
     ue: UECfg = field(default_factory=lambda: None)
 
