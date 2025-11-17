@@ -23,21 +23,21 @@ class UEPatcher(SinglePatcherBase):
         pass
 
     def patch_config_file(self):
-        # TODO support multiple UE implementations
         template_path = os.path.join(self._patch_file_path, "templates", "config", "ue",
                                      str(self._setup_cfg.ue.ues[0].implementation.value))
         env = Environment(loader=FileSystemLoader(template_path))
         template = env.get_template("ue_config.ini.j2")
 
-        rendered_configs = []
         for ue in self._setup_cfg.ue.ues:
+            ue_proxy_config = self._setup_cfg.zmq_proxy.get_component_cfg(ue.name)
             rendered = template.render(
                 ue=ue,
-                gnb_ip=self._setup_cfg.gnb.ip_config.ru_sdr,
+                proxy_ip=self._setup_cfg.zmq_proxy.ip_addr,
                 usim_mode=self._get_usim_mode(),
-                usim_algo=self._get_usim_algorithm()
+                usim_algo=self._get_usim_algorithm(),
+                rx_port=ue_proxy_config.rx_port,
+                tx_port=ue_proxy_config.tx_port,
             )
-            # TODO support multiple UEs
             out_path = os.path.join(FolderManager.add_config_folder(self._patch_file_path, "ue",
                                     str(self._setup_cfg.ue.ues[0].implementation.value)),
                                     f"{ue.name}_zmq.conf")
