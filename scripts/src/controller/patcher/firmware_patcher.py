@@ -95,8 +95,25 @@ class FirmwarePatcher:
                 )
                 return False
 
+            # TODO: Move into appropriate component
+            single_config["services"].update({"zmq_proxy": {
+                "image": "132.231.14.130:8080/zmq_proxy:latest",
+                "build": "./zmq-proxy",
+                "container_name": "zmq_proxy",
+                "platform": "linux/amd64",
+                "networks": {"internal_net": {"ipv4_address": self._setup_cfg.zmq_proxy.ip_addr}},
+                "user": "root",
+                "privileged": True,
+                "cap_add": ["NET_ADMIN"],
+                "entrypoint": "python3 multi_ue_scenario.py",  # TODO: Pass number of UEs to script
+                "stdin_open": True,
+                "tty": True,
+                "restart": "unless-stopped",
+            }})
+
             single_config["networks"].update(core_config.get("networks", {}))
             single_config["services"].update(core_config.get("services", {}))
+
             single_config["services"].update(ue_gnb_config.get("services", {}))
 
             if "networks" in ue_gnb_config and "internal_net" in ue_gnb_config["networks"]:
