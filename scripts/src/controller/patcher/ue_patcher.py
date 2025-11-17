@@ -47,16 +47,18 @@ class UEPatcher(SinglePatcherBase):
 
     def patch_docker_compose(self) -> Optional[dict]:
         FolderManager.create_patch_folders(self._patch_file_path)
-        for i, ue in enumerate(self._setup_cfg.ue.ues):
+        all_services = {}
+        for ue_config in self._setup_cfg.ue.ues:
             template_path = os.path.join(self._patch_file_path, "templates", "docker", "ue",
-                                         str(ue.implementation.value))
+                                         str(ue_config.implementation.value))
             env = Environment(loader=FileSystemLoader(template_path))
             template = env.get_template("docker_compose.ini.j2")
             rendered = template.render(
                 image=f"{self._setup_cfg.environment.docker_registry}/ue{self._patcher_utils.get_tag_or_empty_string(':')}",
-                ue=ue
+                ue=ue_config
             )
-            return yaml.safe_load(rendered)['services']
+            all_services.update(yaml.safe_load(rendered)['services'])
+        return all_services
 
     def copy_config_files(self):
         # TODO solve multiple UEs with different implementations
