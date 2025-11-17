@@ -13,6 +13,7 @@ from controller.patcher.near_rt_ric_patcher import NearRTRICPatcher
 from controller.patcher.patcher_utils import PatcherUtils
 from controller.patcher.single_patcher_base import SinglePatcherBase
 from controller.patcher.ue_patcher import UEPatcher
+from controller.patcher.zmq_proxy_patcher import ZMQProxyPatcher
 from model.core_config import CoreImplementation
 from model.setup_configuration import SetupConfiguration
 
@@ -24,7 +25,8 @@ class PatchListOrder(Enum):
     CORE_5G = 1
     GNB = 2
     UE = 3
-    GENERIC = 4
+    ZMQ_PROXY = 4
+    GENERIC = 5
 
 
 class FirmwarePatcher:
@@ -51,6 +53,7 @@ class FirmwarePatcher:
         self._patcher_list[PatchListOrder.CORE_5G.value] = Core5GPatcher(*params)
         self._patcher_list[PatchListOrder.GNB.value] = GnbPatcher(*params)
         self._patcher_list[PatchListOrder.UE.value] = UEPatcher(*params)
+        self._patcher_list[PatchListOrder.ZMQ_PROXY.value] = ZMQProxyPatcher(*params)
         self._patcher_list[PatchListOrder.GENERIC.value] = GenericPatcher(*params)
 
     def get_images_to_push(self):
@@ -70,6 +73,7 @@ class FirmwarePatcher:
             core_config: Dict[str, Any] = self._patcher_list[PatchListOrder.CORE_5G.value].patch()
             ue_gnb_config = self._patcher_list[PatchListOrder.GNB.value].patch_docker_compose()
             ue_gnb_config['services'].update(self._patcher_list[PatchListOrder.UE.value].patch_docker_compose())
+            ue_gnb_config['services'].update(self._patcher_list[PatchListOrder.ZMQ_PROXY.value].patch_docker_compose())
 
             self._patcher_list[PatchListOrder.UE.value].patch_config_file()
             self._patcher_list[PatchListOrder.GNB.value].patch_config_file()
@@ -94,22 +98,6 @@ class FirmwarePatcher:
                     "Currently only SRS RAN is supported for 5G Core implementation."
                 )
                 return False
-
-            # TODO: Move into appropriate component
-            single_config["services"].update({"zmq_proxy": {
-                "image": "132.231.14.130:8080/zmq_proxy:latest",
-                "build": "./zmq-proxy",
-                "container_name": "zmq_proxy",
-                "platform": "linux/amd64",
-                "networks": {"internal_net": {"ipv4_address": self._setup_cfg.zmq_proxy.ip_addr}},
-                "user": "root",
-                "privileged": True,
-                "cap_add": ["NET_ADMIN"],
-                "entrypoint": "python3 multi_ue_scenario.py",  # TODO: Pass number of UEs to script
-                "stdin_open": True,
-                "tty": True,
-                "restart": "unless-stopped",
-            }})
 
             single_config["networks"].update(core_config.get("networks", {}))
             single_config["services"].update(core_config.get("services", {}))
