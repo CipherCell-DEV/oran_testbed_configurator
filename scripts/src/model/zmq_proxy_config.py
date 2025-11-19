@@ -18,6 +18,17 @@ class ZMQProxyCfg:
             self.component_proxy_cfgs.append(cfg)
             return cfg
 
+    def get_component_data(self) -> dict:
+        result = {}
+        for component_proxy_cfg in self.component_proxy_cfgs:
+            result[component_proxy_cfg.name] = {
+                'path_loss_db': component_proxy_cfg.path_loss_db,
+                'ip': None,
+                'rx_port': component_proxy_cfg.rx_port,
+                'tx_port': component_proxy_cfg.tx_port,
+            }
+        return result
+
 
 @dataclass
 class ComponenteProxyCfg:

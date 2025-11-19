@@ -2,6 +2,7 @@ import os
 from typing import Optional
 
 import yaml
+from fontTools.afmLib import componentRE
 from jinja2 import Environment, FileSystemLoader
 
 from controller.folder_manager import FolderManager
@@ -16,7 +17,26 @@ class ZMQProxyPatcher(SinglePatcherBase):
         super().__init__(patch_file_path, setup_config, patcher_utils)
 
     def patch(self):
-        pass
+        template_path = os.path.join(self._patch_file_path, "templates", "scripts", "zmq-proxy")
+        env = Environment(loader=FileSystemLoader(template_path))
+        template = env.get_template("zmq_proxy.ini.j2")
+
+        component_data = self._setup_cfg.zmq_proxy.get_component_data()
+        for ue in self._setup_cfg.ue.ues:
+            component_data[ue.name]['ip'] = str(ue.ip)
+        component_data['gnb']['ip'] = str(self._setup_cfg.gnb.ip_config.ru_sdr)
+
+        data = {
+            'ue_data': component_data,
+            'slow_down_ratio': self._setup_cfg.zmq_proxy.slow_down_ratio,
+            'sample_rate': int(self._setup_cfg.gnb.srate * 1e6),  # Needed in Hz, not in MHz
+        }
+
+        rendered = template.render(**data)
+        output_folder = os.path.join(self._setup_cfg.environment.build_dir, 'zmq-proxy')
+        FolderManager.create_folder(output_folder, 'zmq-proxy')
+        with open(os.path.join(output_folder, "zmq_proxy.py"), "w") as new_file:
+            new_file.write(rendered)
 
     def patch_config_file(self):
         pass
@@ -35,7 +55,7 @@ class ZMQProxyPatcher(SinglePatcherBase):
 
     def copy_config_files(self):
         FolderManager.create_folder(os.path.join(self._setup_cfg.environment.build_dir, 'zmq-proxy'), 'zmq-proxy')
-        paths_src = [[self._patch_file_path, "templates", "docker", "zmq-proxy"]] * 2
-        paths_dst = [[self._setup_cfg.environment.build_dir, 'zmq-proxy']] * 2
-        file_names = ['Dockerfile', 'zmq_proxy.py']
+        paths_src = [[self._patch_file_path, "templates", "docker", "zmq-proxy"]]
+        paths_dst = [[self._setup_cfg.environment.build_dir, 'zmq-proxy']]
+        file_names = ['Dockerfile']
         super().copy_helper(paths_src, file_names, paths_dst, file_names)

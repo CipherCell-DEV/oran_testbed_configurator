@@ -31,6 +31,7 @@ class SinglePatcherBase(metaclass=ABCMeta):
     def patch_env_file(self, env_dict: dict) -> dict:
         return env_dict
 
+    # TODO: Refactor this method and make it more clear
     def copy_helper(self, path_list_src: List[List[str]], file_name_list_src: List[str], path_list_dst: List[List[str]],
                     file_name_list_dst: List[str]):
         logging.info("Copying patched files to build directory...")

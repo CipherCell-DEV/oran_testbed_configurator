@@ -71,6 +71,7 @@ class FirmwarePatcher:
         try:
             ric_config: Dict[str, Any] = self._patcher_list[PatchListOrder.RIC.value].patch()
             core_config: Dict[str, Any] = self._patcher_list[PatchListOrder.CORE_5G.value].patch()
+            self._patcher_list[PatchListOrder.ZMQ_PROXY.value].patch()
             ue_gnb_config = self._patcher_list[PatchListOrder.GNB.value].patch_docker_compose()
             ue_gnb_config['services'].update(self._patcher_list[PatchListOrder.UE.value].patch_docker_compose())
             ue_gnb_config['services'].update(self._patcher_list[PatchListOrder.ZMQ_PROXY.value].patch_docker_compose())
