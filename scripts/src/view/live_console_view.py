@@ -43,8 +43,8 @@ class LiveView:
     def _signal_handler(self, signum, frame):
         """Handle SIGINT (Ctrl+C) and SIGTERM to gracefully shut down all containers."""
         logging.info(f"Received signal {signum}. Stopping all programs...")
-        self._is_display_active = False
         self._process_manager.cleanup_and_shutdown()
+        self._is_display_active = False
         exit(0)
 
     @staticmethod
@@ -158,6 +158,7 @@ class LiveView:
 
         if self._runner.cfg.programs.output_mode.value == OutputMode.TMUX.value:
             # open tmux session windows -> need list of running session names
+            self._is_display_active = True
             self._ask_for_open_tmux()
         elif self._runner.cfg.programs.output_mode.value == OutputMode.PYTHON.value:
             self._is_display_active = True

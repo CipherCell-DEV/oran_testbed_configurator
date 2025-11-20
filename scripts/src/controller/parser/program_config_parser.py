@@ -66,6 +66,8 @@ class ProgramConfigParser:
             p_desc = ProgramDescription()
             if ProgramIdentifiers.PROGRAM_NAME.value in config_entry:
                 p_desc.name = config_entry[ProgramIdentifiers.PROGRAM_NAME.value]
+            if ProgramIdentifiers.PROGRAM_IMPLEMENTATION.value in config_entry:
+                p_desc.implementation_str = config_entry[ProgramIdentifiers.PROGRAM_IMPLEMENTATION.value]
             if ProgramIdentifiers.PROGRAM_DEPENDS.value in config_entry:
                 p_desc.depends_on_names.extend(config_entry[ProgramIdentifiers.PROGRAM_DEPENDS.value])
             if ProgramIdentifiers.PROGRAM_COMMAND.value in config_entry:
@@ -83,7 +85,7 @@ class ProgramConfigParser:
                     p_desc.transition_stop_to_init = state_transitions[ProgramIdentifiers.PROGRAM_TRANSITION_STOP_INIT.value]
                 if ProgramIdentifiers.PROGRAM_TRANSITION_INIT_RUN.value in state_transitions:
                     p_desc.transition_init_run = state_transitions[ProgramIdentifiers.PROGRAM_TRANSITION_INIT_RUN.value]
-            p_desc.update_group_data(group.restart_timeout, group.restart_max_num)
+            p_desc.update_group_data(group.restart_timeout, group.restart_max_num, group.group_type)
             group.programs.append(p_desc)
 
 
@@ -117,7 +119,7 @@ class ProgramConfigParser:
 
     @staticmethod
     def parse_program_cfg(file_path: str, params: dict, default_working_dir: str) -> ProgramDescriptionCfg:
-        logging.info(f"Parsing program config file")
+        logging.info(f"Parsing program config file {file_path}")
         program_cfg = ProgramDescriptionCfg()
         program_cfg.config_file_path = file_path
         ProgramConfigParser._parse_terminal_data(params, program_cfg)
