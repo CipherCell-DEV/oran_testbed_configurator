@@ -28,7 +28,7 @@ class GeneralIdentifiers:
     IMPLEMENTATION = 'implementation'
     COMMIT = 'commit'
     REPOSITORY = 'repository'
-    VENDOR = 'vendor'
+    VENDOR = 'vendors'
 
 
 class EnvironmentCfg:

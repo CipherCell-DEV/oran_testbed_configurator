@@ -4,7 +4,7 @@ from typing import List
 
 from controller.parser.parser_utils import ParsingUtils
 from model.ric_config import NearRtRICCFG, RICFieldIdentifiers, RICRelease, DefaultValuesRIC, \
-    NearRTRICNetworkConfig
+    NearRTRICNetworkConfig, RICImplementation
 from model.setup_configuration import GeneralIdentifiers, ComponentIdentifiers
 
 
@@ -34,7 +34,7 @@ class NearRTRICConfigParser:
 
         # iterate over all implementations
         if GeneralIdentifiers.VENDOR in params:
-            for impl in params[GeneralIdentifiers.VENDOR.name]:
+            for impl in params[GeneralIdentifiers.VENDOR]:
                 cfg = NearRtRICCFG()
                 cfg.ip_config = ric_network
                 cfg.build_type = ParsingUtils.parse_build_type(impl, ComponentIdentifiers.CFG_NEAR_RT_RIC)
@@ -51,7 +51,8 @@ class NearRTRICConfigParser:
                         raise ValueError(f"Unsupported Release: {impl[RICFieldIdentifiers.RELEASE]}")
                 else:
                     cfg.release = DefaultValuesRIC.DEFAULT_RELEASE
-                    logging.warning(f"No sc ric release defined use default release i")
+                    if cfg.implementation is RICImplementation.ORAN_SC_RIC:
+                        logging.warning(f"No sc ric release defined use default release {DefaultValuesRIC.DEFAULT_RELEASE}")
                 rics.append(cfg)
 
         if len(rics) == 0:

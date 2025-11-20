@@ -49,7 +49,7 @@ class DemoRunner:
 
     def _create_ric(self):
         """Create the Near-RT RIC program."""
-        if self._cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC or \
+        if self._cfg.environment.ric_implementation == RICImplementation.ORAN_SC_RIC or \
                 self._cfg.near_rt_ric.implementation == RICImplementation.FLEX_RIC:
             rics = self._cfg.programs.get_ric_programs()
             # TODO: allow partial deployment (e.g. no RICs)? Might come in handy in future hardware integration tests ...

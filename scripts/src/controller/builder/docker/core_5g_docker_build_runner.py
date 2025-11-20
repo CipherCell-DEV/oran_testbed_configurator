@@ -12,11 +12,11 @@ class Core5GDockerBuildRunner(DockerBuilderBase):
     def build(self) -> bool:
         curr_dir = os.getcwd()
         os.chdir(self.setup_cfg.environment.build_dir)  # TODO is this necessary?
-        if self.setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
+        if self.setup_cfg.environment.core_implementation == CoreImplementation.OPEN5GS_SRS:
             result = self.docker_compose_build_helper('5gc', ["docker", "compose", "build", '5gc'])
             os.chdir(curr_dir)
             return result
-        if self.setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
+        if self.setup_cfg.environment.core_implementation == CoreImplementation.OPEN5GS:
             result = self.docker_compose_build_helper('5gc', ["docker", "compose", "build", '5gc', 'mongodb'])
             os.chdir(curr_dir)
             return result

@@ -28,7 +28,7 @@ class GNBCfg:
     implementation: Optional[GNBImplementation] = None
     repository: str = ""
     commit: str = "latest"
-    build_type = BuildType = BuildType.DOCKER
+    build_type : BuildType = BuildType.DOCKER
     ip_config: Optional[GNBIPConfig] = None
     srate: Optional[float] = 11.52
     tx_gain: Optional[int] = 75

@@ -63,7 +63,7 @@ class NearRtRICCFG:
     repository: str = ""
     commit: str = "latest"
     release: Optional[RICRelease] = None
-    build_type = BuildType = BuildType.DOCKER
+    build_type : BuildType = BuildType.DOCKER
     ip_config: Optional[NearRTRICNetworkConfig] = None
 
     def __str__(self):
