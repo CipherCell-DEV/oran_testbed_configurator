@@ -61,14 +61,13 @@ class UEPatcher(SinglePatcherBase):
         return all_services
 
     def copy_config_files(self):
-        # TODO solve multiple UEs with different implementations
         config_paths = [[self._patch_file_path, "patched", "config", "ue",
                          str(self._setup_cfg.ue.ues[0].implementation.value)] for _ in self._setup_cfg.ue.ues]
 
         template_paths = [
             [self._patch_file_path, "templates", "docker", "ue", str(self._setup_cfg.ue.ues[0].implementation.value)],
             [self._patch_file_path, "templates", "docker", "ue", str(self._setup_cfg.ue.ues[0].implementation.value)],
-            [self._patch_file_path, "templates", "config", "ue", str(self._setup_cfg.ue.ues[0].implementation.value)]
+            [self._patch_file_path, "templates", "scripts", "ue", str(self._setup_cfg.ue.ues[0].implementation.value)]
         ]
         paths_src = config_paths + template_paths
 
