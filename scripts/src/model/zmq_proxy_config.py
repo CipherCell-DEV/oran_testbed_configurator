@@ -10,10 +10,12 @@ class ZMQProxyCfg:
     component_proxy_cfgs: Optional[List['ProxyComponentCfg']] = None
 
     def get_component_cfg(self, name: str) -> 'ProxyComponentCfg':
+        if self.component_proxy_cfgs is None:
+            self.component_proxy_cfgs = []
         for cfg in self.component_proxy_cfgs:
             if cfg.name == name:
                 return cfg
-        else:
+        else:  # If no entry is found, create one with the correct name
             cfg = ProxyComponentCfg(name=name)
             self.component_proxy_cfgs.append(cfg)
             return cfg
