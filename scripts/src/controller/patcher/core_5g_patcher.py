@@ -102,6 +102,7 @@ class Core5GPatcher(SinglePatcherBase):
         if self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
             self._patch_open5gs_endpoint_script()
             self._patch_open5gs_config_file()
+        self.__generate_subscriber_csv()
 
     def patch_env_file(self, env_dict: dict) -> dict:
         if self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
@@ -173,25 +174,25 @@ class Core5GPatcher(SinglePatcherBase):
                 [self._patch_file_path, "templates", "config", "ran", self._setup_cfg.core_5g.implementation.value],
                 [self._patch_file_path, "templates", "config", "ran", self._setup_cfg.core_5g.implementation.value],
 
-                [self._patch_file_path, "templates", "config", "ran", self._setup_cfg.core_5g.implementation.value],
-
                 [self._patch_file_path, "templates", "docker", "ran", self._setup_cfg.core_5g.implementation.value]]
 
             dest_dirs = [[self._setup_cfg.environment.build_dir, "open5gs", "config"],
                          [self._setup_cfg.environment.build_dir, "open5gs", "config"],
                          [self._setup_cfg.environment.build_dir, "open5gs", "config"],
                          [self._setup_cfg.environment.build_dir, "open5gs", "config"],
-                         [self._setup_cfg.environment.build_dir, "open5gs", "config"],
                          [self._setup_cfg.environment.build_dir, "open5gs"]]
 
-            file_names = ["open5gs-5gc.yml", "open5gs_entrypoint.sh", 'add_users.py', 'setup_tun.py',
-                          'subscriber_db.csv', 'Dockerfile']
+            file_names = ["open5gs-5gc.yml", "open5gs_entrypoint.sh", 'add_users.py', 'setup_tun.py', 'Dockerfile']
 
             super().copy_helper(src_dirs, file_names, dest_dirs, file_names)
 
-        FolderManager.create_folder(os.path.join(self._setup_cfg.environment.build_dir, 'open5gs', 'config'), 'open5gs')
-        src_dirs = [[self._patch_file_path, "templates", "config", "ran", self._setup_cfg.core_5g.implementation.value]]
-        dest_dirs = [[self._setup_cfg.environment.build_dir, "open5gs"]]
-        file_names = ['subscriber_db.csv']
+    def __generate_subscriber_csv(self) -> None:
+        result = []
+        for ue_conf in self._setup_cfg.ue.ues:
+            usim = ue_conf.usim
+            result.append(f'{ue_conf.name},{usim.imsi},{usim.key},opc,{usim.opc},9001,9,{str(ue_conf.ip)}\n')
 
-        super().copy_helper(src_dirs, file_names, dest_dirs, file_names)
+        out_dir = os.path.join(self._patch_file_path, "patched", "config", "ran", "open5gs")
+        FolderManager.create_folder(out_dir, "open5gs")
+        with open(os.path.join(out_dir, "subscriber_db.csv"), "w") as out:
+            out.writelines(result)

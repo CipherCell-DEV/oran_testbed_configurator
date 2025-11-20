@@ -39,6 +39,7 @@ services:
         command: 5gc -c open5gs-5gc.yml
         volumes:
           - ../patches/templates/traffic/:/trafficker/
+          - ../patches/patched/config/ran/open5gs/subscriber_db.csv:/open5gs/subscriber_db.csv
         healthcheck:
             test: ["CMD-SHELL", "nc -z 127.0.0.20 7777"]
             interval: 3s
