@@ -3,6 +3,7 @@ import os
 from typing import Optional
 
 import yaml
+from jinja2 import Environment, FileSystemLoader
 
 from controller.folder_manager import FolderManager
 from controller.patcher.patcher_utils import PatcherUtils
@@ -10,8 +11,6 @@ from controller.patcher.single_patcher_base import SinglePatcherBase
 from model.core_config import CoreImplementation
 from model.setup_configuration import SetupConfiguration
 from model.utils_config import BuildType
-
-from jinja2 import Environment, FileSystemLoader
 
 
 class Core5GPatcher(SinglePatcherBase):
@@ -178,6 +177,19 @@ class Core5GPatcher(SinglePatcherBase):
             super().copy_helper(src_dirs, file_names, dest_dirs, file_names)
 
     def __generate_subscriber_csv(self) -> None:
+        """
+        Generates a CSV file containing subscriber information for all configured UEs.
+        The CSV is formatted for use by the Open5GS core network and includes the following fields:
+          - Name:     Human readable name to help distinguish UE's. Ignored by the HSS
+          - IMSI:     UE's IMSI value
+          - Key:      UE's key, where other keys are derived from. Stored in hexadecimal
+          - OP_Type:  Operator's code type, either OP or OPc
+          - OP/OPc:   Operator Code/Cyphered Operator Code, stored in hexadecimal
+          - AMF:      Authentication management field, stored in hexadecimal
+          - QCI:      QoS Class Identifier for the UE's default bearer.
+          - IP_alloc: Statically assigned IP for the UE.
+        The file is written to the Open5GS config directory under 'subscriber_db.csv'.
+        """
         result = []
         for ue_conf in self._setup_cfg.ue.ues:
             usim = ue_conf.usim
