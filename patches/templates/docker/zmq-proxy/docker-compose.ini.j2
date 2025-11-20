@@ -13,7 +13,7 @@ services:
     privileged: true
     cap_add:
       - NET_ADMIN
-    entrypoint: python3 zmq_proxy.py {{ nr_of_ues }}
+    entrypoint: python3 zmq_proxy.py
     stdin_open: true
     tty: true
     restart: unless-stopped
