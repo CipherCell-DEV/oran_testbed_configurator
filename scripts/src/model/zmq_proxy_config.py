@@ -7,14 +7,14 @@ from typing import Optional, List
 class ZMQProxyCfg:
     ip_addr: Optional[ipaddress.IPv4Address] = None
     slow_down_ratio: Optional[int] = 4
-    component_proxy_cfgs: Optional[List['ComponenteProxyCfg']] = None
+    component_proxy_cfgs: Optional[List['ProxyComponentCfg']] = None
 
-    def get_component_cfg(self, name: str) -> 'ComponenteProxyCfg':
+    def get_component_cfg(self, name: str) -> 'ProxyComponentCfg':
         for cfg in self.component_proxy_cfgs:
             if cfg.name == name:
                 return cfg
         else:
-            cfg = ComponenteProxyCfg(name=name)
+            cfg = ProxyComponentCfg(name=name)
             self.component_proxy_cfgs.append(cfg)
             return cfg
 
@@ -31,7 +31,7 @@ class ZMQProxyCfg:
 
 
 @dataclass
-class ComponenteProxyCfg:
+class ProxyComponentCfg:
     name: Optional[str] = None
     rx_port: Optional[int] = None
     tx_port: Optional[int] = None
