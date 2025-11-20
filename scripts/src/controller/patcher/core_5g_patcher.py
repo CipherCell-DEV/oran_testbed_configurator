@@ -185,6 +185,13 @@ class Core5GPatcher(SinglePatcherBase):
                          [self._setup_cfg.environment.build_dir, "open5gs"]]
 
             file_names = ["open5gs-5gc.yml", "open5gs_entrypoint.sh", 'add_users.py', 'setup_tun.py',
-                          'subscriber_db.csv.example', 'Dockerfile']
+                          'subscriber_db.csv', 'Dockerfile']
 
             super().copy_helper(src_dirs, file_names, dest_dirs, file_names)
+
+        FolderManager.create_folder(os.path.join(self._setup_cfg.environment.build_dir, 'open5gs', 'config'), 'open5gs')
+        src_dirs = [[self._patch_file_path, "templates", "config", "ran", self._setup_cfg.core_5g.implementation.value]]
+        dest_dirs = [[self._setup_cfg.environment.build_dir, "open5gs"]]
+        file_names = ['subscriber_db.csv']
+
+        super().copy_helper(src_dirs, file_names, dest_dirs, file_names)
