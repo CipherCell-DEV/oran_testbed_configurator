@@ -56,7 +56,6 @@ class ZMQProxyPatcher(SinglePatcherBase):
         return yaml.safe_load(rendered)['services']
 
     def copy_config_files(self):
-        FolderManager.create_folder(os.path.join(self._setup_cfg.environment.build_dir, 'zmq-proxy'), 'zmq-proxy')
         paths_src = [[self._patch_file_path, "templates", "docker", "zmq-proxy"]]
         paths_dst = [[self._setup_cfg.environment.build_dir, 'zmq-proxy']]
         file_names = ['Dockerfile']
