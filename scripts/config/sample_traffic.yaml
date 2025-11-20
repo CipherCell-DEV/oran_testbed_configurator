@@ -10,6 +10,9 @@ parameters:
     ue2:
       service: ue2  # Name of the UE docker service. Irrelevant if using NIST Deployment.
       address: 10.45.1.3
+    ue3:
+      service: ue3  # Name of the UE docker service. Irrelevant if using NIST Deployment.
+      address: 10.45.1.4
   direction: DL  # Direction of traffic. Either DL (Download), UL (Upload) or BI (Bidirectional) (currently not supported)
   workdir: ../../repositories/  # The directory of the main docker-compose file.
   granularity: 100ms  # The granularity of time intervals, i.e. the timespan of one slot in the traffic array.
@@ -20,8 +23,6 @@ parameters:
                                     # If trafficker is started on the same machine as the deployment, use 'local' here.
   use_udp: false  # Whether to use UDP instead of TCP for generating traffic. Using UDP limits the amount of data that
                   # can be sent in one packet (sent every 100 ms (granularity) on each device) to 65 kB. Default: false.
-
-
 
 # Supported units: Timespans can be given in ms, s, m or h; packet sizes can be given in B, kB, MB, GB
 traffic:
@@ -35,3 +36,77 @@ traffic:
         duration: 5s
         min_size: 0kB
         max_size: 10kB
+  ue3:
+    # Patterns can be looped
+    - loop:
+        iterations: 3
+        elements:
+          - overlap:
+              # 30 kB every 100 ms for 5 s
+              - periodic:
+                  offset: 0ms
+                  size: 30kB
+                  interval: 100ms
+                  duration: 5s
+              - periodic:
+                  offset: 1s
+                  size: 15kB
+                  interval: 400ms
+                  duration: 4s
+    - pause: 1s  # Pauses can be added to define timespans without any traffic.
+
+    # Traffic can also be overlapped with a given offset. If no offset is given, 0 s is assumed.
+    - overlap:
+        - periodic:
+            size: 20kB
+            interval: 200ms
+            duration: 5s
+        - random:
+            offset: 2s
+            duration: 1s
+            min_size: 0kB
+            max_size: 40kB
+    - pause: 1s
+    - random:
+        duration: 3s
+        min_size: 10kB
+        max_size: 50kB
+    - pause: 1s
+
+    # Normal, uniform and exponential distributions are supported and can be fine-tuned. If the parameters for the
+    # respective distributions are not given, they are determined with respect to the duration.
+    - distribution:
+        type: 'normal-distribution'
+        duration: 3s
+        cumulative_size: 300kB
+        mean: 0.5
+        variance: 50
+    - pause: 1s
+    - overlap:
+        - distribution:
+            type: 'normal-distribution'
+            duration: 3s
+            cumulative_size: 300kB
+        # Overlapped and looped patterns can also be nested.
+        - overlap:
+            - offset: 500ms
+            - distribution:
+                type: 'uniform-distribution'
+                duration: 3s
+                cumulative_size: 300kB
+            - random:
+                duration: 3s
+                min_size: -2kB
+                max_size: 2kB
+    - pause: 1s
+    - distribution:
+        type: 'exponential-distribution'
+        duration: 3s
+        cumulative_size: 300kB
+    - pause: 1s
+    - distribution:
+        type: 'exponential-distribution'
+        duration: 3s
+        cumulative_size: 300kB
+        lambda: 0.2
+        reverse: true
