@@ -1,5 +1,4 @@
 import time
-from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Type
 
@@ -21,7 +20,7 @@ class TrafficExecutor:
             print('Generating bidirectional traffic is currently not supported. You can use the ping sender / receiver'
                   'for this.')
         else:
-            if Counter(parameters.user_equipments.keys()) != Counter(self.traffic_plan.keys()):
+            if parameters.user_equipments.keys() != self.traffic_plan.keys():
                 raise KeyError('Mismatch between the specified UEs and the UEs used for traffic generation. Make sure '
                                'all UEs specified in the traffic section are defined in the user-equipments section.')
 
@@ -31,8 +30,8 @@ class TrafficExecutor:
             # handling all incoming traffic from the Core.
             sender = {}
             receivers = {}
-            receiver = receiver_class(parameters, parameters.core_service,
-                                      parameters.core_address) if parameters.direction == Direction.ueToCore else None
+            receiver = receiver_class(parameters, parameters.core_service, parameters.core_address) \
+                if parameters.direction == Direction.ueToCore else None
             for ue_id, conn_info in parameters.user_equipments.items():
                 if parameters.direction == Direction.ueToCore:
                     server_address = parameters.core_address
