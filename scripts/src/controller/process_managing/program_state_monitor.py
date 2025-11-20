@@ -33,7 +33,6 @@ class ProgramRecord:
     def add_intitialised_program(self, program_name: str):
         with self.cv_initialised_programs:
             with self._mutex:
-                print('Program', program_name, 'initialised. Waiting for gNB.')
                 self._initialised_programs.append(program_name)
             self.cv_initialised_programs.notify_all()
 
