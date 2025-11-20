@@ -1,4 +1,5 @@
 import time
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Type
 
@@ -20,6 +21,10 @@ class TrafficExecutor:
             print('Generating bidirectional traffic is currently not supported. You can use the ping sender / receiver'
                   'for this.')
         else:
+            if Counter(parameters.user_equipments.keys()) != Counter(self.traffic_plan.keys()):
+                raise KeyError('Mismatch between the specified UEs and the UEs used for traffic generation. Make sure '
+                               'all UEs specified in the traffic section are defined in the user-equipments section.')
+
             # For UL: Clients are connections from each UE to the Core. There is only one server handling all incoming
             # traffic from the UEs.
             # For DL: Clients are distinct connection from the Core to each UE. There is one server running on each UE
