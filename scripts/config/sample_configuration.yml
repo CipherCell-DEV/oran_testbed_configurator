@@ -78,6 +78,25 @@ ue:
           netns: ue2
           ip_devname: tun_srsue
           ip_netmask: 255.255.255.0
+    - ue:
+        implementation: "srs"
+        commit: "ec29b0c1ff79cebcbe66caa6d6b90778261c42b8"
+        name: "ue3"
+        build_type: "docker"
+        ue_type: "srsUE"
+        ip_addr: 10.45.1.4
+        srate: 11.52e6
+        usim:
+          mode: soft
+          algo: milenage
+          opc: 63bfa50ee6523365ff14c1f45f88737d
+          key: 00112233445566778899aabbccddef01
+          imsi: 001010123456791
+          imei: 353490069873319
+        gateway:
+          netns: ue3
+          ip_devname: tun_srsue
+          ip_netmask: 255.255.255.0
 
 gnb:
   implementation: "srs"
