@@ -54,6 +54,7 @@ class ZMQProxy(gr.top_block):
 
 
 if __name__ == '__main__':
+    print('ZMQ Proxy initialising.')
     proxy = ZMQProxy()
 
     def sig_handler(sig=None, frame=None):
