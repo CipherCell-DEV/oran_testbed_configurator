@@ -10,8 +10,7 @@ from controller.parser.program_config_parser import ProgramConfigParser
 from controller.parser.ue_config_parser import UEConfigParser
 from controller.parser.zmq_proxy_parser import ZMQProxyParser
 from model.program_descr_config import ProgramDescriptionCfg
-from model.setup_configuration import EnvironmentCfg, SetupConfiguration, \
-    ComponentIdentifiers
+from model.setup_configuration import EnvironmentCfg, SetupConfiguration, ComponentIdentifiers
 from model.utils_config import FILE_DIR
 
 

@@ -30,7 +30,7 @@ class ProgramRecord:
         with self._mutex:
             return program_name in self._initialised_programs
 
-    def add_intitialised_program(self, program_name: str):
+    def add_inititialised_program(self, program_name: str):
         with self.cv_initialised_programs:
             with self._mutex:
                 self._initialised_programs.append(program_name)
@@ -82,7 +82,7 @@ class ProgramStateData:
             if self.program_state.value == ProgramState.STOPPED.value:
                 if output_str.__contains__(self.program.transition_stop_to_init):
                     self.change_state_to(ProgramState.INITIALIZING)
-                    self._program_record.add_intitialised_program(self.program.name)
+                    self._program_record.add_inititialised_program(self.program.name)
             elif self.program_state.value == ProgramState.INITIALIZING.value:
                 if output_str.__contains__(self.program.transition_init_run):
                     self.change_state_to(ProgramState.RUNNING)
