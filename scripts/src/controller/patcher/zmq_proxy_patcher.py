@@ -1,4 +1,6 @@
+import logging
 import os
+import sys
 from typing import Optional
 
 import yaml
@@ -23,7 +25,11 @@ class ZMQProxyPatcher(SinglePatcherBase):
 
         component_data = self._setup_cfg.zmq_proxy.get_component_data()
         for ue in self._setup_cfg.ue.ues:
-            component_data[ue.name]['ip'] = str(ue.ip)
+            try:
+                component_data[ue.name]['ip'] = str(ue.ip)
+            except KeyError:
+                logging.error('Could not find zmq proxy entry for ' + ue.name)
+                sys.exit(1)
         component_data['gnb']['ip'] = str(self._setup_cfg.gnb.ip_config.ru_sdr)
 
         data = {
