@@ -67,6 +67,7 @@ class UEPatcher(SinglePatcherBase):
 
         template_paths = [
             [self._patch_file_path, "templates", "docker", "ue", str(self._setup_cfg.ue.ues[0].implementation.value)],
+            [self._patch_file_path, "templates", "docker", "ue", str(self._setup_cfg.ue.ues[0].implementation.value)],
             [self._patch_file_path, "templates", "config", "ue", str(self._setup_cfg.ue.ues[0].implementation.value)]
         ]
         paths_src = config_paths + template_paths
@@ -76,12 +77,13 @@ class UEPatcher(SinglePatcherBase):
         config_dst = [[build_dir, "srsRAN_4G", "configs"] for _ in self._setup_cfg.ue.ues]
         template_dst = [
             [build_dir, "srsRAN_4G"],
+            [build_dir, "srsRAN_4G"],
             [build_dir, "srsRAN_4G"]
         ]
         paths_dst = config_dst + template_dst
 
         config_files = [f"{ue.name}_zmq.conf" for ue in self._setup_cfg.ue.ues]
-        file_name = config_files + ["Dockerfile", "ue_entrypoint.sh"]
+        file_name = config_files + ["Dockerfile", ".dockerignore", "ue_entrypoint.sh"]
         super().copy_helper(paths_src, file_name, paths_dst, file_name)
 
     def _get_usim_mode(self):
