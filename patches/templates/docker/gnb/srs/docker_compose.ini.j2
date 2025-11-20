@@ -25,7 +25,6 @@ services:
         command: ["./build_docker/apps/gnb/gnb", "-c", "./configs/gnb_zmq.yaml"]
         volumes:
             - gnb_interface_log:/logs/gnb
-            - ./srsRAN_Project/configs/:/app/configs/
         stdin_open: true
         tty: true
         restart: unless-stopped
