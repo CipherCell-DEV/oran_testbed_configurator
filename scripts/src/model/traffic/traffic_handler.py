@@ -115,8 +115,7 @@ class TrafficHandler(ABC):
     @property
     def _cmd_prefix(self) -> str:
         if self.__service_name.startswith('ue'):
-            return (('sudo ' if self._parameters.use_nist else '') + 'ip netns exec '
-                    + (self.__service_name if self._parameters.use_nist else 'ue1'))  # FIXME: Temporary workaround
+            return (('sudo ' if self._parameters.use_nist else '') + 'ip netns exec ' + self.__service_name)
         else:
             return ''
 
