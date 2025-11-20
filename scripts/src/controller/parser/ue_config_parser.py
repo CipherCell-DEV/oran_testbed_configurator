@@ -16,7 +16,7 @@ class UEConfigParser:
         for params in elements['ues']:
             keys = list(params.keys())
             if len(keys) > 1:
-                logging.error('Did not expect more than one entry in the ue config dict for ' + keys[0])
+                logging.error(f'Expected exactly one UE name per config entry, but found {len(keys)}: {keys}')
             cfg = UEInstCfg()
             cfg.name = keys[0]
             params = params[cfg.name]
