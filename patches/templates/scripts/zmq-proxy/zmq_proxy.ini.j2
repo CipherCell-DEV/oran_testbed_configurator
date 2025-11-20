@@ -13,7 +13,7 @@ from gnuradio import zeromq
 import threading
 
 
-class multi_ue_scenario(gr.top_block):
+class ZMQProxy(gr.top_block):
 
     def __init__(self):
         gr.top_block.__init__(self, "zmq-proxy", catch_exceptions=True)
@@ -23,18 +23,16 @@ class multi_ue_scenario(gr.top_block):
         zmq_hwm = -1
         comp_data = {{ ue_data }}
 
-        zmq_req_sources = {key: zeromq.req_source(gr.sizeof_gr_complex, 1, f'tcp://{el["ip"]:{el["tx_port"]}}',
+        zmq_req_sources = {key: zeromq.req_source(gr.sizeof_gr_complex, 1, f'tcp://{el["ip"]}:{el["tx_port"]}',
                                                        zmq_timeout, False, zmq_hwm, False)
                                 for key, el in comp_data.items()}
         zmq_rep_sinks = {key: zeromq.rep_sink(gr.sizeof_gr_complex, 1, f'tcp://0.0.0.0:{el["rx_port"]}',
                                                    zmq_timeout, False, zmq_hwm, True)
                               for key, el in comp_data.items()}
         blocks_multiply_from_sources = {key: blocks.multiply_const_cc(10 ** (-1.0 * el['path_loss_db'] / 20.0))
-                                              for key, el in comp_data.items() if key.startswith('ue')
-        }
+                                              for key, el in comp_data.items() if key.startswith('ue')}
         blocks_multiply_from_throttle = {key: blocks.multiply_const_cc(10 ** (-1.0 * el['path_loss_db'] / 20.0))
-                                            for key, el in comp_data.items() if key.startswith('ue')
-                                            }
+                                            for key, el in comp_data.items() if key.startswith('ue')}
         blocks_throttle = blocks.throttle(gr.sizeof_gr_complex * 1,
                                           (1.0 * {{ sample_rate }} / (1.0 * {{ slow_down_ratio }})), True)
         blocks_add = blocks.add_vcc(1)
@@ -55,28 +53,25 @@ class multi_ue_scenario(gr.top_block):
         self.connect((blocks_add, 0), (zmq_rep_sinks['gnb']))
 
 
-def main(top_block_cls=multi_ue_scenario, options=None):
-    tb = top_block_cls()
+if __name__ == '__main__':
+    proxy = ZMQProxy()
 
     def sig_handler(sig=None, frame=None):
-        tb.stop()
-        tb.wait()
+        proxy.stop()
+        proxy.wait()
 
         sys.exit(0)
 
     signal.signal(signal.SIGINT, sig_handler)
     signal.signal(signal.SIGTERM, sig_handler)
 
-    tb.start()
-    tb.flowgraph_started.set()
+    proxy.start()
+    proxy.flowgraph_started.set()
+    print('ZMQ Proxy running.')
 
     try:
         input('Press Enter to quit: ')
     except EOFError:
         pass
-    tb.stop()
-    tb.wait()
-
-
-if __name__ == '__main__':
-    main()
+    proxy.stop()
+    proxy.wait()
