@@ -56,19 +56,10 @@ class Core5GPatcher(SinglePatcherBase):
         env = Environment(loader=FileSystemLoader(template_path))
         template = env.get_template("open5gs_entrypoint.ini.j2")
 
-        # TODO handle multiple UEs
         data = {
-            'ue': {
-                "ip_range": self._setup_cfg.ue.ip_range,
-                "gateway": self._setup_cfg.ue.gateway,
-                "imsi": self._setup_cfg.ue.ues[0].usim.imsi,
-                "key": self._setup_cfg.ue.ues[0].usim.key,
-                "opc": self._setup_cfg.ue.ues[0].usim.opc,
-                "ip": self._setup_cfg.ue.ues[0].ip
-            },
-            'ran': {
-                'mongodb_ip': self._setup_cfg.core_5g.network.mongodb_ip
-            }
+            "ip_range": self._setup_cfg.ue.ip_range,
+            "gateway": self._setup_cfg.ue.gateway,
+            'mongodb_ip': self._setup_cfg.core_5g.network.mongodb_ip
         }
 
         rendered = template.render(**data)

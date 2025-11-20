@@ -1,7 +1,7 @@
 #!/bin/bash
 
-export UE_GATEWAY_IP={{ ue.gateway }} # "10.45.0.1"
-export UE_IP_RANGE={{ ue.ip_range }}
+export UE_GATEWAY_IP={{ gateway }}
+export UE_IP_RANGE={{ ip_range }}
 
 INSTALL_ARCH=x86_64-linux-gnu
 if [ "$(uname -m)" = "aarch64" ]; then
@@ -37,12 +37,11 @@ fi
 
 # Add subscriber data to open5gs mongo db
 echo "SUBSCRIBER_DB=${SUBSCRIBER_DB}"
-python3 add_users.py --mongodb {{ ran.mongodb_ip }} --subscriber_data ${SUBSCRIBER_DB}
+python3 add_users.py --mongodb {{ mongodb_ip }} --subscriber_data ${SUBSCRIBER_DB}
 if [ $? -ne 0 ]
 then
     echo "Failed to add subscribers to database"
     exit 1
 fi
-
 
 exec stdbuf -o L /app/build/tests/app/5gc -c open5gs-5gc.yml
