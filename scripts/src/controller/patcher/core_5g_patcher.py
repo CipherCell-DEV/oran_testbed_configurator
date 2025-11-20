@@ -180,7 +180,7 @@ class Core5GPatcher(SinglePatcherBase):
         """
         Generates a CSV file containing subscriber information for all configured UEs.
         The CSV is formatted for use by the Open5GS core network and includes the following fields:
-          - Name:     Human readable name to help distinguish UE's. Ignored by the HSS
+          - Name:     Human readable name to help distinguish UEs. Ignored by the HSS
           - IMSI:     UE's IMSI value
           - Key:      UE's key, where other keys are derived from. Stored in hexadecimal
           - OP_Type:  Operator's code type, either OP or OPc

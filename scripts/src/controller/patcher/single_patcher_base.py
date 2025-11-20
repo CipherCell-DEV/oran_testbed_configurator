@@ -60,4 +60,3 @@ class SinglePatcherBase(metaclass=ABCMeta):
             except Exception:
                 logging.exception("Error copying %s to %s", source_path, destination_path)
                 raise
-0
