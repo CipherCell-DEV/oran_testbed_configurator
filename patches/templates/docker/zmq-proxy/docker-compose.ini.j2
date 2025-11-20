@@ -7,6 +7,8 @@ services:
     networks:
       internal_net:
         ipv4_address: {{ zmq_proxy_ip }}
+    volumes:
+      - ./zmq-proxy/zmq_proxy.py:/app/zmq_proxy.py
     user: root
     privileged: true
     cap_add:
