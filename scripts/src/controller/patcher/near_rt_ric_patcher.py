@@ -3,6 +3,7 @@ import os
 from typing import Optional
 
 import yaml
+from jinja2 import Environment, FileSystemLoader
 
 from controller.folder_manager import FolderManager
 from controller.patcher.patcher_utils import PatcherUtils
@@ -10,8 +11,6 @@ from controller.patcher.single_patcher_base import SinglePatcherBase
 from model.ric_config import RICImplementation, ORAN_SC_RIC_SERVICE_IP_MAP
 from model.setup_configuration import SetupConfiguration
 from model.utils_config import BuildType
-
-from jinja2 import Environment, FileSystemLoader
 
 
 class NearRTRICPatcher(SinglePatcherBase):
@@ -118,16 +117,12 @@ class NearRTRICPatcher(SinglePatcherBase):
         if self._setup_cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC:
             docker_files = ["dockerfile_appmgr", "dockerfile_submgr", "dockerfile_e2term", "dockerfile_rtmgr_sim",
                             "dockerfile_e2mgr", "dockerfile_ric-plt-xapp-frame-py"]
-            dst_file_paths = [
-                [self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images", file.replace("dockerfile_", "")]
-                for
-                file in docker_files]
+            src_paths = [[self._patch_file_path, "templates", "docker", "ric",
+                          str(self._setup_cfg.near_rt_ric.implementation.value)] for _ in docker_files]
+            dst_paths = [[self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images",
+                          file.replace("dockerfile_", "")] for file in docker_files]
 
-            super().copy_helper(
-                [[self._patch_file_path, "templates", "docker", "ric",
-                  str(self._setup_cfg.near_rt_ric.implementation.value)]
-                 for _ in docker_files], docker_files,
-                dst_file_paths, ["Dockerfile" for _ in docker_files])
+            super().copy_helper(src_paths, docker_files, dst_paths, ["Dockerfile" for _ in docker_files])
         elif self._setup_cfg.near_rt_ric.implementation == RICImplementation.FLEX_RIC:
             flex_ric_config_folder_patched = [self._patch_file_path, "patched", "config", "ric",
                                               self._setup_cfg.near_rt_ric.implementation.value]

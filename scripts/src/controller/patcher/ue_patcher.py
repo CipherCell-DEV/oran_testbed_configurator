@@ -63,7 +63,6 @@ class UEPatcher(SinglePatcherBase):
     def copy_config_files(self):
         config_paths = [[self._patch_file_path, "patched", "config", "ue",
                          str(self._setup_cfg.ue.ues[0].implementation.value)] for _ in self._setup_cfg.ue.ues]
-
         template_paths = [
             [self._patch_file_path, "templates", "docker", "ue", str(self._setup_cfg.ue.ues[0].implementation.value)],
             [self._patch_file_path, "templates", "docker", "ue", str(self._setup_cfg.ue.ues[0].implementation.value)],
@@ -71,7 +70,6 @@ class UEPatcher(SinglePatcherBase):
         ]
         paths_src = config_paths + template_paths
 
-        # Destination Paths
         build_dir = self._setup_cfg.environment.build_dir
         config_dst = [[build_dir, "srsRAN_4G", "configs"] for _ in self._setup_cfg.ue.ues]
         template_dst = [
