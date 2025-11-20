@@ -23,8 +23,8 @@ class UEPatcher(SinglePatcherBase):
         pass
 
     def patch_config_file(self):
-        template_path = os.path.join(self._patch_file_path, "templates", "config", "ue",
-                                     str(self._setup_cfg.ue.ues[0].implementation.value))
+        implementation = str(self._setup_cfg.ue.ues[0].implementation.value)
+        template_path = os.path.join(self._patch_file_path, "templates", "config", "ue", implementation)
         env = Environment(loader=FileSystemLoader(template_path))
         template = env.get_template("ue_config.ini.j2")
 
@@ -39,8 +39,7 @@ class UEPatcher(SinglePatcherBase):
                 tx_port=ue_proxy_config.tx_port,
             )
             out_path = os.path.join(FolderManager.add_config_folder(self._patch_file_path, "ue",
-                                    str(self._setup_cfg.ue.ues[0].implementation.value)),
-                                    f"{ue.name}_zmq.conf")
+                                    implementation), f"{ue.name}_zmq.conf")
 
             with open(out_path, "w") as new_file:
                 new_file.write(rendered)
@@ -61,12 +60,13 @@ class UEPatcher(SinglePatcherBase):
         return all_services
 
     def copy_config_files(self):
+        implementation = str(self._setup_cfg.ue.ues[0].implementation.value)
         config_paths = [[self._patch_file_path, "patched", "config", "ue",
-                         str(self._setup_cfg.ue.ues[0].implementation.value)] for _ in self._setup_cfg.ue.ues]
+                         implementation] for _ in self._setup_cfg.ue.ues]
         template_paths = [
-            [self._patch_file_path, "templates", "docker", "ue", str(self._setup_cfg.ue.ues[0].implementation.value)],
-            [self._patch_file_path, "templates", "docker", "ue", str(self._setup_cfg.ue.ues[0].implementation.value)],
-            [self._patch_file_path, "templates", "scripts", "ue", str(self._setup_cfg.ue.ues[0].implementation.value)]
+            [self._patch_file_path, "templates", "docker", "ue", ],
+            [self._patch_file_path, "templates", "docker", "ue", implementation],
+            [self._patch_file_path, "templates", "scripts", "ue", implementation]
         ]
         paths_src = config_paths + template_paths
 
