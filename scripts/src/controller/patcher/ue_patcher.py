@@ -61,22 +61,15 @@ class UEPatcher(SinglePatcherBase):
 
     def copy_config_files(self):
         implementation = str(self._setup_cfg.ue.ues[0].implementation.value)
-        config_paths = [[self._patch_file_path, "patched", "config", "ue",
-                         implementation] for _ in self._setup_cfg.ue.ues]
-        template_paths = [
-            [self._patch_file_path, "templates", "docker", "ue", ],
-            [self._patch_file_path, "templates", "docker", "ue", implementation],
-            [self._patch_file_path, "templates", "scripts", "ue", implementation]
-        ]
+        config_paths = [[self._patch_file_path, "patched", "config", "ue", implementation]
+                        for _ in self._setup_cfg.ue.ues]
+        template_paths = ([[self._patch_file_path, "templates", "docker", "ue", implementation]] * 2
+                          + [[self._patch_file_path, "templates", "scripts", "ue", implementation]])
         paths_src = config_paths + template_paths
 
         build_dir = self._setup_cfg.environment.build_dir
         config_dst = [[build_dir, "srsRAN_4G", "configs"] for _ in self._setup_cfg.ue.ues]
-        template_dst = [
-            [build_dir, "srsRAN_4G"],
-            [build_dir, "srsRAN_4G"],
-            [build_dir, "srsRAN_4G"]
-        ]
+        template_dst = [[build_dir, "srsRAN_4G"]] * 3
         paths_dst = config_dst + template_dst
 
         config_files = [f"{ue.name}_zmq.conf" for ue in self._setup_cfg.ue.ues]
