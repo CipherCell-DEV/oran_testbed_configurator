@@ -1,10 +1,7 @@
-import logging
 import os
-import sys
 from typing import Optional
 
 import yaml
-from fontTools.afmLib import componentRE
 from jinja2 import Environment, FileSystemLoader
 
 from controller.folder_manager import FolderManager
@@ -28,8 +25,7 @@ class ZMQProxyPatcher(SinglePatcherBase):
             try:
                 component_data[ue.name]['ip'] = str(ue.ip)
             except KeyError:
-                logging.error('Could not find zmq proxy entry for ' + ue.name)
-                sys.exit(1)
+                raise KeyError('Could not find zmq proxy entry for ' + ue.name)
         component_data['gnb']['ip'] = str(self._setup_cfg.gnb.ip_config.ru_sdr)
 
         data = {
