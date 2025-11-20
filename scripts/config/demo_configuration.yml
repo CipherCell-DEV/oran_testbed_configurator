@@ -107,13 +107,13 @@ programs:
           stop_to_init: "Attaching to ue"
           init_to_running: "PDU Session Establishment successful."
         ############################################ Add more UEs here. Currently not supported.
-      - name: "ue2"
-        implementation: "srs_4g"
-        depends_on: [ "gnb" ]
-        command: [ "docker", "compose", "up", "--force-recreate", "ue2" ]
-        state_transitions:
-          stop_to_init: "Attaching to ue"
-          init_to_running: "PDU Session Establishment successful."
+      #- name: "ue2"
+      #  implementation: "srs_4g"
+      #  depends_on: [ "gnb" ]
+      #  command: [ "docker", "compose", "up", "--force-recreate", "ue2" ]
+      #  state_transitions:
+      #    stop_to_init: "Attaching to ue"
+      #    init_to_running: "PDU Session Establishment successful."
   run_misc:
     restart_timeout_s: 20
     max_num_restart: 3

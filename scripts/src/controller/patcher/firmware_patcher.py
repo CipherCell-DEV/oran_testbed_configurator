@@ -82,12 +82,12 @@ class FirmwarePatcher:
                 "volumes": ue_gnb_config["volumes"]
             }
 
-            if self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
+            if self._setup_cfg.get_used_core().implementation == CoreImplementation.OPEN5GS_SRS:
                 if "volumes" in core_config:
                     for key in core_config["volumes"]:
                         single_config["volumes"].update({key: core_config["volumes"][key]})
 
-            elif self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
+            elif self._setup_cfg.get_used_core().implementation == CoreImplementation.OPEN5GS:
                 logging.info("Patching standalone open5gs")
             else:
                 logging.error(

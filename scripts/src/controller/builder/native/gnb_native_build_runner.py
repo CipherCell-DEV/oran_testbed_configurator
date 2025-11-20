@@ -26,7 +26,7 @@ class GNBNativeBuildRunner(NativeBuilderBase):
         return self.build_helper(working_dir, "gnb", build_commands)
 
     def get_implementation_specific_config(self) -> Tuple[List[List[str]], List[str], List[str]]:
-        if self.setup_cfg.gnb.implementation == GNBImplementation.SRS:
+        if self.setup_cfg.get_used_gnb().implementation == GNBImplementation.SRS:
             FolderManager.create_native_build_folder(self.setup_cfg.environment.build_dir, "srsRAN_Project")
             return [
                 ['cmake', '-DENABLE_UHD=OFF', '-DENABLE_ARMPL=OFF', '-DENABLE_EXPORT=ON', '-DENABLE_ZEROMQ=ON', '..'],

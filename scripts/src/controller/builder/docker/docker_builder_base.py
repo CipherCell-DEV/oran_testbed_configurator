@@ -37,7 +37,7 @@ class DockerBuilderBase(BuilderBase, metaclass=ABCMeta):
         with open(log_path, "w") as log_file:
             if self.utils.command_helper(self.setup_cfg.environment.build_dir, component_name, command,
                                          log_file, log_path):
-                logging.info("RIC Docker build completed successfully ✅ (log: %s)",
+                logging.info(f"{component_name} Docker build completed successfully ✅ (log: %s)",
                              log_path)
                 print()  # Add empty line to indicate that build is done!
                 return True

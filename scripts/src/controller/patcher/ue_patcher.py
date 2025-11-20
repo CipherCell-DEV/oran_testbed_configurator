@@ -33,7 +33,7 @@ class UEPatcher(SinglePatcherBase):
         for ue in self._setup_cfg.ue.ues:
             rendered = template.render(
                 ue=ue,
-                gnb_ip=self._setup_cfg.gnb.ip_config.ru_sdr,
+                gnb_ip=self._setup_cfg.get_used_gnb().ip_config.ru_sdr,
                 usim_mode=self._get_usim_mode(),
                 usim_algo=self._get_usim_algorithm()
             )

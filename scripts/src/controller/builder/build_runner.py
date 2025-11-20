@@ -42,7 +42,7 @@ class BuildRunner:
         """
         logging.info("Running near RT RIC build process...")
         return self._build_helper(
-            self.setup_cfg.near_rt_ric,
+            self.setup_cfg.get_used_ric(),
             NearRTRICDockerBuildRunner,
             NearRTRICNativeBuildRunner
         )
@@ -54,7 +54,7 @@ class BuildRunner:
         """
         logging.info("Running 5g core build process...")
         return self._build_helper(
-            self.setup_cfg.near_rt_ric,
+            self.setup_cfg.get_used_ric(),
             Core5GDockerBuildRunner,
             Core5GNativeBuildRunner
         )
@@ -66,7 +66,7 @@ class BuildRunner:
         """
         logging.info("Running gNB build process...")
         return self._build_helper(
-            self.setup_cfg.near_rt_ric,
+            self.setup_cfg.get_used_ric(),
             GNBDockerBuildRunner,
             GNBNativeBuildRunner
         )

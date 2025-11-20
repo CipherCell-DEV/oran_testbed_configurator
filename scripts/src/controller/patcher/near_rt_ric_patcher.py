@@ -25,9 +25,9 @@ class NearRTRICPatcher(SinglePatcherBase):
     def patch(self):
         logging.info("Patching RIC firmware...")
         if os.path.exists(self._patch_file_path):
-            if self._setup_cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC or \
-                    self._setup_cfg.near_rt_ric.implementation == RICImplementation.FLEX_RIC:
-                if self._setup_cfg.near_rt_ric.build_type == BuildType.DOCKER:
+            if self._setup_cfg.get_used_ric().implementation == RICImplementation.ORAN_SC_RIC or \
+                    self._setup_cfg.get_used_ric().implementation == RICImplementation.FLEX_RIC:
+                if self._setup_cfg.get_used_ric().build_type == BuildType.DOCKER:
                     self.patch_config_file()
                     return self.patch_docker_compose()
                 else:
@@ -37,17 +37,17 @@ class NearRTRICPatcher(SinglePatcherBase):
             raise FileNotFoundError(f"Patch file not found: {self._patch_file_path}")
 
     def patch_config_file(self):
-        if self._setup_cfg.near_rt_ric.implementation == RICImplementation.FLEX_RIC:
+        if self._setup_cfg.get_used_ric().implementation == RICImplementation.FLEX_RIC:
             patched_file = os.path.join(FolderManager.
                                         add_config_folder(self._patch_file_path, "ric",
-                                                          str(self._setup_cfg.near_rt_ric.implementation.value)),
+                                                          str(self._setup_cfg.get_used_ric().implementation.value)),
                                         "flexric.ini.j2")
             template_path = os.path.join(self._patch_file_path, "templates", "config", "ric",
-                                         str(self._setup_cfg.near_rt_ric.implementation.value))
+                                         str(self._setup_cfg.get_used_ric().implementation.value))
             env = Environment(loader=FileSystemLoader(template_path))
             template = env.get_template("flexric.ini.j2")
             config = {'e2term': {
-                "ip": getattr(self._setup_cfg.near_rt_ric.ip_config, 'e2term_ip')
+                "ip": getattr(self._setup_cfg.get_used_ric().ip_config, 'e2term_ip')
             }}
 
             rendered = template.render(**config)
@@ -57,7 +57,7 @@ class NearRTRICPatcher(SinglePatcherBase):
     def patch_docker_compose(self) -> Optional[dict]:
         FolderManager.create_patch_folders(self._patch_file_path)
 
-        if self._setup_cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC:
+        if self._setup_cfg.get_used_ric().implementation == RICImplementation.ORAN_SC_RIC:
             """ Patch the ORAN SC RIC docker-compose.yml file with custom IP addresses and subnet. """
 
             config = {
@@ -90,32 +90,32 @@ class NearRTRICPatcher(SinglePatcherBase):
                     "ip": "${XAPP_PY_RUNNER_IP:-dummy}"
                 },
                 'ric': {
-                    "subnet": self._setup_cfg.near_rt_ric.ip_config.subnet
+                    "subnet": self._setup_cfg.get_used_ric().ip_config.subnet
                 }
             }
 
             for service, (env_var, ip_attr) in ORAN_SC_RIC_SERVICE_IP_MAP.items():
-                ip_value = getattr(self._setup_cfg.near_rt_ric.ip_config, ip_attr)
+                ip_value = getattr(self._setup_cfg.get_used_ric().ip_config, ip_attr)
                 config[service]['ip'] = config[service]['ip'].replace('dummy', str(ip_value))
                 config[service]['image'] = self._patcher_utils.replace_tag_and_image(config[service]['image'])
 
-        elif self._setup_cfg.near_rt_ric.implementation == RICImplementation.FLEX_RIC:
+        elif self._setup_cfg.get_used_ric().implementation == RICImplementation.FLEX_RIC:
             config = {'e2term': {
-                "ip": getattr(self._setup_cfg.near_rt_ric.ip_config, 'e2term_ip')
+                "ip": getattr(self._setup_cfg.get_used_ric().ip_config, 'e2term_ip')
             }, 'ric': {
-                "subnet": self._setup_cfg.near_rt_ric.ip_config.subnet
+                "subnet": self._setup_cfg.get_used_ric().ip_config.subnet
             }}
         else:
             logging.error("Cannot patch unsupported RIC implementation!")
             exit(1)
         template_path = os.path.join(self._patch_file_path, "templates", "docker", "ric",
-                                     str(self._setup_cfg.near_rt_ric.implementation.value))
+                                     str(self._setup_cfg.get_used_ric().implementation.value))
         env = Environment(loader=FileSystemLoader(template_path))
         template = env.get_template("docker_compose.ini.j2")
         return yaml.safe_load(template.render(**config))
 
     def copy_config_files(self):
-        if self._setup_cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC:
+        if self._setup_cfg.get_used_ric().implementation == RICImplementation.ORAN_SC_RIC:
             docker_files = ["dockerfile_appmgr", "dockerfile_submgr", "dockerfile_e2term", "dockerfile_rtmgr_sim",
                             "dockerfile_e2mgr", "dockerfile_ric-plt-xapp-frame-py"]
             dst_file_paths = [
@@ -125,16 +125,16 @@ class NearRTRICPatcher(SinglePatcherBase):
 
             super().copy_helper(
                 [[self._patch_file_path, "templates", "docker", "ric",
-                  str(self._setup_cfg.near_rt_ric.implementation.value)]
+                  str(self._setup_cfg.get_used_ric().implementation.value)]
                  for _ in docker_files], docker_files,
                 dst_file_paths, ["Dockerfile" for _ in docker_files])
-        elif self._setup_cfg.near_rt_ric.implementation == RICImplementation.FLEX_RIC:
+        elif self._setup_cfg.get_used_ric().implementation == RICImplementation.FLEX_RIC:
             flex_ric_config_folder_patched = [self._patch_file_path, "patched", "config", "ric",
-                                              self._setup_cfg.near_rt_ric.implementation.value]
+                                              self._setup_cfg.get_used_ric().implementation.value]
             flex_ric_config_folder_template = [self._patch_file_path, "templates", "config", "ric",
-                                               self._setup_cfg.near_rt_ric.implementation.value]
+                                               self._setup_cfg.get_used_ric().implementation.value]
             flex_ric_docker_folder = [self._patch_file_path, "templates", "docker", "ric",
-                                      self._setup_cfg.near_rt_ric.implementation.value]
+                                      self._setup_cfg.get_used_ric().implementation.value]
             dest_dir = [self._setup_cfg.environment.build_dir, "flexric"]
             src_file_names = ["flexric.ini.j2", "flexric_entrypoint.sh", "Dockerfile"]
             file_names = ["flexric.conf", "flexric_entrypoint.sh", "Dockerfile"]
@@ -142,22 +142,22 @@ class NearRTRICPatcher(SinglePatcherBase):
                 [flex_ric_config_folder_patched, flex_ric_config_folder_template, flex_ric_docker_folder],
                 src_file_names, [dest_dir, dest_dir, dest_dir], file_names)
         else:
-            logging.error(f"{str(self._setup_cfg.near_rt_ric.implementation.value)} is not implemented yet.")
+            logging.error(f"{str(self._setup_cfg.get_used_ric().implementation.value)} is not implemented yet.")
             exit(1)
 
     def patch_env_file(self, env_dict: dict) -> dict:
-        if self._setup_cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC:
+        if self._setup_cfg.get_used_ric().implementation == RICImplementation.ORAN_SC_RIC:
             template_path = os.path.join(self._patch_file_path, "templates", "config", "ric",
-                                         str(self._setup_cfg.near_rt_ric.implementation.value), )
+                                         str(self._setup_cfg.get_used_ric().implementation.value), )
 
             env = Environment(loader=FileSystemLoader(template_path))
             template = env.get_template("oran_sc_ric_env.ini.j2")
             rendered = template.render(
-                near_rt_ric=self._setup_cfg.near_rt_ric)
+                near_rt_ric=self._setup_cfg.get_used_ric())
 
             env_dict_oran_sc_ric = PatcherUtils.load_env_file_str_helper(rendered.split('\n'))
             return env_dict | env_dict_oran_sc_ric
-        if self._setup_cfg.near_rt_ric.implementation == RICImplementation.FLEX_RIC:
+        if self._setup_cfg.get_used_ric().implementation == RICImplementation.FLEX_RIC:
             logging.info("No .env file required for Flexric")
             return env_dict
         else:
