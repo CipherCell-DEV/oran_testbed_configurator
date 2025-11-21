@@ -4,9 +4,16 @@ import socket
 import sys
 
 
+PAYLOAD = '123'  # Or '{RANDOM}' for random traffic
+
+
+def gen_payload(size: int):
+    return os.urandom(size) if PAYLOAD == '{RANDOM}' else ((PAYLOAD * (size // (len(PAYLOAD)) + 1))[:size]).encode()
+
+
 def run_tcp(host, port):
     print(f"Connecting to {host}:{port} ...", flush=True)
-    with socket.create_connection((host, port)) as sock:
+    with (socket.create_connection((host, port)) as sock):
         print("Connected. Waiting for commands (packet sizes)...", flush=True)
         for line in sys.stdin:
             line = line.strip()
@@ -24,9 +31,8 @@ def run_tcp(host, port):
                 print(f"Ignoring invalid input: {line}")
                 continue
 
-            payload = os.urandom(size)
             try:
-                sock.sendall(payload)
+                sock.sendall(gen_payload(size))
             except BrokenPipeError:
                 print("Connection closed by server.", flush=True)
                 break
@@ -57,8 +63,7 @@ def run_udp(host, port):
                 print(f"Ignoring invalid input: {line}")
                 continue
 
-            payload = os.urandom(size)
-            sock.sendto(payload, (host, port))
+            sock.sendto(gen_payload(size), (host, port))
             print(f"Sent {size} bytes.", flush=True)
 
 
