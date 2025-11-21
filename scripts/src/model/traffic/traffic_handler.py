@@ -8,7 +8,7 @@ from typing import override
 from model.traffic.traffic_config import TrafficParameters
 
 
-_DEBUG_ = False
+_DEBUG_ = True
 
 
 class TrafficHandler(ABC):
@@ -149,7 +149,7 @@ class TrafficHandler(ABC):
             ready, _, _ = select.select([self.process.stdout], [], [], 0.1)
             if ready:
                 line = self.process.stdout.readline().strip()
-                if _DEBUG_:
+                if _DEBUG_ and line:
                     print(line)
                 if line and marker in line:
                     return True

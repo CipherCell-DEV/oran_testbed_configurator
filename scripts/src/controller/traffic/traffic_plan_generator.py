@@ -144,10 +144,28 @@ class TrafficPlanGenerator:
     def _(self, config: Pause) -> ndarray[tuple[int], dtype[Any]]:
         return np.zeros(int(config.duration / self.__granularity), dtype=int)
 
-    def plot(self, traffic: dict = None, plot_single: bool = True, plot_cumulative: bool = True):
+    def plot(self, traffic: dict = None, plot_single: bool = True, plot_cumulative: bool = True, time_unit: str = 's'):
+        """
+        Plots the generated traffic plan.
+
+        :param traffic: Pass a traffic plan, if None is provided, it uses the generated traffic plan.
+        :param plot_single: Plot traffic of single UEs.
+        :param plot_cumulative: Plot cumulative traffic of all UEs.
+        :param time_unit: Time unit on the x-Axis. Supported units: 'ms', 's', 'm', 'h'
+        :return:
+        """
         def plot_traffic(name, trfc):
-            time_axis = np.arange(0, trfc.size * self.__granularity, self.__granularity)[:len(trfc)]
-            plt.step(time_axis, list(map(lambda x: x / 1000, trfc)), label=name)
+            match time_unit:
+                case 's':
+                    time_dividend = 1000
+                case 'm':
+                    time_dividend = 1000 * 60
+                case 'h':
+                    time_dividend = 1000 * 60 * 60
+                case _:
+                    time_dividend = 1
+            time_axis_ms = np.arange(0, trfc.size * self.__granularity, self.__granularity)[:len(trfc)]
+            plt.step(time_axis_ms / time_dividend, list(map(lambda x: x / 1000, trfc)), label=name)
 
         if traffic is None:
             traffic = self.__traffic
@@ -163,7 +181,7 @@ class TrafficPlanGenerator:
         if plot_single:
             for ue_id, traffic_list in traffic.items():
                 plot_traffic(ue_id, traffic_list)
-        plt.xlabel('Time (ms)')
+        plt.xlabel(f'Time ({time_unit})')
         plt.ylabel('Instantaneous Traffic (in kB)')
         plt.title('Traffic Over Time')
         plt.grid(True, alpha=0.3)
