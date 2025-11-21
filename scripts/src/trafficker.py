@@ -19,7 +19,7 @@ if __name__ == '__main__':
 
     generator = TrafficPlanGenerator(parameters)
     generator.from_plan(traffic_config)
-    generator.plot()
+    generator.plot(time_unit='m')
 
     executor = TrafficExecutor(generator.traffic)
     executor.execute(parameters, receiver_class=PySocketReceiver, sender_class=PySocketSender)

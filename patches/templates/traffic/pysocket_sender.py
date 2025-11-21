@@ -4,7 +4,7 @@ import socket
 import sys
 
 
-PAYLOAD = '123'  # Or '{RANDOM}' for random traffic
+PAYLOAD = '{RANDOM}'  # Or '{RANDOM}' for random traffic
 
 
 def gen_payload(size: int):

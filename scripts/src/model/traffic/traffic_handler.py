@@ -8,7 +8,7 @@ from typing import override
 from model.traffic.traffic_config import TrafficParameters
 
 
-_DEBUG_ = True
+_DEBUG_ = False
 
 
 class TrafficHandler(ABC):
