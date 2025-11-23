@@ -10,6 +10,9 @@ parameters:
     ue2:
       service: ue2  # Name of the UE docker service. Irrelevant if using NIST Deployment.
       address: 10.45.1.3
+    ue3:
+      service: ue3  # Name of the UE docker service. Irrelevant if using NIST Deployment.
+      address: 10.45.1.4
   direction: DL  # Direction of traffic. Either DL (Download), UL (Upload) or BI (Bidirectional) (currently not supported)
   workdir: ../../repositories/  # The directory of the main docker-compose file.
   granularity: 100ms  # The granularity of time intervals, i.e. the timespan of one slot in the traffic array.
@@ -21,11 +24,19 @@ parameters:
   use_udp: false  # Whether to use UDP instead of TCP for generating traffic. Using UDP limits the amount of data that
                   # can be sent in one packet (sent every 100 ms (granularity) on each device) to 65 kB. Default: false.
 
-
-
 # Supported units: Timespans can be given in ms, s, m or h; packet sizes can be given in B, kB, MB, GB
 traffic:
   ue1:
+    - periodic:
+        size: 30kB
+        interval: 1s
+        duration: 10s
+  ue2:
+    - random:
+        duration: 5s
+        min_size: 0kB
+        max_size: 10kB
+  ue3:
     # Patterns can be looped
     - loop:
         iterations: 3
@@ -99,13 +110,3 @@ traffic:
         cumulative_size: 300kB
         lambda: 0.2
         reverse: true
-  ue2:
-    - random:
-        duration: 7s
-        min_size: 0kB
-        max_size: 10kB
-    - periodic:
-        offset: 7s
-        size: 5kB
-        interval: 1s
-        duration: 6s

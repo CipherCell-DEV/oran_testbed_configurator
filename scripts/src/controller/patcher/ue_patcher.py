@@ -23,63 +23,57 @@ class UEPatcher(SinglePatcherBase):
         pass
 
     def patch_config_file(self):
-        # TODO support multiple UE implementations
-        template_path = os.path.join(self._patch_file_path, "templates", "config", "ue",
-                                     str(self._setup_cfg.ue.ues[0].implementation.value))
+        implementation = str(self._setup_cfg.ue.ues[0].implementation.value)
+        template_path = os.path.join(self._patch_file_path, "templates", "config", "ue", implementation)
         env = Environment(loader=FileSystemLoader(template_path))
         template = env.get_template("ue_config.ini.j2")
 
-        rendered_configs = []
         for ue in self._setup_cfg.ue.ues:
+            ue_proxy_config = self._setup_cfg.zmq_proxy.get_component_cfg(ue.name)
             rendered = template.render(
                 ue=ue,
-                gnb_ip=self._setup_cfg.gnb.ip_config.ru_sdr,
+                proxy_ip=self._setup_cfg.zmq_proxy.ip_addr,
                 usim_mode=self._get_usim_mode(),
-                usim_algo=self._get_usim_algorithm()
+                usim_algo=self._get_usim_algorithm(),
+                rx_port=ue_proxy_config.rx_port,
+                tx_port=ue_proxy_config.tx_port,
             )
-            # TODO support multiple UEs
             out_path = os.path.join(FolderManager.add_config_folder(self._patch_file_path, "ue",
-                                    str(self._setup_cfg.ue.ues[0].implementation.value)),
-                                    f"{ue.name}_zmq.conf")
+                                    implementation), f"{ue.name}_zmq.conf")
 
             with open(out_path, "w") as new_file:
                 new_file.write(rendered)
 
     def patch_docker_compose(self) -> Optional[dict]:
         FolderManager.create_patch_folders(self._patch_file_path)
-        for i, ue in enumerate(self._setup_cfg.ue.ues):
+        all_services = {}
+        for ue_config in self._setup_cfg.ue.ues:
             template_path = os.path.join(self._patch_file_path, "templates", "docker", "ue",
-                                         str(ue.implementation.value))
+                                         str(ue_config.implementation.value))
             env = Environment(loader=FileSystemLoader(template_path))
             template = env.get_template("docker_compose.ini.j2")
             rendered = template.render(
                 image=f"{self._setup_cfg.environment.docker_registry}/ue{self._patcher_utils.get_tag_or_empty_string(':')}",
-                ue=ue
+                ue=ue_config
             )
-            return yaml.safe_load(rendered)['services']
+            all_services.update(yaml.safe_load(rendered)['services'])
+        return all_services
 
     def copy_config_files(self):
-        # TODO solve multiple UEs with different implementations
-        config_paths = [[self._patch_file_path, "patched", "config", "ue",
-                         str(self._setup_cfg.ue.ues[0].implementation.value)] for _ in self._setup_cfg.ue.ues]
-
-        template_paths = [
-            [self._patch_file_path, "templates", "docker", "ue", str(self._setup_cfg.ue.ues[0].implementation.value)],
-            [self._patch_file_path, "templates", "config", "ue", str(self._setup_cfg.ue.ues[0].implementation.value)]
-        ]
+        implementation = str(self._setup_cfg.ue.ues[0].implementation.value)
+        config_paths = [[self._patch_file_path, "patched", "config", "ue", implementation]
+                        for _ in self._setup_cfg.ue.ues]
+        template_paths = ([[self._patch_file_path, "templates", "docker", "ue", implementation]] * 2
+                          + [[self._patch_file_path, "templates", "scripts", "ue", implementation]])
         paths_src = config_paths + template_paths
 
-        # Destination Paths
         build_dir = self._setup_cfg.environment.build_dir
         config_dst = [[build_dir, "srsRAN_4G", "configs"] for _ in self._setup_cfg.ue.ues]
-        template_dst = [
-            [build_dir, "srsRAN_4G"],
-            [build_dir, "srsRAN_4G"]
-        ]
+        template_dst = [[build_dir, "srsRAN_4G"]] * 3
         paths_dst = config_dst + template_dst
 
         config_files = [f"{ue.name}_zmq.conf" for ue in self._setup_cfg.ue.ues]
-        file_name = config_files + ["Dockerfile", "ue_entrypoint.sh"]
+        file_name = config_files + ["Dockerfile", ".dockerignore", "ue_entrypoint.sh"]
         super().copy_helper(paths_src, file_name, paths_dst, file_name)
 
     def _get_usim_mode(self):

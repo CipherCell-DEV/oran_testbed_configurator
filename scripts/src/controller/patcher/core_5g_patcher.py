@@ -3,6 +3,7 @@ import os
 from typing import Optional
 
 import yaml
+from jinja2 import Environment, FileSystemLoader
 
 from controller.folder_manager import FolderManager
 from controller.patcher.patcher_utils import PatcherUtils
@@ -10,8 +11,6 @@ from controller.patcher.single_patcher_base import SinglePatcherBase
 from model.core_config import CoreImplementation
 from model.setup_configuration import SetupConfiguration
 from model.utils_config import BuildType
-
-from jinja2 import Environment, FileSystemLoader
 
 
 class Core5GPatcher(SinglePatcherBase):
@@ -56,19 +55,10 @@ class Core5GPatcher(SinglePatcherBase):
         env = Environment(loader=FileSystemLoader(template_path))
         template = env.get_template("open5gs_entrypoint.ini.j2")
 
-        # TODO handle multiple UEs
         data = {
-            'ue': {
-                "ip_range": self._setup_cfg.ue.ip_range,
-                "gateway": self._setup_cfg.ue.gateway,
-                "imsi": self._setup_cfg.ue.ues[0].usim.imsi,
-                "key": self._setup_cfg.ue.ues[0].usim.key,
-                "opc": self._setup_cfg.ue.ues[0].usim.opc,
-                "ip": self._setup_cfg.ue.ues[0].ip
-            },
-            'ran': {
-                'mongodb_ip': self._setup_cfg.core_5g.network.mongodb_ip
-            }
+            "ip_range": self._setup_cfg.ue.ip_range,
+            "gateway": self._setup_cfg.ue.gateway,
+            'mongodb_ip': self._setup_cfg.core_5g.network.mongodb_ip
         }
 
         rendered = template.render(**data)
@@ -102,6 +92,7 @@ class Core5GPatcher(SinglePatcherBase):
         if self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
             self._patch_open5gs_endpoint_script()
             self._patch_open5gs_config_file()
+        self.__generate_subscriber_csv()
 
     def patch_env_file(self, env_dict: dict) -> dict:
         if self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
@@ -173,18 +164,38 @@ class Core5GPatcher(SinglePatcherBase):
                 [self._patch_file_path, "templates", "config", "ran", self._setup_cfg.core_5g.implementation.value],
                 [self._patch_file_path, "templates", "config", "ran", self._setup_cfg.core_5g.implementation.value],
 
-                [self._patch_file_path, "templates", "config", "ran", self._setup_cfg.core_5g.implementation.value],
-
                 [self._patch_file_path, "templates", "docker", "ran", self._setup_cfg.core_5g.implementation.value]]
 
             dest_dirs = [[self._setup_cfg.environment.build_dir, "open5gs", "config"],
                          [self._setup_cfg.environment.build_dir, "open5gs", "config"],
                          [self._setup_cfg.environment.build_dir, "open5gs", "config"],
                          [self._setup_cfg.environment.build_dir, "open5gs", "config"],
-                         [self._setup_cfg.environment.build_dir, "open5gs", "config"],
                          [self._setup_cfg.environment.build_dir, "open5gs"]]
 
-            file_names = ["open5gs-5gc.yml", "open5gs_entrypoint.sh", 'add_users.py', 'setup_tun.py',
-                          'subscriber_db.csv.example', 'Dockerfile']
+            file_names = ["open5gs-5gc.yml", "open5gs_entrypoint.sh", 'add_users.py', 'setup_tun.py', 'Dockerfile']
 
             super().copy_helper(src_dirs, file_names, dest_dirs, file_names)
+
+    def __generate_subscriber_csv(self) -> None:
+        """
+        Generates a CSV file containing subscriber information for all configured UEs.
+        The CSV is formatted for use by the Open5GS core network and includes the following fields:
+          - Name:     Human readable name to help distinguish UEs. Ignored by the HSS
+          - IMSI:     UE's IMSI value
+          - Key:      UE's key, where other keys are derived from. Stored in hexadecimal
+          - OP_Type:  Operator's code type, either OP or OPc
+          - OP/OPc:   Operator Code/Cyphered Operator Code, stored in hexadecimal
+          - AMF:      Authentication management field, stored in hexadecimal
+          - QCI:      QoS Class Identifier for the UE's default bearer.
+          - IP_alloc: Statically assigned IP for the UE.
+        The file is written to the Open5GS config directory under 'subscriber_db.csv'.
+        """
+        result = []
+        for ue_conf in self._setup_cfg.ue.ues:
+            usim = ue_conf.usim
+            result.append(f'{ue_conf.name},{usim.imsi},{usim.key},opc,{usim.opc},9001,9,{str(ue_conf.ip)}\n')
+
+        out_dir = os.path.join(self._patch_file_path, "patched", "config", "ran", "open5gs")
+        FolderManager.create_folder(out_dir, "open5gs")
+        with open(os.path.join(out_dir, "subscriber_db.csv"), "w") as out:
+            out.writelines(result)

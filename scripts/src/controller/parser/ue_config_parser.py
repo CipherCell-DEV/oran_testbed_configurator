@@ -14,16 +14,15 @@ class UEConfigParser:
         list_cfgs = []
         ue_cfg = UECfg()
         for params in elements['ues']:
-            params = params['ue']
+            keys = list(params.keys())
+            if len(keys) > 1:
+                logging.error(f'Expected exactly one UE name per config entry, but found {len(keys)}: {keys}')
             cfg = UEInstCfg()
+            cfg.name = keys[0]
+            params = params[cfg.name]
             cfg.build_type = ParsingUtils.parse_build_type(params, 'UE')
             cfg.implementation = ParsingUtils.parse_implementation(params, ALLOWED_IMPLEMENTATION_LIST, 'UE')
             cfg.commit = ParsingUtils.parse_commit(params, 'UE')
-
-            if UEFieldIdentifiers.NAME in params:
-                cfg.name = params[UEFieldIdentifiers.NAME]
-            else:
-                raise KeyError(f"Missing required parameter for UE config: '{UEFieldIdentifiers.NAME}'")
 
             if UEFieldIdentifiers.IP_ADDR in params:
                 cfg.ip = ipaddress.IPv4Address(params[UEFieldIdentifiers.IP_ADDR])

@@ -8,13 +8,15 @@ services:
     restart: unless-stopped
     command: --bind_ip_all
 
-
   5gc:
     build: ./open5gs
     image: {{ image }}
     container_name: open5gcore
     privileged: true
     platform: linux/amd64
+    volumes:
+      - ../patches/templates/traffic/:/trafficker/
+      - ../patches/patched/config/ran/open5gs/subscriber_db.csv:/open5gs/subscriber_db.csv
     ports:
       - "9999:9999/tcp"
     healthcheck:

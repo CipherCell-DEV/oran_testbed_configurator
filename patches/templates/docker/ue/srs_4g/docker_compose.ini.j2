@@ -12,6 +12,10 @@ services:
     cap_add:
       - NET_ADMIN
     entrypoint: /app/ue_entrypoint.sh {{ ue.name }}
+    volumes:
+      - ./srsRAN_4G/configs/:/app/configs/
+      - ./srsRAN_4G/ue_entrypoint.sh:/app/ue_entrypoint.sh
+      - ../patches/templates/traffic/:/trafficker/
     stdin_open: true
     tty: true
     restart: unless-stopped

@@ -31,26 +31,32 @@ class SinglePatcherBase(metaclass=ABCMeta):
     def patch_env_file(self, env_dict: dict) -> dict:
         return env_dict
 
-    def copy_helper(self, path_list_src: List[List[str]], file_name_list_src: List[str], path_list_dst: List[List[str]],
-                    file_name_list_dst: List[str]):
-        logging.info("Copying patched files to build directory...")
+    @staticmethod
+    def copy_helper(path_list_src: List[List[str]], file_name_list_src: List[str],
+                    path_list_dst: List[List[str]], file_name_list_dst: List[str]):
+        """
+        Copy multiple files from source to destination directories.
+        
+        This method iterates through lists of source and destination paths, copying each file
+        while creating necessary destination directories. Progress is logged for each file.
+        
+        Args:
+            path_list_src: List of path component lists for source directories.
+                          Example: [['path', 'to', 'dir1'], ['path', 'to', 'dir2']]
+            file_name_list_src: List of source file names corresponding to path_list_src.
+                               Example: ['file1.txt', 'file2.yaml']
+            path_list_dst: List of path component lists for destination directories.
+                          Example: [['build', 'output', 'dir1'], ['build', 'output', 'dir2']]
+            file_name_list_dst: List of destination file names corresponding to path_list_dst.
+                               Example: ['file1.txt', 'config.yaml']
+        """
+        for index in range(len(file_name_list_src)):
+            source_path = os.path.join(*path_list_src[index], file_name_list_src[index])
+            destination_path = os.path.join(*path_list_dst[index], file_name_list_dst[index])
 
-        file_mappings = list(map(lambda path_src, file_src, path_dst, file_dst: (os.path.join(*path_src, file_src),
-                                                                                 os.path.join(*path_dst, file_dst)),
-                                 path_list_src, file_name_list_src, path_list_dst, file_name_list_dst))
-
-        for src, dst in file_mappings:
             try:
-                logging.info("Copy file from %s to %s", src, dst)
-                shutil.copy(src, dst)
-                src = src.replace(f'{self._patch_file_path}' + '/', '')
-                dst = dst.replace(f'{self._setup_cfg.environment.build_dir}' + '/', '')
-            except FileNotFoundError:
-                logging.error("Source file not found: %s", src)
-                raise
-            except PermissionError:
-                logging.error("Permission denied while copying %s to %s", src, dst)
-                raise
+                os.makedirs(os.path.dirname(destination_path), exist_ok=True)
+                shutil.copy(source_path, destination_path)
             except Exception:
-                logging.exception("Unexpected error while copying %s to %s", src, dst)
+                logging.exception("Error copying %s to %s", source_path, destination_path)
                 raise

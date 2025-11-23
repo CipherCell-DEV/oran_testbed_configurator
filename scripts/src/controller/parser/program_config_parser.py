@@ -70,6 +70,8 @@ class ProgramConfigParser:
                 p_desc.implementation_str = config_entry[ProgramIdentifiers.PROGRAM_IMPLEMENTATION.value]
             if ProgramIdentifiers.PROGRAM_DEPENDS.value in config_entry:
                 p_desc.depends_on_names.extend(config_entry[ProgramIdentifiers.PROGRAM_DEPENDS.value])
+            if ProgramIdentifiers.PROGRAM_DEPENDS_INIT.value in config_entry:
+                p_desc.depends_on_init_names.extend(config_entry[ProgramIdentifiers.PROGRAM_DEPENDS_INIT.value])
             if ProgramIdentifiers.PROGRAM_COMMAND.value in config_entry:
                 p_desc.command.extend(config_entry[ProgramIdentifiers.PROGRAM_COMMAND.value])
             if ProgramIdentifiers.PROGRAM_WORKING_DIRECTORY.value in config_entry:
