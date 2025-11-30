@@ -118,16 +118,12 @@ class NearRTRICPatcher(SinglePatcherBase):
         if self._setup_cfg.get_used_ric().implementation == RICImplementation.ORAN_SC_RIC:
             docker_files = ["dockerfile_appmgr", "dockerfile_submgr", "dockerfile_e2term", "dockerfile_rtmgr_sim",
                             "dockerfile_e2mgr", "dockerfile_ric-plt-xapp-frame-py"]
-            dst_file_paths = [
-                [self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images", file.replace("dockerfile_", "")]
-                for
-                file in docker_files]
+            src_paths = [[self._patch_file_path, "templates", "docker", "ric",
+                          str(self._setup_cfg.get_used_ric().implementation.value)] for _ in docker_files]
+            dst_paths = [[self._setup_cfg.environment.build_dir, "oran-sc-ric", "ric", "images",
+                          file.replace("dockerfile_", "")] for file in docker_files]
 
-            super().copy_helper(
-                [[self._patch_file_path, "templates", "docker", "ric",
-                  str(self._setup_cfg.get_used_ric().implementation.value)]
-                 for _ in docker_files], docker_files,
-                dst_file_paths, ["Dockerfile" for _ in docker_files])
+            super().copy_helper(src_paths, docker_files, dst_paths, ["Dockerfile" for _ in docker_files])
         elif self._setup_cfg.get_used_ric().implementation == RICImplementation.FLEX_RIC:
             flex_ric_config_folder_patched = [self._patch_file_path, "patched", "config", "ric",
                                               self._setup_cfg.get_used_ric().implementation.value]

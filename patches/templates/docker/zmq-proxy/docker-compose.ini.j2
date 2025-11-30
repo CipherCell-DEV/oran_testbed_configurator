@@ -1,0 +1,19 @@
+services:
+  zmq_proxy:
+    image: {{ image }}
+    build: ./zmq-proxy
+    container_name: zeromq-proxy
+    platform: linux/amd64
+    networks:
+      internal_net:
+        ipv4_address: {{ zmq_proxy_ip }}
+    volumes:
+      - ./zmq-proxy/zmq_proxy.py:/app/zmq_proxy.py
+    user: root
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+    entrypoint: python3 zmq_proxy.py
+    stdin_open: true
+    tty: true
+    restart: unless-stopped

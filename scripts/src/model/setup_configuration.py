@@ -8,11 +8,12 @@ from model.core_config import CoreImplementation
 from model.dialog_cfg import DialogConfig
 from model.core_config import Core5GCfg
 from model.gnb_config import GNBCfg, GNBImplementation
-from model.ric_config import NearRtRICCFG, RICRelease, RICImplementation
+from model.ric_config import NearRtRICCFG, RICImplementation
 from model.ue_config import UECfg
 from model.utils_config import LogLevel
 from model.program_descr_config import ProgramDescriptionCfg
 from model.program_descr_config import ProgramGroupIdentifier
+from model.zmq_proxy_config import ZMQProxyCfg
 
 
 class ComponentIdentifiers:
@@ -21,6 +22,7 @@ class ComponentIdentifiers:
     CFG_UE = "ue"
     CFG_GNB = "gnb"
     CFG_ENVIRONMENT = "environment"
+    CFG_ZMQ_PROXY = "zmq_proxy"
 
 
 class GeneralIdentifiers:
@@ -61,6 +63,7 @@ class SetupConfiguration:
     near_rt_rics: List[NearRtRICCFG] = field(default_factory=list)
     cores_5g: List[Core5GCfg] = field(default_factory=list)
     gnbs: List[GNBCfg] = field(default_factory=list)
+    zmq_proxy: Optional[ZMQProxyCfg] = None
     programs: Optional[ProgramDescriptionCfg] = None
     ue: UECfg = field(default_factory=lambda: None)
 

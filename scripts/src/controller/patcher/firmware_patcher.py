@@ -13,6 +13,7 @@ from controller.patcher.near_rt_ric_patcher import NearRTRICPatcher
 from controller.patcher.patcher_utils import PatcherUtils
 from controller.patcher.single_patcher_base import SinglePatcherBase
 from controller.patcher.ue_patcher import UEPatcher
+from controller.patcher.zmq_proxy_patcher import ZMQProxyPatcher
 from model.core_config import CoreImplementation
 from model.setup_configuration import SetupConfiguration
 
@@ -24,7 +25,8 @@ class PatchListOrder(Enum):
     CORE_5G = 1
     GNB = 2
     UE = 3
-    GENERIC = 4
+    ZMQ_PROXY = 4
+    GENERIC = 5
 
 
 class FirmwarePatcher:
@@ -51,6 +53,7 @@ class FirmwarePatcher:
         self._patcher_list[PatchListOrder.CORE_5G.value] = Core5GPatcher(*params)
         self._patcher_list[PatchListOrder.GNB.value] = GnbPatcher(*params)
         self._patcher_list[PatchListOrder.UE.value] = UEPatcher(*params)
+        self._patcher_list[PatchListOrder.ZMQ_PROXY.value] = ZMQProxyPatcher(*params)
         self._patcher_list[PatchListOrder.GENERIC.value] = GenericPatcher(*params)
 
     def get_images_to_push(self):
@@ -68,8 +71,10 @@ class FirmwarePatcher:
         try:
             ric_config: Dict[str, Any] = self._patcher_list[PatchListOrder.RIC.value].patch()
             core_config: Dict[str, Any] = self._patcher_list[PatchListOrder.CORE_5G.value].patch()
+            self._patcher_list[PatchListOrder.ZMQ_PROXY.value].patch()
             ue_gnb_config = self._patcher_list[PatchListOrder.GNB.value].patch_docker_compose()
             ue_gnb_config['services'].update(self._patcher_list[PatchListOrder.UE.value].patch_docker_compose())
+            ue_gnb_config['services'].update(self._patcher_list[PatchListOrder.ZMQ_PROXY.value].patch_docker_compose())
 
             self._patcher_list[PatchListOrder.UE.value].patch_config_file()
             self._patcher_list[PatchListOrder.GNB.value].patch_config_file()
@@ -97,6 +102,7 @@ class FirmwarePatcher:
 
             single_config["networks"].update(core_config.get("networks", {}))
             single_config["services"].update(core_config.get("services", {}))
+
             single_config["services"].update(ue_gnb_config.get("services", {}))
 
             if "networks" in ue_gnb_config and "internal_net" in ue_gnb_config["networks"]:

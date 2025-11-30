@@ -8,6 +8,9 @@ from typing import override
 from model.traffic.traffic_config import TrafficParameters
 
 
+_DEBUG_ = False
+
+
 class TrafficHandler(ABC):
 
     def __init__(self, parameters: TrafficParameters, service_name: str, server_address: str, server_port: int = 5301):
@@ -19,6 +22,8 @@ class TrafficHandler(ABC):
         self.process = None
 
     def _execute_cmd(self, cmd: str) -> None:
+        if _DEBUG_:
+            print(f'{self.__service_name}: {cmd}')
         if not cmd.endswith('\n'):
             cmd += '\n'
         self.process.stdin.write(cmd)
@@ -115,8 +120,7 @@ class TrafficHandler(ABC):
     @property
     def _cmd_prefix(self) -> str:
         if self.__service_name.startswith('ue'):
-            return (('sudo ' if self._parameters.use_nist else '') + 'ip netns exec '
-                    + (self.__service_name if self._parameters.use_nist else 'ue1'))  # FIXME: Temporary workaround
+            return (('sudo ' if self._parameters.use_nist else '') + 'ip netns exec ' + self.__service_name)
         else:
             return ''
 
@@ -145,6 +149,8 @@ class TrafficHandler(ABC):
             ready, _, _ = select.select([self.process.stdout], [], [], 0.1)
             if ready:
                 line = self.process.stdout.readline().strip()
+                if _DEBUG_ and line:
+                    print(line)
                 if line and marker in line:
                     return True
         return False

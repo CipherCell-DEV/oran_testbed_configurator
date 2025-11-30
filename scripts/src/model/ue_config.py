@@ -124,7 +124,6 @@ class GatewayFieldIdentifiers:
 class UEFieldIdentifiers:
     IMPLEMENTATION = 'implementation'
     BUILD_TYPE = 'build_type'
-    NAME = 'name'
     IP_ADDR = 'ip_addr'
     SRATE = 'srate'
     GATEWAY = 'gateway'

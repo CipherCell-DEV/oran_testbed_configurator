@@ -6,15 +6,15 @@ import yaml
 from controller.parser.core_5g_config_parser import Core5GConfigParser
 from controller.parser.gnb_config_parser import GNBConfigParser
 from controller.parser.near_rt_ric_config_parser import NearRTRICConfigParser
+from controller.parser.program_config_parser import ProgramConfigParser
 from controller.parser.ue_config_parser import UEConfigParser
-from model.core_config import Core5GNetworkCfg, CoreImplementation
+from controller.parser.zmq_proxy_parser import ZMQProxyParser
+from model.core_config import CoreImplementation
 from model.gnb_config import GNBImplementation
 from model.program_descr_config import ProgramDescriptionCfg
-from model.ric_config import RICRelease, RICImplementation
-from model.setup_configuration import EnvironmentCfg, SetupConfiguration, \
-    ComponentIdentifiers
+from model.ric_config import RICImplementation
+from model.setup_configuration import EnvironmentCfg, SetupConfiguration, ComponentIdentifiers
 from model.utils_config import FILE_DIR
-from controller.parser.program_config_parser import ProgramConfigParser
 
 
 class ConfigParser:
@@ -93,20 +93,25 @@ class ConfigParser:
         with open(file_path, "r") as f:
             parsed_config = yaml.safe_load(f)
             for config_entry in parsed_config:
-                if config_entry == ComponentIdentifiers.CFG_NEAR_RT_RIC:
-                    setup_config.near_rt_rics = NearRTRICConfigParser.parse_near_rt_ric_cfgs(
-                        parsed_config[ComponentIdentifiers.CFG_NEAR_RT_RIC])
-                elif config_entry == ComponentIdentifiers.CFG_5GC:
-                    setup_config.cores_5g = Core5GConfigParser.parse_5g_cfgs(parsed_config[ComponentIdentifiers.CFG_5GC])
-                elif config_entry == ComponentIdentifiers.CFG_UE:
-                    setup_config.ue = UEConfigParser.parse_ue_cfg(parsed_config[ComponentIdentifiers.CFG_UE])
-                elif config_entry == ComponentIdentifiers.CFG_GNB:
-                    setup_config.gnbs = GNBConfigParser.parse_gnb_cfgs(parsed_config[ComponentIdentifiers.CFG_GNB])
-                elif config_entry == ComponentIdentifiers.CFG_ENVIRONMENT:
-                    setup_config.environment = ConfigParser._parse_environment_cfg(
-                        parsed_config[ComponentIdentifiers.CFG_ENVIRONMENT])
-                else:
-                    raise KeyError(f"Unknown configuration section: '{config_entry}'")
+                match config_entry:
+                    case ComponentIdentifiers.CFG_NEAR_RT_RIC:
+                        setup_config.near_rt_rics = NearRTRICConfigParser.parse_near_rt_ric_cfgs(
+                            parsed_config[ComponentIdentifiers.CFG_NEAR_RT_RIC])
+                    case ComponentIdentifiers.CFG_5GC:
+                        setup_config.cores_5g = Core5GConfigParser.parse_5g_cfgs(
+                            parsed_config[ComponentIdentifiers.CFG_5GC])
+                    case ComponentIdentifiers.CFG_UE:
+                        setup_config.ue = UEConfigParser.parse_ue_cfg(parsed_config[ComponentIdentifiers.CFG_UE])
+                    case ComponentIdentifiers.CFG_GNB:
+                        setup_config.gnbs = GNBConfigParser.parse_gnb_cfgs(parsed_config[ComponentIdentifiers.CFG_GNB])
+                    case ComponentIdentifiers.CFG_ZMQ_PROXY:
+                        setup_config.zmq_proxy = ZMQProxyParser.parse_zmq_proxy_cfg(
+                            parsed_config[ComponentIdentifiers.CFG_ZMQ_PROXY])
+                    case ComponentIdentifiers.CFG_ENVIRONMENT:
+                        setup_config.environment = ConfigParser._parse_environment_cfg(
+                            parsed_config[ComponentIdentifiers.CFG_ENVIRONMENT])
+                    case _:
+                        raise KeyError(f"Unknown configuration section: '{config_entry}'")
 
         return setup_config
 

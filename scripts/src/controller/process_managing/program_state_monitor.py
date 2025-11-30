@@ -16,13 +16,25 @@ class ProgramRecord:
     Everytime a new program name is added to the list, the public condition variable of this class is notified.
     """
     def __init__(self):
+        self._initialised_programs: List[str] = []
         self._finished_programs: List[str] = []
+        self.cv_initialised_programs: Condition = Condition()
         self.cv_finished_programs: Condition = Condition()
         self._mutex = Lock()
 
     def has_program_finished(self, program_name: str) -> bool:
         with self._mutex:
             return program_name in self._finished_programs
+
+    def has_program_initialised(self, program_name: str) -> bool:
+        with self._mutex:
+            return program_name in self._initialised_programs
+
+    def add_inititialised_program(self, program_name: str):
+        with self.cv_initialised_programs:
+            with self._mutex:
+                self._initialised_programs.append(program_name)
+            self.cv_initialised_programs.notify_all()
 
     def add_finished_program(self, program_name: str):
         with self.cv_finished_programs:
@@ -70,6 +82,7 @@ class ProgramStateData:
             if self.program_state.value == ProgramState.STOPPED.value:
                 if output_str.__contains__(self.program.transition_stop_to_init):
                     self.change_state_to(ProgramState.INITIALIZING)
+                    self._program_record.add_inititialised_program(self.program.name)
             elif self.program_state.value == ProgramState.INITIALIZING.value:
                 if output_str.__contains__(self.program.transition_init_run):
                     self.change_state_to(ProgramState.RUNNING)
@@ -93,4 +106,6 @@ class ProgramStateData:
         all_met = True
         for dep in self.program.depends_on_names:
             all_met = all_met & self._program_record.has_program_finished(dep)
+        for dep in self.program.depends_on_init_names:
+            all_met = all_met & self._program_record.has_program_initialised(dep)
         return all_met

@@ -52,6 +52,7 @@ class ProgramIdentifiers(Enum):
     PROGRAM_LIST = "program_list"
     PROGRAM_NAME = "name"
     PROGRAM_DEPENDS = "depends_on"
+    PROGRAM_DEPENDS_INIT = "depends_on_init"
     PROGRAM_COMMAND = "command"
     PROGRAM_WORKING_DIRECTORY = "working_directory"
     PROGRAM_STATE_TRANSITIONS = "state_transitions"
@@ -97,6 +98,7 @@ class ProgramDescription:
     def __init__(self):
         self.name: Optional[str] = None
         self.depends_on_names: List[str] = []
+        self.depends_on_init_names: List[str] = []
         self.command: List[str] = []
         self.working_directory: Optional[str] = None
         self.transition_stop_to_init: Optional[str] = None
@@ -155,6 +157,7 @@ class ProgramDescription:
         ret_str = f"name={self.name}\n"
         ret_str += f"    implementation={self.implementation_str}\n"
         ret_str += f"    depends_on={self.depends_on_names}\n"
+        ret_str += f"    depends_on_init={self.depends_on_init_names}\n"
         ret_str += f"    command={self.command}\n"
         ret_str += f"    working_directory={self.working_directory}\n"
         ret_str += f"    transition_stop_to_init={self.transition_stop_to_init}\n"
@@ -425,7 +428,7 @@ class ProgramDescriptionCfg:
         # dependencies must refer to program names
         for group in self.program_groups:
             for program in group.programs:
-                for dependency in program.depends_on_names:
+                for dependency in program.depends_on_names + program.depends_on_init_names:
                     if dependency not in all_program_names:
                         logging.error(f"{self.config_file_path}: Program {program.name}: Dependency {dependency} is not in program list!")
                         return False

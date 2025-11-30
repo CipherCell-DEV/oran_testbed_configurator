@@ -20,7 +20,7 @@ class GnbPatcher(SinglePatcherBase):
                  patcher_utils: PatcherUtils):
         super().__init__(patch_file_path, setup_config, patcher_utils)
         self._patch_file_path = patch_file_path
-        self._setup_cfg = setup_config
+        self._setup_cfg: SetupConfiguration = setup_config
         self._patcher_utils = patcher_utils
 
     def patch(self):
@@ -40,8 +40,10 @@ class GnbPatcher(SinglePatcherBase):
             core5g=self._setup_cfg.get_used_core(),
             ric=self._setup_cfg.get_used_ric(),
             gnb=self._setup_cfg.get_used_gnb(),
-            ue=self._setup_cfg.ue.ues[0],
-            pcap=self._parse_pcap_dict(template_path, config_file_name)
+            pcap=self._parse_pcap_dict(template_path, config_file_name),
+            zmq_proxy_ip=self._setup_cfg.zmq_proxy.ip_addr,
+            rx_port=self._setup_cfg.zmq_proxy.get_component_cfg("gnb").rx_port,
+            tx_port=self._setup_cfg.zmq_proxy.get_component_cfg("gnb").tx_port,
         )
 
         with open(patched_file, "w") as new_file:
