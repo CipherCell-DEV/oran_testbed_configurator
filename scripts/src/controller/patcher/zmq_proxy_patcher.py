@@ -26,12 +26,12 @@ class ZMQProxyPatcher(SinglePatcherBase):
                 component_data[ue.name]['ip'] = str(ue.ip)
             except KeyError:
                 raise KeyError('Could not find zmq proxy entry for ' + ue.name)
-        component_data['gnb']['ip'] = str(self._setup_cfg.gnb.ip_config.ru_sdr)
+        component_data['gnb']['ip'] = str(self._setup_cfg.get_used_gnb().ip_config.ru_sdr)
 
         data = {
             'ue_data': component_data,
             'slow_down_ratio': self._setup_cfg.zmq_proxy.slow_down_ratio,
-            'sample_rate': int(self._setup_cfg.gnb.srate * 1e6),  # Needed in Hz, not in MHz
+            'sample_rate': int(self._setup_cfg.get_used_gnb().srate * 1e6),  # Needed in Hz, not in MHz
         }
 
         rendered = template.render(**data)

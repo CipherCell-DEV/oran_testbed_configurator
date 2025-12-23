@@ -43,11 +43,11 @@ class FolderManager:
     @staticmethod
     def create_project_config_folders(setup_cfg: SetupConfiguration):
 
-        if setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
+        if setup_cfg.get_used_core().implementation == CoreImplementation.OPEN5GS:
             srs_core_path = os.path.join(setup_cfg.environment.build_dir, "srsRAN_Project", "configs")
             FolderManager.create_folder(srs_core_path, "srsRAN_Project")
 
-        if setup_cfg.gnb.implementation == GNBImplementation.SRS:
+        if setup_cfg.get_used_gnb().implementation == GNBImplementation.SRS:
             srs_gnb_path = os.path.join(setup_cfg.environment.build_dir, "srsRAN_Project", "configs")
             FolderManager.create_folder(srs_gnb_path, "srsRAN_Project (gNB)")
 

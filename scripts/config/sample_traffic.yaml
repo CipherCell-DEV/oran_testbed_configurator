@@ -24,6 +24,8 @@ parameters:
   use_udp: false  # Whether to use UDP instead of TCP for generating traffic. Using UDP limits the amount of data that
                   # can be sent in one packet (sent every 100 ms (granularity) on each device) to 65 kB. Default: false.
 
+
+
 # Supported units: Timespans can be given in ms, s, m or h; packet sizes can be given in B, kB, MB, GB
 traffic:
   ue1:

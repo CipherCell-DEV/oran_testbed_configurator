@@ -3,8 +3,9 @@ import logging
 from typing import List
 
 from controller.parser.parser_utils import ParsingUtils
+from model.setup_configuration import ComponentIdentifiers
 from model.ue_config import UEFieldIdentifiers, DefaultValuesUE, UECfg, USIMCfg, USIMMode, USIMAlgo, \
-    UEGatewayCfg, ALLOWED_IMPLEMENTATION_LIST, UEInstCfg
+    UEGatewayCfg, UEInstCfg
 
 
 class UEConfigParser:
@@ -20,9 +21,10 @@ class UEConfigParser:
             cfg = UEInstCfg()
             cfg.name = keys[0]
             params = params[cfg.name]
-            cfg.build_type = ParsingUtils.parse_build_type(params, 'UE')
-            cfg.implementation = ParsingUtils.parse_implementation(params, ALLOWED_IMPLEMENTATION_LIST, 'UE')
-            cfg.commit = ParsingUtils.parse_commit(params, 'UE')
+            cfg.build_type = ParsingUtils.parse_build_type(params, ComponentIdentifiers.CFG_UE)
+            cfg.implementation = ParsingUtils.parse_implementation(params, ComponentIdentifiers.CFG_UE)
+            cfg.commit = ParsingUtils.parse_commit(params, ComponentIdentifiers.CFG_UE)
+            cfg.repository = ParsingUtils.parse_repository(params, ComponentIdentifiers.CFG_UE)
 
             if UEFieldIdentifiers.IP_ADDR in params:
                 cfg.ip = ipaddress.IPv4Address(params[UEFieldIdentifiers.IP_ADDR])
@@ -49,17 +51,18 @@ class UEConfigParser:
 
         ue_cfg.ues = list_cfgs
 
-        if UEFieldIdentifiers.IP_RANGE in elements:
-            ue_cfg.ip_range = ipaddress.IPv4Network(elements[UEFieldIdentifiers.IP_RANGE])
-        else:
-            raise KeyError(
-                f"Missing required parameter {UEFieldIdentifiers.IP_RANGE}")
+        if "network" in elements:
+            if UEFieldIdentifiers.IP_RANGE in elements["network"]:
+                ue_cfg.ip_range = ipaddress.IPv4Network(elements["network"][UEFieldIdentifiers.IP_RANGE])
+            else:
+                raise KeyError(
+                    f"Missing required parameter {UEFieldIdentifiers.IP_RANGE}")
 
-        if UEFieldIdentifiers.GATEWAY in elements:
-            ue_cfg.gateway = ipaddress.IPv4Address(elements[UEFieldIdentifiers.GATEWAY])
-        else:
-            raise KeyError(
-                f"Missing required parameter {UEFieldIdentifiers.GATEWAY}")
+            if UEFieldIdentifiers.GATEWAY in elements["network"]:
+                ue_cfg.gateway = ipaddress.IPv4Address(elements["network"][UEFieldIdentifiers.GATEWAY])
+            else:
+                raise KeyError(
+                    f"Missing required parameter {UEFieldIdentifiers.GATEWAY}")
 
         return ue_cfg
 

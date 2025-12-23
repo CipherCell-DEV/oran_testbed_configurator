@@ -56,6 +56,7 @@ class SinglePatcherBase(metaclass=ABCMeta):
 
             try:
                 os.makedirs(os.path.dirname(destination_path), exist_ok=True)
+                logging.info(f"Copy {source_path} -> {destination_path}")
                 shutil.copy(source_path, destination_path)
             except Exception:
                 logging.exception("Error copying %s to %s", source_path, destination_path)

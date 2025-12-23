@@ -11,10 +11,6 @@ class UEImplementation(Enum):
     SRS_4G = 'srs_4g'
 
 
-# TODO harmonize identifier names
-ALLOWED_IMPLEMENTATION_LIST = {'srs': UEImplementation.SRS_4G}
-
-
 class USIMMode(Enum):
     SOFT = 0
     HARD = 1
@@ -72,6 +68,7 @@ class USIMCfg:
 @dataclass
 class UEInstCfg:
     implementation: Optional[UEImplementation] = None
+    repository : Optional[str] = None
     commit: str = "latest"
     name: Optional[str] = None
     build_type : BuildType = BuildType.DOCKER
@@ -83,6 +80,7 @@ class UEInstCfg:
     def __str__(self):
         return (f"UECfg: \n"
                 f"    implementation={self.implementation}, \n"
+                f"    repository={self.repository}, \n"
                 f"    commit={self.commit}, \n"
                 f"    name={self.name}, \n"
                 f"    build_type={self.build_type}, \n"

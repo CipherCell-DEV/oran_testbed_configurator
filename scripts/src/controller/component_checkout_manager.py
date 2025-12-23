@@ -3,7 +3,6 @@ import os.path
 
 from model.core_config import CoreImplementation
 from model.gnb_config import GNBImplementation
-from model.component_repositories import ORAN_SC_RIC_REPO, FLEX_RIC_REPO, SRS_RAN_REPO, SRS_RAN_4G_REPO, OPEN5GS_REPO
 from model.ric_config import RICImplementation
 from model.setup_configuration import SetupConfiguration
 
@@ -40,39 +39,53 @@ class ComponentCheckoutManager:
             logging.info(f"{folder} already exists at {destination}, skipping clone.")
 
     def checkout_ric(self):
-        if self._setup_cfg.near_rt_ric.implementation == RICImplementation.ORAN_SC_RIC:
-            self._clone_repository(repo=ORAN_SC_RIC_REPO, name="ORAN SC RIC", folder='oran-sc-ric',
-                                   commit=self._setup_cfg.near_rt_ric.commit)
-        elif self._setup_cfg.near_rt_ric.implementation == RICImplementation.FLEX_RIC:
-            self._clone_repository(repo=FLEX_RIC_REPO, name="flexric", folder='flexric',
-                                   commit=self._setup_cfg.near_rt_ric.commit)
+        ric = self._setup_cfg.get_used_ric()
+        if ric is not None:
+            if ric.implementation == RICImplementation.ORAN_SC_RIC:
+                self._clone_repository(repo=ric.repository, name="ORAN SC RIC",
+                                       folder='oran-sc-ric', commit=ric.commit)
+            elif ric.implementation == RICImplementation.FLEX_RIC:
+                self._clone_repository(repo=ric.repository, name="flexric",
+                                       folder='flexric', commit=ric.commit)
+            else:
+                logging.error(f"Unknown RIC implementation {ric.implementation}")
+                exit(1)
         else:
-            logging.error("Unknown RIC implementation")
-            exit(1)
+            logging.warning(f"No RIC implementation specified for checkout")
 
     def checkout_5g_core(self):
-        if self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
-            self._clone_repository(repo=SRS_RAN_REPO, name="srsRAN Project", folder='srsRAN_Project',
-                                   commit=self._setup_cfg.core_5g.commit)
-        elif self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
-            self._clone_repository(repo=OPEN5GS_REPO, name="open5gs", folder='open5gs',
-                                   commit=self._setup_cfg.core_5g.commit)
+        core = self._setup_cfg.get_used_core()
+        if core is not None:
+            if core.implementation == CoreImplementation.OPEN5GS_SRS:
+                self._clone_repository(repo=core.repository, name="srsRAN Project",
+                                       folder='srsRAN_Project', commit=core.commit)
+            elif core.implementation == CoreImplementation.OPEN5GS:
+                self._clone_repository(repo=core.repository, name="open5gs",
+                                       folder='open5gs', commit=core.commit)
+            else:
+                logging.error(f"Unknown Core implementation {core.implementation}")
+                exit(1)
         else:
-            logging.error(f"Other 5G Core implementations currently not supported")
-            exit(1)
+            logging.warning(f"No Core implementation specified for checkout")
+
 
     def checkout_gnb(self):
-        if self._setup_cfg.gnb.implementation == GNBImplementation.SRS:
-            self._clone_repository(repo=SRS_RAN_REPO, name="srsRAN Project", folder='srsRAN_Project',
-                                   commit=self._setup_cfg.gnb.commit)
+        gnb = self._setup_cfg.get_used_gnb()
+        if gnb is not None:
+            if gnb.implementation == GNBImplementation.SRS:
+                self._clone_repository(repo=gnb.repository, name="srsRAN Project",
+                                       folder='srsRAN_Project', commit=gnb.commit)
+            else:
+                logging.error(f"Unknown gNB implementation {gnb.implementation}")
+                exit(1)
         else:
-            logging.error(f"Other gnB implementations currently not supported")
-            exit(1)
+            logging.warning(f"No gNB implementation specified for checkout")
+
 
     def checkout_ue(self):
         for ue in self._setup_cfg.ue.ues:
             if ue.implementation == UEImplementation.SRS_4G:
-                self._clone_repository(repo=SRS_RAN_4G_REPO, name="srsRAN 4G", folder='srsRAN_4G',
+                self._clone_repository(repo=ue.repository, name="srsRAN 4G", folder='srsRAN_4G',
                                        commit=ue.commit)
             else:
                 logging.error(f"Other UE implementations currently not supported")

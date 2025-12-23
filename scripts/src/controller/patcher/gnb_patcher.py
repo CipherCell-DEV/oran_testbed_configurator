@@ -28,18 +28,18 @@ class GnbPatcher(SinglePatcherBase):
 
     def patch_config_file(self):
         template_path = os.path.join(self._patch_file_path, "templates", "config", "gnb",
-                                     str(self._setup_cfg.gnb.implementation.value))
+                                     str(self._setup_cfg.get_used_gnb().implementation.value))
         patched_file = os.path.join(FolderManager.
                                     add_config_folder(self._patch_file_path, "gnb",
-                                                      str(self._setup_cfg.gnb.implementation.value)), "gnb_zmq.yaml")
+                                                      str(self._setup_cfg.get_used_gnb().implementation.value)), "gnb_zmq.yaml")
 
         env = Environment(loader=FileSystemLoader(template_path))
         config_file_name = "gnb_zmq.ini.j2"
         template = env.get_template(config_file_name)
         rendered = template.render(
-            core5g=self._setup_cfg.core_5g,
-            ric=self._setup_cfg.near_rt_ric,
-            gnb=self._setup_cfg.gnb,
+            core5g=self._setup_cfg.get_used_core(),
+            ric=self._setup_cfg.get_used_ric(),
+            gnb=self._setup_cfg.get_used_gnb(),
             pcap=self._parse_pcap_dict(template_path, config_file_name),
             zmq_proxy_ip=self._setup_cfg.zmq_proxy.ip_addr,
             rx_port=self._setup_cfg.zmq_proxy.get_component_cfg("gnb").rx_port,
@@ -59,7 +59,7 @@ class GnbPatcher(SinglePatcherBase):
                 yaml_ret = yaml.safe_load(text)
                 for entry in yaml_ret['pcap'].keys():
                     if entry.__str__().endswith("_filename"):
-                        if self._setup_cfg.gnb.build_type == BuildType.DOCKER:
+                        if self._setup_cfg.get_used_gnb().build_type == BuildType.DOCKER:
                             # write files to docker volume
                             log_file_path = os.path.join("/logs", "gnb")
                         else:
@@ -81,19 +81,19 @@ class GnbPatcher(SinglePatcherBase):
         FolderManager.create_patch_folders(self._patch_file_path)
 
         template_path = os.path.join(self._patch_file_path, "templates", "docker", "gnb",
-                                     str(self._setup_cfg.gnb.implementation.value))
+                                     str(self._setup_cfg.get_used_gnb().implementation.value))
         env = Environment(loader=FileSystemLoader(template_path))
         template = env.get_template("docker_compose.ini.j2")
         rendered = template.render(
-            gnb=self._setup_cfg.gnb,
+            gnb=self._setup_cfg.get_used_gnb(),
             image=self._patcher_utils.replace_tag_and_image("localhost:4000/gnb:selftag"),
             log_file_path=os.path.join(self._setup_cfg.environment.log_dir, "gnb")
         )
         return yaml.safe_load(rendered)
 
     def copy_config_files(self):
-        src_dirs = [[self._patch_file_path, "patched", "config", "gnb", self._setup_cfg.gnb.implementation.value],
-                    [self._patch_file_path, "templates", "docker", "gnb", self._setup_cfg.gnb.implementation.value]]
+        src_dirs = [[self._patch_file_path, "patched", "config", "gnb", self._setup_cfg.get_used_gnb().implementation.value],
+                    [self._patch_file_path, "templates", "docker", "gnb", self._setup_cfg.get_used_gnb().implementation.value]]
         dest_dirs = [[self._setup_cfg.environment.build_dir, "srsRAN_Project", "configs"],
                      [self._setup_cfg.environment.build_dir, "srsRAN_Project", ]]
         file_names = ["gnb_zmq.yaml", "Dockerfile"]

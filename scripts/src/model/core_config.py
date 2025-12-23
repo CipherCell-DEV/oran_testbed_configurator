@@ -34,11 +34,13 @@ class Core5GCfg:
     implementation: Optional[CoreImplementation] = None
     build_type: BuildType = BuildType.DOCKER
     commit: str = "latest"
+    repository : str = ""
     network: Optional[Core5GNetworkCfg] = None
 
     def __str__(self):
         return (f"Core5GCfg: \n"
                 f"    build_type={self.implementation},\n"
+                f"    repository={self.repository},\n"
                 f"    commit={self.commit},\n"
                 f"    build_type={self.build_type},\n"
                 f"    network=\n{self.network}")

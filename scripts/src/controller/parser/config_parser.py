@@ -9,7 +9,10 @@ from controller.parser.near_rt_ric_config_parser import NearRTRICConfigParser
 from controller.parser.program_config_parser import ProgramConfigParser
 from controller.parser.ue_config_parser import UEConfigParser
 from controller.parser.zmq_proxy_parser import ZMQProxyParser
+from model.core_config import CoreImplementation
+from model.gnb_config import GNBImplementation
 from model.program_descr_config import ProgramDescriptionCfg
+from model.ric_config import RICImplementation
 from model.setup_configuration import EnvironmentCfg, SetupConfiguration, ComponentIdentifiers
 from model.utils_config import FILE_DIR
 
@@ -24,6 +27,34 @@ class ConfigParser:
         """
         logging.info("Parse Environment Configuration")
         cfg = EnvironmentCfg()
+
+        if 'core_implementation' in params:
+            valid_core = False
+            for core in CoreImplementation:
+                if core.value == params['core_implementation']:
+                    valid_core = True
+                    cfg.core_implementation = core
+            if not valid_core:
+                logging.error(f"Invalid core implementation {params['core_implementation']}")
+
+        if 'gnb_implementation' in params:
+            valid_gnb = False
+            for gnb in GNBImplementation:
+                if gnb.value == params['gnb_implementation']:
+                    valid_gnb = True
+                    cfg.gnb_implementation = gnb
+            if not valid_gnb:
+                logging.error(f"Invalid gNB implementation {params['gnb_implementation']}")
+
+        if 'ric_implementation' in params:
+            valid_ric = False
+            for ric in RICImplementation:
+                if ric.value == params['ric_implementation']:
+                    valid_ric = True
+                    cfg.ric_implementation = ric
+            if not valid_ric:
+                logging.error(f"Invalid RIC implementation {params['ric_implementation']}")
+
 
         if 'log_level' in params:
             if params['log_level'] in ['DEBUG', 'INFO', 'WARNING', 'ERROR']:
@@ -64,15 +95,15 @@ class ConfigParser:
             for config_entry in parsed_config:
                 match config_entry:
                     case ComponentIdentifiers.CFG_NEAR_RT_RIC:
-                        setup_config.near_rt_ric = NearRTRICConfigParser.parse_near_rt_ric_cfg(
+                        setup_config.near_rt_rics = NearRTRICConfigParser.parse_near_rt_ric_cfgs(
                             parsed_config[ComponentIdentifiers.CFG_NEAR_RT_RIC])
                     case ComponentIdentifiers.CFG_5GC:
-                        setup_config.core_5g = Core5GConfigParser.parse_5g_cfg(
+                        setup_config.cores_5g = Core5GConfigParser.parse_5g_cfgs(
                             parsed_config[ComponentIdentifiers.CFG_5GC])
                     case ComponentIdentifiers.CFG_UE:
                         setup_config.ue = UEConfigParser.parse_ue_cfg(parsed_config[ComponentIdentifiers.CFG_UE])
                     case ComponentIdentifiers.CFG_GNB:
-                        setup_config.gnb = GNBConfigParser.parse_gnb_cfg(parsed_config[ComponentIdentifiers.CFG_GNB])
+                        setup_config.gnbs = GNBConfigParser.parse_gnb_cfgs(parsed_config[ComponentIdentifiers.CFG_GNB])
                     case ComponentIdentifiers.CFG_ZMQ_PROXY:
                         setup_config.zmq_proxy = ZMQProxyParser.parse_zmq_proxy_cfg(
                             parsed_config[ComponentIdentifiers.CFG_ZMQ_PROXY])

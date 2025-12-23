@@ -32,6 +32,7 @@ class UEPatcher(SinglePatcherBase):
             ue_proxy_config = self._setup_cfg.zmq_proxy.get_component_cfg(ue.name)
             rendered = template.render(
                 ue=ue,
+                gnb_ip=self._setup_cfg.get_used_gnb().ip_config.ru_sdr,
                 proxy_ip=self._setup_cfg.zmq_proxy.ip_addr,
                 usim_mode=self._get_usim_mode(),
                 usim_algo=self._get_usim_algorithm(),

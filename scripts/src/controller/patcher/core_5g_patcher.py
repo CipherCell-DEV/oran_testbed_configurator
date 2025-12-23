@@ -25,7 +25,7 @@ class Core5GPatcher(SinglePatcherBase):
         super().__init__(patch_file_path, setup_cfg, patcher_utils)
 
     def patch(self):
-        if self._setup_cfg.core_5g.build_type == BuildType.DOCKER:
+        if self._setup_cfg.get_used_core().build_type == BuildType.DOCKER:
             self.patch_config_file()
             return self.patch_docker_compose()
         else:
@@ -33,15 +33,15 @@ class Core5GPatcher(SinglePatcherBase):
             exit(1)
 
     def patch_docker_compose(self) -> Optional[dict]:
-        if (self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS or
-                self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS):
+        if (self._setup_cfg.get_used_core().implementation == CoreImplementation.OPEN5GS_SRS or
+                self._setup_cfg.get_used_core().implementation == CoreImplementation.OPEN5GS):
             FolderManager.create_patch_folders(self._patch_file_path)
             template_path = os.path.join(self._patch_file_path, "templates", "docker", "ran",
-                                         str(self._setup_cfg.core_5g.implementation.value))
+                                         str(self._setup_cfg.get_used_core().implementation.value))
             env = Environment(loader=FileSystemLoader(template_path))
             template = env.get_template("docker_compose.ini.j2")
             rendered = template.render(
-                core_5g=self._setup_cfg.core_5g,
+                core_5g=self._setup_cfg.get_used_core(),
                 image=self._patcher_utils.replace_tag_and_image("localhost:4000/open5gs-5gc:selftag")
             )
             return yaml.safe_load(rendered)
@@ -51,51 +51,50 @@ class Core5GPatcher(SinglePatcherBase):
 
     def _patch_open5gs_endpoint_script(self):
         template_path = os.path.join(self._patch_file_path, "templates", "config", "ran",
-                                     str(self._setup_cfg.core_5g.implementation.value))
+                                     str(self._setup_cfg.get_used_core().implementation.value))
         env = Environment(loader=FileSystemLoader(template_path))
         template = env.get_template("open5gs_entrypoint.ini.j2")
 
         data = {
             "ip_range": self._setup_cfg.ue.ip_range,
             "gateway": self._setup_cfg.ue.gateway,
-            'mongodb_ip': self._setup_cfg.core_5g.network.mongodb_ip
+            'mongodb_ip': self._setup_cfg.get_used_core().network.mongodb_ip
         }
 
         rendered = template.render(**data)
         out_path = os.path.join(FolderManager.add_config_folder(self._patch_file_path, "ran",
-                                                                str(self._setup_cfg.core_5g.implementation.value)),
-                                "open5gs_entrypoint.sh")
+                   str(self._setup_cfg.get_used_core().implementation.value)), "open5gs_entrypoint.sh")
         with open(out_path, "w") as new_file:
             new_file.write(rendered)
 
     def _patch_open5gs_config_file(self):
         template_path = os.path.join(self._patch_file_path, "templates", "config", "ran",
-                                     str(self._setup_cfg.core_5g.implementation.value))
+                                     str(self._setup_cfg.get_used_core().implementation.value))
         env = Environment(loader=FileSystemLoader(template_path))
         template = env.get_template("open5gs-5gc.ini.j2")
 
         data = {
             "ran": {
-                "mongodb_ip": self._setup_cfg.core_5g.network.mongodb_ip,
+                "mongodb_ip": self._setup_cfg.get_used_core().network.mongodb_ip,
             }
         }
 
         rendered = template.render(**data)
 
         out_path = os.path.join(FolderManager.add_config_folder(self._patch_file_path, "ran",
-                                                                str(self._setup_cfg.core_5g.implementation.value)),
+                                                                str(self._setup_cfg.get_used_core().implementation.value)),
                                 "open5gs-5gc.yml")
         with open(out_path, "w") as new_file:
             new_file.write(rendered)
 
     def patch_config_file(self):
-        if self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
+        if self._setup_cfg.get_used_core().implementation == CoreImplementation.OPEN5GS:
             self._patch_open5gs_endpoint_script()
             self._patch_open5gs_config_file()
         self.__generate_subscriber_csv()
 
     def patch_env_file(self, env_dict: dict) -> dict:
-        if self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS_SRS:
+        if self._setup_cfg.get_used_core().implementation == CoreImplementation.OPEN5GS_SRS:
             return self._open5gs_5gc_srs_patch_env_file(env_dict)
         else:
             logging.warning("Unsupported 5G core implementation for env file patching. Returning original env_dict.")
@@ -120,7 +119,7 @@ class Core5GPatcher(SinglePatcherBase):
         """
 
         template_path = os.path.join(self._patch_file_path, "templates", "config", "ran",
-                                     str(self._setup_cfg.core_5g.implementation.value))
+                                     str(self._setup_cfg.get_used_core().implementation.value))
 
         env_dict_5gc = dict()
         if not self._setup_cfg.ue:
@@ -141,8 +140,8 @@ class Core5GPatcher(SinglePatcherBase):
                 env = Environment(loader=FileSystemLoader(template_path))
                 template = env.get_template("5gc_srsran_env.ini.j2")
                 rendered = template.render(
-                    core5g=self._setup_cfg.core_5g,
-                    gnb=self._setup_cfg.gnb,
+                    core5g=self._setup_cfg.get_used_core(),
+                    gnb=self._setup_cfg.get_used_gnb(),
                     ue={'ip_range': '.'.join(str(self._setup_cfg.ue.ip_range).split('/')[0].split('.')[:3])}
                 )
                 env_dict_5gc = PatcherUtils.load_env_file_str_helper(rendered.split('\n'))
@@ -154,17 +153,17 @@ class Core5GPatcher(SinglePatcherBase):
         return env_dict | env_dict_5gc
 
     def copy_config_files(self):
-        if self._setup_cfg.core_5g.implementation == CoreImplementation.OPEN5GS:
+        if self._setup_cfg.get_used_core().implementation == CoreImplementation.OPEN5GS:
             FolderManager.create_folder(os.path.join(self._setup_cfg.environment.build_dir, 'open5gs', 'config'),
                                         'open5gs')
             src_dirs = [
-                [self._patch_file_path, "patched", "config", "ran", self._setup_cfg.core_5g.implementation.value],
-                [self._patch_file_path, "patched", "config", "ran", self._setup_cfg.core_5g.implementation.value],
+                [self._patch_file_path, "patched", "config", "ran", self._setup_cfg.get_used_core().implementation.value],
+                [self._patch_file_path, "patched", "config", "ran", self._setup_cfg.get_used_core().implementation.value],
 
-                [self._patch_file_path, "templates", "config", "ran", self._setup_cfg.core_5g.implementation.value],
-                [self._patch_file_path, "templates", "config", "ran", self._setup_cfg.core_5g.implementation.value],
+                [self._patch_file_path, "templates", "config", "ran", self._setup_cfg.get_used_core().implementation.value],
+                [self._patch_file_path, "templates", "config", "ran", self._setup_cfg.get_used_core().implementation.value],
 
-                [self._patch_file_path, "templates", "docker", "ran", self._setup_cfg.core_5g.implementation.value]]
+                [self._patch_file_path, "templates", "docker", "ran", self._setup_cfg.get_used_core().implementation.value]]
 
             dest_dirs = [[self._setup_cfg.environment.build_dir, "open5gs", "config"],
                          [self._setup_cfg.environment.build_dir, "open5gs", "config"],

@@ -10,9 +10,6 @@ class GNBImplementation(Enum):
     SRS = "srs"
 
 
-ALLOWED_IMPLEMENTATION_LIST = {str(GNBImplementation.SRS.value): GNBImplementation.SRS}
-
-
 @dataclass
 class GNBIPConfig:
     e2: Optional[ipaddress.IPv4Address] = None
@@ -29,8 +26,9 @@ class GNBIPConfig:
 @dataclass
 class GNBCfg:
     implementation: Optional[GNBImplementation] = None
+    repository: str = ""
     commit: str = "latest"
-    build_type = BuildType = BuildType.DOCKER
+    build_type : BuildType = BuildType.DOCKER
     ip_config: Optional[GNBIPConfig] = None
     srate: Optional[float] = 11.52
     tx_gain: Optional[int] = 75
@@ -39,6 +37,7 @@ class GNBCfg:
     def __str__(self):
         return (f"GNBCfg: \n"
                 f"    implementation={self.implementation}, \n"
+                f"    repository={self.repository}, \n"
                 f"    commit={self.commit}, \n"
                 f"    ip={self.ip_config}, \n"
                 f"    srate={self.srate}, \n"
@@ -48,7 +47,7 @@ class GNBCfg:
 
 class GnbFieldIdentifiers:
     SRATE = 'srate'
-    IP_ADDR = 'ip_addr'
+    NETWORK = 'network'
     GNB_TYPE = 'type'
     TX_GAIN = 'tx_gain'
     RX_GAIN = 'rx_gain'
