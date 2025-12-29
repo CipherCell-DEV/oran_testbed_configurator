@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Optional
 
 from model.utils_config import BuildType
+from pydantic import BaseModel, Field, validator, ConfigDict
 
 
 class GNBImplementation(Enum):
@@ -24,15 +25,17 @@ class GNBIPConfig:
 
 
 @dataclass
-class GNBCfg:
+class GNBCfg(BaseModel):
     implementation: Optional[GNBImplementation] = None
     repository: str = ""
     commit: str = "latest"
-    build_type : BuildType = BuildType.DOCKER
+    build_type: BuildType = BuildType.DOCKER
     ip_config: Optional[GNBIPConfig] = None
     srate: Optional[float] = 11.52
     tx_gain: Optional[int] = 75
     rx_gain: Optional[int] = 75
+    # Forbid extra fields required for FastAPI parsing
+    model_config = ConfigDict(extra="forbid")
 
     def __str__(self):
         return (f"GNBCfg: \n"

@@ -123,7 +123,10 @@ def parse_command_line_arguments(argv: List[str]) -> CommandLineConfig:
         if v.startswith("--help"):
             print_help()
 
-        if v.startswith("--config_file="):
+        if v.startswith("--api_endpoint="):
+            cfg.start_fast_api_server = parse_boolean_value(v.split("=", 1)[1])
+            logging.info(f"Enable FastAPI Endpoint: {cfg.generate_patch_files}")
+        elif v.startswith("--config_file="):
             cfg.config_file = v.split("=", 1)[1]
             if not cfg.config_file.startswith('/'):
                 cfg.config_file = os.path.join(FILE_DIR, "../..", cfg.config_file)

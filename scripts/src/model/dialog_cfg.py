@@ -19,3 +19,4 @@ class CommandLineConfig:
     generate_patch_files: bool = True
     enable_build: bool = True
     run_demo: bool = True
+    start_fast_api_server: bool = False

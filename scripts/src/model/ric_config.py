@@ -2,6 +2,9 @@ import ipaddress
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
+
+from pydantic import BaseModel
+
 from model.utils_config import BuildType
 
 
@@ -11,8 +14,9 @@ class RICImplementation(Enum):
 
 
 class RICRelease(Enum):
-    RELEASE_i = 0,
-    RELEASE_l = 1
+    RELEASE_i = 'i'
+    RELEASE_l = 'l'
+    RELEASE_m = 'm'
 
     def __str__(self):
         if self == RICRelease.RELEASE_i:
@@ -58,7 +62,7 @@ class NearRTRICNetworkConfig:
 
 
 @dataclass
-class NearRtRICCFG:
+class NearRtRICCFG(BaseModel):
     implementation: Optional[RICImplementation] = None
     repository: str = ""
     commit: str = "latest"

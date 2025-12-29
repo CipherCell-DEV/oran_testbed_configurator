@@ -3,6 +3,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional, List
 
+from pydantic import BaseModel
+
 from model.gnb_config import DefaultValuesGNB
 from model.utils_config import BuildType
 
@@ -12,17 +14,17 @@ class UEImplementation(Enum):
 
 
 class USIMMode(Enum):
-    SOFT = 0
-    HARD = 1
+    SOFT = "soft"
+    HARD = "hard"
 
 
 class USIMAlgo(Enum):
-    MILENAGE = 0
-    XOR = 1
-    COMP = 2
-    COMP128_1 = 3
-    COMP128_2 = 4
-    COMP128_3 = 5
+    MILENAGE = "milenage"
+    XOR = "xor"
+    COMP = "comp"
+    COMP128_1 = "comp128_1"
+    COMP128_2 = "comp128_2"
+    COMP128_3 = "comp128_3"
 
 
 @dataclass
@@ -66,7 +68,7 @@ class USIMCfg:
 
 
 @dataclass
-class UEInstCfg:
+class UEInstCfg(BaseModel):
     implementation: Optional[UEImplementation] = None
     repository : Optional[str] = None
     commit: str = "latest"
@@ -91,7 +93,7 @@ class UEInstCfg:
 
 
 @dataclass
-class UECfg:
+class UECfg(BaseModel):
     ip_range: Optional[ipaddress.IPv4Address] = None
     gateway: Optional[ipaddress.IPv4Network] = None
     ues: List[UEInstCfg] = field(default_factory=list)

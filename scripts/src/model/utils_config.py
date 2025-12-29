@@ -8,8 +8,8 @@ DEFAULT_DEMO_CFG_FILE: str = os.path.join(FILE_DIR, '../config/demo_configuratio
 
 
 class BuildType(Enum):
-    NATIVE = 0
-    DOCKER = 1
+    NATIVE = "native"
+    DOCKER = "docker"
 
 
 class LogLevel(Enum):
