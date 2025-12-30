@@ -39,7 +39,9 @@ if __name__ == "__main__":
             config.programs = ConfigParser.parse_program_setup_config(DEFAULT_DEMO_CFG_FILE, config.environment.build_dir)
             config.verify_consistency()
 
-        checkout_repositories(config)
+        ret, err_msg = checkout_repositories(config)
+        if not ret:
+            exit(1)
         config.dialog = dialog_cfg
 
         if cmd_line_cfg.generate_patch_files:

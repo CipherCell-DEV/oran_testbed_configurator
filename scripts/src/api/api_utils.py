@@ -1,3 +1,4 @@
+import asyncio
 import os
 import datetime
 from typing import Optional
@@ -89,7 +90,7 @@ def check_configuration(setup_cfg: SetupConfiguration) -> HTTPException | None:
     return None
 
 
-def run_checkout(setup_cfg: SetupConfiguration, api_status: APIStatus):
+async def run_checkout(setup_cfg: SetupConfiguration, api_status: APIStatus):
     """
     Function that actually performs the checkout.
     Runs in a separate thread.
@@ -97,11 +98,13 @@ def run_checkout(setup_cfg: SetupConfiguration, api_status: APIStatus):
     try:
         ret = check_configuration(setup_cfg)
         if ret:
-            # You could log this error since HTTPException won't propagate in background
-            print(f"Configuration error: {ret.detail}")
-            return
-        checkout_repos_util(setup_cfg)
-        api_status.repositories_checked_out = RepositoryCheckoutStatus.CHECKED_OUT
+            raise ret
+        ret, err_str = await asyncio.to_thread(checkout_repos_util, setup_cfg)
+        if ret:
+            await api_status.set_repository_state(RepositoryCheckoutStatus.CHECKED_OUT)
+        else:
+            await api_status.set_repository_state(RepositoryCheckoutStatus.FAILED)
+            await api_status.add_error(err_str)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail=f"Failed to checkout repositories: {e}")

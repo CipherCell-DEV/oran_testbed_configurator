@@ -1,4 +1,5 @@
 import datetime
+import json
 import logging
 from typing import Literal
 
@@ -117,7 +118,8 @@ async def set_near_rt_ric_config(config: NearRtRICCFG):
 
     api_config.get_setup_config().near_rt_rics.append(config)
     api_config.get_setup_config().environment.ric_implementation = config.implementation
-    await api_config.get_api_status().set_component_status(ComponentIdentifiers.CFG_NEAR_RT_RIC, ComponentState.CONFIGURED)
+    await api_config.get_api_status().set_component_status(ComponentIdentifiers.CFG_NEAR_RT_RIC,
+                                                           ComponentState.CONFIGURED)
     logging.debug(f"Set near-rt-ric config: {config}")
     return StatusResponse(status=APIStateEnum.OK)
 
@@ -147,7 +149,8 @@ async def set_ue_config(ue_inst: UEInstCfg):
     Add a single UE configuration to the list of UEs.
     """
     if api_config.get_setup_config().ue is None:
-        await api_config.get_api_status().add_error("UE configuration list is not initialized. Run ue-config-list first.")
+        await api_config.get_api_status().add_error(
+            "UE configuration list is not initialized. Run ue-config-list first.")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="UE configuration list is not initialized. Run ue-config-list first.")
 
@@ -167,7 +170,8 @@ async def set_zmq_proxy_config(zmq_proxy_cfg: ZMQProxyCfg):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="IP or proxy configuration for ZMQ Proxy not set")
 
-    await api_config.get_api_status().set_component_status(ComponentIdentifiers.CFG_ZMQ_PROXY, ComponentState.CONFIGURED)
+    await api_config.get_api_status().set_component_status(ComponentIdentifiers.CFG_ZMQ_PROXY,
+                                                           ComponentState.CONFIGURED)
     api_config.get_setup_config().zmq_proxy = zmq_proxy_cfg
     logging.debug(f"Set ZMQ Proxy settings: {zmq_proxy_cfg}")
     return StatusResponse(status=APIStateEnum.OK)
@@ -178,7 +182,7 @@ async def checkout_repositories(background_tasks: BackgroundTasks):
     """
     Checkout all required repositories based on the current setup configuration.
     """
-    if api_config.get_api_status().set_repository_state(RepositoryCheckoutStatus.CHECKED_OUT):
+    if api_config.get_api_status().get_repository_state() == RepositoryCheckoutStatus.CHECKED_OUT:
         logging.info(f"Repositories already cloned")
         return {"status": RepositoryCheckoutStatus.CHECKED_OUT}
     else:
@@ -259,7 +263,8 @@ async def state_watcher():
         async with api_config.get_api_status().get_condition():
             await api_config.get_api_status().get_condition().wait()
             logging.info("State Change detected push state information")
-            yield f"data: {api_config.get_api_status()}\n\n"
+            print(json.dumps(api_config.get_api_status().to_dict()))
+            yield f"data: {json.dumps(api_config.get_api_status().to_dict())}\n\n"
 
 
 @app.get("/register-state-watcher")

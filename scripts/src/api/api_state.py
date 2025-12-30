@@ -81,7 +81,7 @@ class APIStatus:
         return self._repositories_checked_out
 
     def to_dict(self) -> dict:
-        return {"api_status": self._status,
+        return {"api_status": self._status.value,
                 "last_error": self.get_last_error(),
                 "component_states": {comp: state.value for comp, state in
                                      self.get_component_status().items()},

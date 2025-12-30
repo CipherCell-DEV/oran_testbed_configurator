@@ -66,13 +66,22 @@ def run_demo(setup_cfg: SetupConfiguration):
     view.connect_view()
 
 
-def checkout_repositories(setup_cfg: SetupConfiguration):
+def checkout_repositories(setup_cfg: SetupConfiguration) -> tuple[bool, str]:
     """
     Clone (check out) all repositories required for the current setup configuration.
     """
 
     component_checkout_mgr = ComponentCheckoutManager(setup_config=setup_cfg)
-    component_checkout_mgr.checkout_ric()
-    component_checkout_mgr.checkout_5g_core()
-    component_checkout_mgr.checkout_gnb()
-    component_checkout_mgr.checkout_ue()
+    if not component_checkout_mgr.checkout_ric():
+        return False, component_checkout_mgr.get_last_error()
+
+    if not component_checkout_mgr.checkout_5g_core():
+        return False, component_checkout_mgr.get_last_error()
+
+    if not component_checkout_mgr.checkout_gnb():
+        return False, component_checkout_mgr.get_last_error()
+
+    if not component_checkout_mgr.checkout_ue():
+        return False, component_checkout_mgr.get_last_error()
+
+    return True, ""
