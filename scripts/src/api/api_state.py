@@ -1,3 +1,5 @@
+import logging
+import asyncio
 from enum import Enum
 from typing import List, Optional
 
@@ -33,6 +35,7 @@ class APIStatus:
             ComponentIdentifiers.CFG_5GC.value: ComponentState.NOT_CONFIGURED,
             ComponentIdentifiers.CFG_NEAR_RT_RIC.value: ComponentState.NOT_CONFIGURED}
         self._repositories_checked_out: RepositoryCheckoutStatus = RepositoryCheckoutStatus.NOT_CHECKED_OUT
+        self._condition = asyncio.Condition()
 
     def get_current_state(self) -> APIStateEnum:
         return self._status
@@ -40,17 +43,28 @@ class APIStatus:
     def get_component_status(self) -> dict[str, ComponentState]:
         return self._component_states
 
-    def set_component_status(self, component: ComponentIdentifiers, status: ComponentState):
-        self._component_states[component.value] = status
+    async def set_component_status(self, component: ComponentIdentifiers, status: ComponentState):
+        logging.debug("Change component state -> send notification to state watcher")
+        async with self._condition:
+            self._component_states[component.value] = status
+            self._condition.notify_all()
 
-    def set_ue_status(self, ue_name: str, status: ComponentState):
-        self._component_states[ue_name] = status
+    async def set_ue_status(self, ue_name: str, status: ComponentState):
+        logging.debug("Change ue status -> send notification to state watcher")
+        async with self._condition:
+            self._component_states[ue_name] = status
+            self._condition.notify_all()
 
-    def add_error(self, err: str) -> None:
-        self._err_list.append(err)
+    async def add_error(self, err: str) -> None:
+        logging.debug("An error occurred -> send notification to state watcher")
+        async with self._condition:
+            self._err_list.append(err)
+            self._condition.notify_all()
 
-    def clear_errors(self) -> None:
-        self._err_list.clear()
+    async def clear_errors(self) -> None:
+        async with self._condition:
+            self._err_list.clear()
+            self._condition.notify_all()
 
     def get_last_error(self) -> str:
         if len(self._err_list) == 0:
@@ -58,8 +72,21 @@ class APIStatus:
         else:
             return self._err_list[-1]
 
-    def set_repository_state(self, repo_state: RepositoryCheckoutStatus) -> None:
-        self._repositories_checked_out = repo_state
+    async def set_repository_state(self, repo_state: RepositoryCheckoutStatus) -> None:
+        async with self._condition:
+            self._condition.notify_all()
+            self._repositories_checked_out = repo_state
 
     def get_repository_state(self) -> RepositoryCheckoutStatus:
         return self._repositories_checked_out
+
+    def to_dict(self) -> dict:
+        return {"api_status": self._status,
+                "last_error": self.get_last_error(),
+                "component_states": {comp: state.value for comp, state in
+                                     self.get_component_status().items()},
+                "repositories_checked_out": self._repositories_checked_out.value,
+                }
+
+    def get_condition(self):
+        return self._condition

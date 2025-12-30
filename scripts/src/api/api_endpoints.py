@@ -4,13 +4,14 @@ from typing import Literal
 
 import uvicorn
 from fastapi import Request, status, HTTPException
+from fastapi.responses import StreamingResponse
 from fastapi.background import BackgroundTasks
 from fastapi.exceptions import RequestValidationError
 from starlette.responses import JSONResponse
 
 from api.api_state import ComponentState, APIStateEnum
 from api.api_utils import check_configuration, StatusResponse, run_checkout, RepositoryCheckoutStatus, run_build, \
-    format_time_difference, APIConfig
+    APIConfig, format_time_difference
 from api.meta_data import API_IP, API_PORT, API_VERSION, AGENT_NAME
 from model.core_config import Core5GCfg
 from model.gnb_config import GNBCfg
@@ -59,15 +60,10 @@ async def get_status():
     Get the current status of the API. The message contains the API status, the state of different components, such
     as additional information such as if all repositories are checked out.
     """
-    status_msg = {"api_status": api_config.get_api_status().get_current_state(),
-                  "last_error": api_config.get_api_status().get_last_error(),
-                  "component_states": {comp: state.value for comp, state in
-                                       api_config.get_api_status().get_component_status().items()},
-                  "repositories_checked_out": api_config.get_api_status().get_repository_state().value,
-                  "uptime": format_time_difference(
-                      int((datetime.datetime.now() - api_config.get_up_time()).total_seconds())),
-                  "timestamp": datetime.datetime.now().strftime("%H-%M-%S.%f")
-                  }
+    status_msg = api_config.get_api_status().to_dict()
+    status_msg["uptime"] = format_time_difference(
+        int((datetime.datetime.now() - api_config.get_up_time()).total_seconds()))
+    status_msg["timestamp"] = datetime.datetime.now().strftime("%H-%M-%S.%f")
     logging.debug(f"Return status message: {status_msg}")
     return status_msg
 
@@ -78,14 +74,14 @@ async def set_gnb_config(config: GNBCfg):
     Endpoint to add the configuration of a single gNB.
     """
     if config.implementation is None:
-        api_config.get_api_status().add_error("Invalid GNBCfg object parsed")
+        await api_config.get_api_status().add_error("Invalid GNBCfg object parsed")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="GNBCfg implementation must be set")
 
     api_config.get_setup_config().gnbs.append(config)
     api_config.get_setup_config().environment.gnb_implementation = config.implementation
-    api_config.get_api_status().set_component_status(ComponentIdentifiers.CFG_GNB, ComponentState.CONFIGURED)
+    await api_config.get_api_status().set_component_status(ComponentIdentifiers.CFG_GNB, ComponentState.CONFIGURED)
     logging.debug(f"Set gNB config: {config}")
     return StatusResponse(status=APIStateEnum.OK)
 
@@ -96,14 +92,14 @@ async def set_5g_core_config(config: Core5GCfg):
     Endpoint to set the configuration of the 5G core network.
     """
     if config.implementation is None:
-        api_config.get_api_status().add_error("Invalid Core5GCfg object parsed")
+        await api_config.get_api_status().add_error("Invalid Core5GCfg object parsed")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Core5GCfg implementation must be set")
 
     api_config.get_setup_config().cores_5g.append(config)
     api_config.get_setup_config().environment.core_implementation = config.implementation
-    api_config.get_api_status().set_component_status(ComponentIdentifiers.CFG_5GC, ComponentState.CONFIGURED)
+    await api_config.get_api_status().set_component_status(ComponentIdentifiers.CFG_5GC, ComponentState.CONFIGURED)
     logging.debug(f"Set 5G-core config: {config}")
     return StatusResponse(status=APIStateEnum.OK)
 
@@ -114,14 +110,14 @@ async def set_near_rt_ric_config(config: NearRtRICCFG):
     Endpoint to set the configuration of the 5G core network.
     """
     if config.implementation is None:
-        api_config.get_api_status().add_error("Invalid NearRtRICCFG object parsed")
+        await api_config.get_api_status().add_error("Invalid NearRtRICCFG object parsed")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="NearRtRICCFG implementation must be set")
 
     api_config.get_setup_config().near_rt_rics.append(config)
     api_config.get_setup_config().environment.ric_implementation = config.implementation
-    api_config.get_api_status().set_component_status(ComponentIdentifiers.CFG_NEAR_RT_RIC, ComponentState.CONFIGURED)
+    await api_config.get_api_status().set_component_status(ComponentIdentifiers.CFG_NEAR_RT_RIC, ComponentState.CONFIGURED)
     logging.debug(f"Set near-rt-ric config: {config}")
     return StatusResponse(status=APIStateEnum.OK)
 
@@ -134,13 +130,13 @@ async def set_ue_config_list(ue_cfg: UECfg):
     api_config.get_setup_config().ue = ue_cfg
 
     if ue_cfg.ip_range is None or ue_cfg.gateway is None:
-        api_config.get_api_status().add_error("UE IP Range or Gateway not set")
+        await api_config.get_api_status().add_error("UE IP Range or Gateway not set")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="UE IP Range or Gateway not set")
 
     for ue in ue_cfg.ues:
-        api_config.get_api_status().set_ue_status(ue.name, ComponentState.CONFIGURED)
+        await api_config.get_api_status().set_ue_status(ue.name, ComponentState.CONFIGURED)
     logging.debug(f"Set UE-config: {ue_cfg}")
     return StatusResponse(status=APIStateEnum.OK)
 
@@ -151,12 +147,12 @@ async def set_ue_config(ue_inst: UEInstCfg):
     Add a single UE configuration to the list of UEs.
     """
     if api_config.get_setup_config().ue is None:
-        api_config.get_api_status().add_error("UE configuration list is not initialized. Run ue-config-list first.")
+        await api_config.get_api_status().add_error("UE configuration list is not initialized. Run ue-config-list first.")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="UE configuration list is not initialized. Run ue-config-list first.")
 
     api_config.get_setup_config().ue.ues.append(ue_inst)
-    api_config.get_api_status().set_ue_status(ue_inst.name, ComponentState.CONFIGURED)
+    await api_config.get_api_status().set_ue_status(ue_inst.name, ComponentState.CONFIGURED)
     logging.debug(f"Add single UE: {ue_inst}")
     return StatusResponse(status=APIStateEnum.OK)
 
@@ -167,11 +163,11 @@ async def set_zmq_proxy_config(zmq_proxy_cfg: ZMQProxyCfg):
     Add a single UE configuration to the list of UEs
     """
     if zmq_proxy_cfg.ip_addr is None or zmq_proxy_cfg.component_proxy_cfgs is None:
-        api_config.get_api_status().add_error("IP or proxy configuration for ZMQ Proxy not set")
+        await api_config.get_api_status().add_error("IP or proxy configuration for ZMQ Proxy not set")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="IP or proxy configuration for ZMQ Proxy not set")
 
-    api_config.get_api_status().set_component_status(ComponentIdentifiers.CFG_ZMQ_PROXY, ComponentState.CONFIGURED)
+    await api_config.get_api_status().set_component_status(ComponentIdentifiers.CFG_ZMQ_PROXY, ComponentState.CONFIGURED)
     api_config.get_setup_config().zmq_proxy = zmq_proxy_cfg
     logging.debug(f"Set ZMQ Proxy settings: {zmq_proxy_cfg}")
     return StatusResponse(status=APIStateEnum.OK)
@@ -194,7 +190,7 @@ async def checkout_repositories(background_tasks: BackgroundTasks):
             if api_config.get_api_status().get_repository_state() != RepositoryCheckoutStatus.CHECKED_OUT:
                 background_tasks.add_task(run_checkout, api_config.get_setup_config(), api_config.get_api_status())
         except Exception as e:
-            api_config.get_api_status().add_error(f"Failed to checkout repositories: {e}")
+            await api_config.get_api_status().add_error(f"Failed to checkout repositories: {e}")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                 detail=f"Failed to checkout repositories: {e}")
     return StatusResponse(status=APIStateEnum.OK)
@@ -221,7 +217,7 @@ async def build_component(component: Literal["all"] | ComponentIdentifiers, back
             params = (
                 run_build, component_identifier, api_config.get_setup_config(), api_config.get_api_status(), False)
         except ValueError as e:
-            api_config.get_api_status().add_error(f"Invalid parameter returned error: {e}")
+            await api_config.get_api_status().add_error(f"Invalid parameter returned error: {e}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                 detail=f"Invalid parameter returned error: {e}")
     background_tasks.add_task(*params)
@@ -234,7 +230,7 @@ async def clear_errors():
     Clears the error cache.
     """
     logging.info(f"Clear API error buffer")
-    api_config.get_api_status().clear_errors()
+    await api_config.get_api_status().clear_errors()
     return StatusResponse(status=APIStateEnum.OK)
 
 
@@ -243,7 +239,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     """
     Handles exceptions
     """
-    api_config.get_api_status().add_error(f"err: {exc.errors()}")
+    await api_config.get_api_status().add_error(f"err: {exc.errors()}")
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content={
@@ -254,6 +250,26 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 
+# **************************************************
+# SSE endpoints to notify the frontend or a listener
+# **************************************************
+
+async def state_watcher():
+    while True:
+        async with api_config.get_api_status().get_condition():
+            await api_config.get_api_status().get_condition().wait()
+            logging.info("State Change detected push state information")
+            yield f"data: {api_config.get_api_status()}\n\n"
+
+
+@app.get("/register-state-watcher")
+async def register_state_watcher():
+    return StreamingResponse(state_watcher(), media_type="text/event-stream")
+
+
+# **************************************************
+# API entry point
+# **************************************************
 def start_api_server():
     """
     Start the API server using Uvicorn.
