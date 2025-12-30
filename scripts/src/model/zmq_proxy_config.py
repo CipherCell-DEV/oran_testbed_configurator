@@ -2,11 +2,9 @@ import ipaddress
 from dataclasses import dataclass
 from typing import Optional, List
 
-from pydantic import BaseModel
-
 
 @dataclass
-class ZMQProxyCfg(BaseModel):
+class ZMQProxyCfg:
     ip_addr: Optional[ipaddress.IPv4Address] = None
     slow_down_ratio: Optional[int] = 4
     component_proxy_cfgs: Optional[List['ProxyComponentCfg']] = None

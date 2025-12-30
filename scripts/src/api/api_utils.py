@@ -1,30 +1,54 @@
 import os
-from enum import Enum
+import datetime
+from typing import Optional
 
 from fastapi import HTTPException, FastAPI, status
 from pydantic import BaseModel
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 
 from api.api_state import APIStatus, RepositoryCheckoutStatus, ComponentState
 from controller.builder.build_runner import BuildRunner
-from model.setup_configuration import SetupConfiguration, EnvironmentCfg
 from main_utils import checkout_repositories as checkout_repos_util, patch_firmware
+from model.setup_configuration import SetupConfiguration, EnvironmentCfg, ComponentIdentifiers
 
 setup_configuration = SetupConfiguration()
 
 
+class APIConfig:
+    def __init__(self):
+        self._app, self._templates = setup_fast_api()
+        self._setup_configuration = setup_default_setup_configuration()
+        self._api_status = APIStatus()
+        self._up_time = datetime.datetime.now()
+
+        self._app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+
+    def get_app(self) -> FastAPI:
+        return self._app
+
+    def get_templates(self) -> Jinja2Templates:
+        return self._templates
+
+    def get_setup_config(self) -> SetupConfiguration:
+        return self._setup_configuration
+
+    def get_api_status(self) -> APIStatus:
+        return self._api_status
+
+    def get_up_time(self) -> datetime.datetime:
+        return self._up_time
+
+
 class StatusResponse(BaseModel):
     status: str
-
-
-class BuildSelector(Enum):
-    RIC = "near-rt-ric"
-    CORE_5G = "core5g"
-    GNB = "gnb"
-    UE = "ue"
-    ZMQ_PROXY = "zmq-proxy"
-    ALL = "all"
 
 
 def setup_default_setup_configuration() -> SetupConfiguration:
@@ -54,11 +78,13 @@ def check_configuration(setup_cfg: SetupConfiguration) -> HTTPException | None:
         return HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                              detail=f"Near RT RIC configuration is missing. Run near-rt-ric-config first.")
     elif not setup_cfg.cores_5g:
-        return HTTPException(status_code=400, detail=f"Core 5G configuration is missing. Run core5g-config first.")
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                             detail=f"Core 5G configuration is missing. Run core5g-config first.")
     elif not setup_cfg.gnbs:
-        return HTTPException(status_code=400, detail=f"gNB configuration is missing. Run gnb-config first.")
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                             detail=f"gNB configuration is missing. Run gnb-config first.")
     elif not setup_cfg.ue:
-        return HTTPException(status_code=400,
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                              detail=f"UE configuration is missing. Run ue-config-list and ue-config first.")
     return None
 
@@ -81,24 +107,27 @@ def run_checkout(setup_cfg: SetupConfiguration, api_status: APIStatus):
                             detail=f"Failed to checkout repositories: {e}")
 
 
-def run_build(component: BuildSelector, setup_cfg: SetupConfiguration, api_status: APIStatus) -> bool:
+def run_build(component: Optional[ComponentIdentifiers], setup_cfg: SetupConfiguration, api_status: APIStatus,
+              build_all: bool = False) -> bool:
+    """Executes component-specific build steps and updates API status on failure."""
     patch_firmware(setup_cfg)
     build_runner = BuildRunner(setup_configuration=setup_configuration)
 
-    if component == BuildSelector.RIC or component == BuildSelector.ALL:
+    if component == ComponentIdentifiers.CFG_NEAR_RT_RIC or build_all:
         if not build_runner.build_ric():
-            api_status.set_component_status(BuildSelector.RIC, ComponentState.BUILD_FAILED)
+            api_status.set_component_status(ComponentIdentifiers.CFG_NEAR_RT_RIC, ComponentState.BUILD_FAILED)
             return False
-        if component == BuildSelector.CORE_5G or component == BuildSelector.ALL:
+        if component == ComponentIdentifiers.CFG_5GC or build_all:
             if not build_runner.build_5g_core():
-                api_status.set_component_status(BuildSelector.CORE_5G, ComponentState.BUILD_FAILED)
+                api_status.set_component_status(ComponentIdentifiers.CFG_NEAR_RT_RIC.CFG_5GC,
+                                                ComponentState.BUILD_FAILED)
                 return False
-        if component == BuildSelector.GNB or component == BuildSelector.ALL:
+        if component == ComponentIdentifiers.CFG_GNB or build_all:
             if not build_runner.build_gnb():
-                api_status.set_component_status(BuildSelector.GNB, ComponentState.BUILD_FAILED)
+                api_status.set_component_status(ComponentIdentifiers.CFG_GNB, ComponentState.BUILD_FAILED)
 
                 return False
-        if component == BuildSelector.UE or component == BuildSelector.ALL:
+        if component == ComponentIdentifiers.CFG_NEAR_RT_RIC.CFG_UE or build_all:
             if not build_runner.build_ues():
                 return False
     return True

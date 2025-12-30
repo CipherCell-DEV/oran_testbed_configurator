@@ -59,7 +59,7 @@ class USIMCfg:
                 f"    algo={self.algo}, \n"
                 f"    opc={self.opc}, \n"
                 f"    opc_value={self.opc_value}, \n"
-                f"    key={self.k}, \n"
+                f"    key={self.key}, \n"
                 f"    k2={self.k2}, \n"
                 f"    k3={self.k3}, \n"
                 f"    imsi={self.imsi}, \n"

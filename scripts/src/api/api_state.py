@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List, Optional
 
-from api.api_utils import BuildSelector
+from model.setup_configuration import ComponentIdentifiers
 
 
 class APIStateEnum(Enum):
@@ -28,9 +28,10 @@ class APIStatus:
     def __init__(self):
         self._status: APIStateEnum = APIStateEnum.OK
         self._err_list: Optional[List[str]] = []
-        self._component_states: dict[str, ComponentState] = {"gnb": ComponentState.NOT_CONFIGURED,
-                                                             "core_5g": ComponentState.NOT_CONFIGURED,
-                                                             "near-rt-ric": ComponentState.NOT_CONFIGURED}
+        self._component_states: dict[str, ComponentState] = {
+            ComponentIdentifiers.CFG_GNB.value: ComponentState.NOT_CONFIGURED,
+            ComponentIdentifiers.CFG_5GC.value: ComponentState.NOT_CONFIGURED,
+            ComponentIdentifiers.CFG_NEAR_RT_RIC.value: ComponentState.NOT_CONFIGURED}
         self._repositories_checked_out: RepositoryCheckoutStatus = RepositoryCheckoutStatus.NOT_CHECKED_OUT
 
     def get_current_state(self) -> APIStateEnum:
@@ -39,7 +40,7 @@ class APIStatus:
     def get_component_status(self) -> dict[str, ComponentState]:
         return self._component_states
 
-    def set_component_status(self, component: BuildSelector, status: ComponentState):
+    def set_component_status(self, component: ComponentIdentifiers, status: ComponentState):
         self._component_states[component.value] = status
 
     def set_ue_status(self, ue_name: str, status: ComponentState):
