@@ -1,19 +1,19 @@
 import datetime
 import json
 import logging
-from typing import Literal
+from typing import Literal, Any
 
 import uvicorn
-from fastapi import Request, status, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi import Request, status, HTTPException, WebSocket
 from fastapi.background import BackgroundTasks
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import StreamingResponse
 from starlette.responses import JSONResponse
 
-from api.api_state import ComponentState, APIStateEnum
+from api.api_state import ComponentState, APIStateEnum, LogQueue
 from api.api_utils import check_configuration, StatusResponse, run_checkout, RepositoryCheckoutStatus, run_build, \
     APIConfig, format_time_difference
-from api.meta_data import API_IP, API_PORT, API_VERSION, AGENT_NAME
+from api.meta_data import API_IP, API_PORT, API_VERSION, AGENT_NAME, MAX_API_QUEUE_LEN
 from model.core_config import Core5GCfg
 from model.gnb_config import GNBCfg
 from model.ric_config import NearRtRICCFG
@@ -69,21 +69,46 @@ async def get_status():
     return status_msg
 
 
+# Configuration functions
+
+async def _process_component_config(config: Any, component_type: ComponentIdentifiers):
+    """
+    Helper function which does some basic checks, sets the API status, initializes the logging queue and set the configuration.
+    """
+    if config.implementation is None:
+        await api_config.get_api_status().add_error(f"Invalid {component_type.value} config object parsed")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{component_type.value} implementation must be set")
+
+    setup_config = api_config.get_setup_config()
+    api_status = api_config.get_api_status()
+    api_status.add_log_queue(component_type.value,
+                             LogQueue(queue_size=MAX_API_QUEUE_LEN))
+
+    match component_type:
+        case ComponentIdentifiers.CFG_GNB:
+            setup_config.gnbs.append(config)
+            setup_config.environment.gnb_implementation = config.implementation
+        case ComponentIdentifiers.CFG_5GC:
+            api_config.get_setup_config().cores_5g.append(config)
+            api_config.get_setup_config().environment.core_implementation = config.implementation
+        case ComponentIdentifiers.CFG_NEAR_RT_RIC:
+            api_config.get_setup_config().near_rt_rics.append(config)
+            api_config.get_setup_config().environment.ric_implementation = config.implementation
+        case _:
+            raise ValueError(f"Unknown component type: {component_type}")
+
+    await api_config.get_api_status().set_component_status(component_type, ComponentState.CONFIGURED)
+    logging.debug(f"Set {component_type.value} config: {config}")
+
+
 @app.post("/gnb-config", response_model=StatusResponse, status_code=status.HTTP_200_OK)
 async def set_gnb_config(config: GNBCfg):
     """
     Endpoint to add the configuration of a single gNB.
     """
-    if config.implementation is None:
-        await api_config.get_api_status().add_error("Invalid GNBCfg object parsed")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="GNBCfg implementation must be set")
-
-    api_config.get_setup_config().gnbs.append(config)
-    api_config.get_setup_config().environment.gnb_implementation = config.implementation
-    await api_config.get_api_status().set_component_status(ComponentIdentifiers.CFG_GNB, ComponentState.CONFIGURED)
-    logging.debug(f"Set gNB config: {config}")
+    await _process_component_config(config, ComponentIdentifiers.CFG_GNB)
     return StatusResponse(status=APIStateEnum.OK)
 
 
@@ -92,16 +117,7 @@ async def set_5g_core_config(config: Core5GCfg):
     """
     Endpoint to set the configuration of the 5G core network.
     """
-    if config.implementation is None:
-        await api_config.get_api_status().add_error("Invalid Core5GCfg object parsed")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Core5GCfg implementation must be set")
-
-    api_config.get_setup_config().cores_5g.append(config)
-    api_config.get_setup_config().environment.core_implementation = config.implementation
-    await api_config.get_api_status().set_component_status(ComponentIdentifiers.CFG_5GC, ComponentState.CONFIGURED)
-    logging.debug(f"Set 5G-core config: {config}")
+    await _process_component_config(config, ComponentIdentifiers.CFG_5GC)
     return StatusResponse(status=APIStateEnum.OK)
 
 
@@ -110,17 +126,7 @@ async def set_near_rt_ric_config(config: NearRtRICCFG):
     """
     Endpoint to set the configuration of the 5G core network.
     """
-    if config.implementation is None:
-        await api_config.get_api_status().add_error("Invalid NearRtRICCFG object parsed")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="NearRtRICCFG implementation must be set")
-
-    api_config.get_setup_config().near_rt_rics.append(config)
-    api_config.get_setup_config().environment.ric_implementation = config.implementation
-    await api_config.get_api_status().set_component_status(ComponentIdentifiers.CFG_NEAR_RT_RIC,
-                                                           ComponentState.CONFIGURED)
-    logging.debug(f"Set near-rt-ric config: {config}")
+    await _process_component_config(config, ComponentIdentifiers.CFG_NEAR_RT_RIC)
     return StatusResponse(status=APIStateEnum.OK)
 
 
@@ -137,8 +143,9 @@ async def set_ue_config_list(ue_cfg: UECfg):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="UE IP Range or Gateway not set")
 
-    for ue in ue_cfg.ues:
-        await api_config.get_api_status().set_ue_status(ue.name, ComponentState.CONFIGURED)
+    for ue_inst in ue_cfg.ues:
+        api_config.get_api_status().add_log_queue(ue_inst.name, LogQueue(queue_size=MAX_API_QUEUE_LEN))
+        await api_config.get_api_status().set_ue_status(ue_inst.name, ComponentState.CONFIGURED)
     logging.debug(f"Set UE-config: {ue_cfg}")
     return StatusResponse(status=APIStateEnum.OK)
 
@@ -155,6 +162,7 @@ async def set_ue_config(ue_inst: UEInstCfg):
                             detail="UE configuration list is not initialized. Run ue-config-list first.")
 
     api_config.get_setup_config().ue.ues.append(ue_inst)
+    api_config.get_api_status().add_log_queue(ue_inst.name, LogQueue(queue_size=MAX_API_QUEUE_LEN))
     await api_config.get_api_status().set_ue_status(ue_inst.name, ComponentState.CONFIGURED)
     logging.debug(f"Add single UE: {ue_inst}")
     return StatusResponse(status=APIStateEnum.OK)
@@ -170,6 +178,8 @@ async def set_zmq_proxy_config(zmq_proxy_cfg: ZMQProxyCfg):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="IP or proxy configuration for ZMQ Proxy not set")
 
+    api_config.get_api_status().add_log_queue(ComponentIdentifiers.CFG_ZMQ_PROXY.value,
+                                              LogQueue(queue_size=MAX_API_QUEUE_LEN))
     await api_config.get_api_status().set_component_status(ComponentIdentifiers.CFG_ZMQ_PROXY,
                                                            ComponentState.CONFIGURED)
     api_config.get_setup_config().zmq_proxy = zmq_proxy_cfg
@@ -270,6 +280,25 @@ async def state_watcher():
 @app.get("/register-state-watcher")
 async def register_state_watcher():
     return StreamingResponse(state_watcher(), media_type="text/event-stream")
+
+
+@app.websocket("/ws/register-logging_websocket/{component}")
+async def websocket_endpoint(component: str, websocket: WebSocket):
+    logging.info(f"Register Websocket for logging component: {component}")
+    try:
+        api_config.get_api_status().get_log_queue(component)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    await websocket.accept()
+    try:
+        log_queue = api_config.get_api_status().get_log_queue(component)
+        while True:
+            lines = await log_queue.retrieve_logs()
+            if len(lines) > 0:
+                await websocket.send_text("".join(lines))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 # **************************************************

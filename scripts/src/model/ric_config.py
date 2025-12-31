@@ -3,8 +3,6 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel
-
 from model.utils_config import BuildType
 
 
@@ -62,7 +60,7 @@ class NearRTRICNetworkConfig:
 
 
 @dataclass
-class NearRtRICCFG(BaseModel):
+class NearRtRICCFG:
     implementation: Optional[RICImplementation] = None
     repository: str = ""
     commit: str = "latest"

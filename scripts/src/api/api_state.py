@@ -1,3 +1,4 @@
+import collections
 import logging
 import asyncio
 from enum import Enum
@@ -25,6 +26,41 @@ class ComponentState(Enum):
     BUILD_FAILED = "build_failed"
 
 
+class LogQueue:
+    """
+    Class storing logging information in queues of a maximum size. It implements a functionality to set
+    events in order to notify the webservices communicating with the frontend.
+    """
+    def __init__(self, queue_size: int, flush_every: int = 1):
+        self._queue = collections.deque(maxlen=queue_size)
+        self._flush_sequence = flush_every
+        # Async components
+        self._loop = asyncio.get_running_loop()
+        self._event = asyncio.Event()
+        self._condition = asyncio.Condition()
+
+    def add_element(self, message: str):
+        """
+        Adds a log entry. If a certain flush sequence is reached notify the websocket handler
+        """
+        self._queue.append(message)
+        if len(self._queue) >= self._flush_sequence:
+            self._loop.call_soon_threadsafe(self._event.set)
+
+    async def retrieve_logs(self) -> list[str]:
+        """
+        Function called by the websockets, pauses until the data available event is set.
+        Returns a list of the most recent log files.
+        """
+        await self._event.wait()
+
+        self._event.clear()
+
+        logs_to_send = list(self._queue)
+        self._queue.clear()
+        return logs_to_send
+
+
 class APIStatus:
 
     def __init__(self):
@@ -36,6 +72,7 @@ class APIStatus:
             ComponentIdentifiers.CFG_NEAR_RT_RIC.value: ComponentState.NOT_CONFIGURED}
         self._repositories_checked_out: RepositoryCheckoutStatus = RepositoryCheckoutStatus.NOT_CHECKED_OUT
         self._condition = asyncio.Condition()
+        self._api_queues: dict[str, LogQueue] = {}
 
     def get_current_state(self) -> APIStateEnum:
         return self._status
@@ -90,3 +127,12 @@ class APIStatus:
 
     def get_condition(self):
         return self._condition
+
+    def add_log_queue(self, identifier: str, api_queue: LogQueue):
+        self._api_queues[identifier] = api_queue
+
+    def get_log_queue(self, identifier: str) -> LogQueue:
+        if identifier in self._api_queues:
+            return self._api_queues[identifier]
+        else:
+            raise KeyError(f"Log queue entry '{identifier} does not exist")

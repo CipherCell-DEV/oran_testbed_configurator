@@ -94,22 +94,23 @@ class ConfigParser:
             parsed_config = yaml.safe_load(f)
             for config_entry in parsed_config:
                 match config_entry:
-                    case ComponentIdentifiers.CFG_NEAR_RT_RIC:
+                    case ComponentIdentifiers.CFG_NEAR_RT_RIC.value:
                         setup_config.near_rt_rics = NearRTRICConfigParser.parse_near_rt_ric_cfgs(
-                            parsed_config[ComponentIdentifiers.CFG_NEAR_RT_RIC])
-                    case ComponentIdentifiers.CFG_5GC:
+                            parsed_config[ComponentIdentifiers.CFG_NEAR_RT_RIC.value])
+                    case ComponentIdentifiers.CFG_5GC.value:
                         setup_config.cores_5g = Core5GConfigParser.parse_5g_cfgs(
-                            parsed_config[ComponentIdentifiers.CFG_5GC])
-                    case ComponentIdentifiers.CFG_UE:
-                        setup_config.ue = UEConfigParser.parse_ue_cfg(parsed_config[ComponentIdentifiers.CFG_UE])
-                    case ComponentIdentifiers.CFG_GNB:
-                        setup_config.gnbs = GNBConfigParser.parse_gnb_cfgs(parsed_config[ComponentIdentifiers.CFG_GNB])
-                    case ComponentIdentifiers.CFG_ZMQ_PROXY:
+                            parsed_config[ComponentIdentifiers.CFG_5GC.value])
+                    case ComponentIdentifiers.CFG_UE.value:
+                        setup_config.ue = UEConfigParser.parse_ue_cfg(parsed_config[ComponentIdentifiers.CFG_UE.value])
+                    case ComponentIdentifiers.CFG_GNB.value:
+                        setup_config.gnbs = GNBConfigParser.parse_gnb_cfgs(parsed_config[ComponentIdentifiers.CFG_GNB.value])
+                    case ComponentIdentifiers.CFG_ZMQ_PROXY.value:
                         setup_config.zmq_proxy = ZMQProxyParser.parse_zmq_proxy_cfg(
-                            parsed_config[ComponentIdentifiers.CFG_ZMQ_PROXY])
-                    case ComponentIdentifiers.CFG_ENVIRONMENT:
+                            parsed_config[ComponentIdentifiers.CFG_ZMQ_PROXY.value])
+                    case ComponentIdentifiers.CFG_ENVIRONMENT.value:
+                        print(ComponentIdentifiers.CFG_ENVIRONMENT.value)
                         setup_config.environment = ConfigParser._parse_environment_cfg(
-                            parsed_config[ComponentIdentifiers.CFG_ENVIRONMENT])
+                            parsed_config[ComponentIdentifiers.CFG_ENVIRONMENT.value])
                     case _:
                         raise KeyError(f"Unknown configuration section: '{config_entry}'")
 

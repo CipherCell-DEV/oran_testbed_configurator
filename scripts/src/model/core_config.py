@@ -3,8 +3,6 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel
-
 from model.utils_config import BuildType
 
 
@@ -33,11 +31,11 @@ class Core5GNetworkCfg:
 
 
 @dataclass
-class Core5GCfg(BaseModel):
+class Core5GCfg:
     implementation: Optional[CoreImplementation] = None
     build_type: BuildType = BuildType.DOCKER
     commit: str = "latest"
-    repository : str = ""
+    repository: str = ""
     network: Optional[Core5GNetworkCfg] = None
 
     def __str__(self):

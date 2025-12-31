@@ -1,6 +1,9 @@
 import asyncio
+import logging
 import os
 import datetime
+import threading
+import time
 from typing import Optional
 
 from fastapi import HTTPException, FastAPI, status
@@ -117,21 +120,31 @@ def run_build(component: Optional[ComponentIdentifiers], setup_cfg: SetupConfigu
     build_runner = BuildRunner(setup_configuration=setup_configuration)
 
     if component == ComponentIdentifiers.CFG_NEAR_RT_RIC or build_all:
-        if not build_runner.build_ric():
+        api_queue_ric = api_status.get_log_queue(ComponentIdentifiers.CFG_NEAR_RT_RIC.value)
+        if not build_runner.build_ric(api_queue_ric):
             api_status.set_component_status(ComponentIdentifiers.CFG_NEAR_RT_RIC, ComponentState.BUILD_FAILED)
+            logging.error("build_ric returned an error")
             return False
-        if component == ComponentIdentifiers.CFG_5GC or build_all:
-            if not build_runner.build_5g_core():
-                api_status.set_component_status(ComponentIdentifiers.CFG_NEAR_RT_RIC.CFG_5GC,
-                                                ComponentState.BUILD_FAILED)
-                return False
-        if component == ComponentIdentifiers.CFG_GNB or build_all:
-            if not build_runner.build_gnb():
-                api_status.set_component_status(ComponentIdentifiers.CFG_GNB, ComponentState.BUILD_FAILED)
 
+        if component == ComponentIdentifiers.CFG_5GC or build_all:
+            api_queue_5gc = api_status.get_log_queue(ComponentIdentifiers.CFG_5GC.value)
+            if not build_runner.build_5g_core(api_queue_5gc):
+                api_status.set_component_status(ComponentIdentifiers.CFG_5GC,
+                                                ComponentState.BUILD_FAILED)
+                logging.error("build_5g_core returned an error")
                 return False
+
+        if component == ComponentIdentifiers.CFG_GNB or build_all:
+            api_queue_gnb = api_status.get_log_queue(ComponentIdentifiers.CFG_GNB.value)
+            if not build_runner.build_gnb(api_queue_gnb):
+                api_status.set_component_status(ComponentIdentifiers.CFG_GNB, ComponentState.BUILD_FAILED)
+                logging.error("build_gnb returned an error")
+                return False
+
         if component == ComponentIdentifiers.CFG_NEAR_RT_RIC.CFG_UE or build_all:
-            if not build_runner.build_ues():
+            log_buffer_list = [api_status.get_log_queue(ue_inst.name) for ue_inst in setup_cfg.ue.ues]
+            if build_runner.build_ues(log_buffer_list[0]):  # TODO queue for each seperate ue build
+                logging.error("build_ues returned an error")
                 return False
     return True
 
