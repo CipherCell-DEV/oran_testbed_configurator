@@ -12,18 +12,16 @@ class APIStateEnum(Enum):
     ERROR = "error"
 
 
-class RepositoryCheckoutStatus(Enum):
-    CHECKED_OUT = "checked_out"
-    NOT_CHECKED_OUT = "not_checked_out"
-    FAILED = "failed"
-
-
 class ComponentState(Enum):
+    NOT_CHECKED_OUT = "not_checked_out"
+    CHECKING_OUT = "checking_out"
+    CHECKED_OUT = "checked_out"
+    FAILED = "failed"
     CONFIGURED = "configured"
     NOT_CONFIGURED = "not_configured"
-    BUILDING = "building"
+    BUILDING = "started"
     BUILT = "built"
-    BUILD_FAILED = "build_failed"
+    BUILD_FAILED = "failed"
 
 
 class LogQueue:
@@ -31,6 +29,7 @@ class LogQueue:
     Class storing logging information in queues of a maximum size. It implements a functionality to set
     events in order to notify the webservices communicating with the frontend.
     """
+
     def __init__(self, queue_size: int, flush_every: int = 1):
         self._queue = collections.deque(maxlen=queue_size)
         self._flush_sequence = flush_every
@@ -70,7 +69,6 @@ class APIStatus:
             ComponentIdentifiers.CFG_GNB.value: ComponentState.NOT_CONFIGURED,
             ComponentIdentifiers.CFG_5GC.value: ComponentState.NOT_CONFIGURED,
             ComponentIdentifiers.CFG_NEAR_RT_RIC.value: ComponentState.NOT_CONFIGURED}
-        self._repositories_checked_out: RepositoryCheckoutStatus = RepositoryCheckoutStatus.NOT_CHECKED_OUT
         self._condition = asyncio.Condition()
         self._api_queues: dict[str, LogQueue] = {}
 
@@ -109,20 +107,28 @@ class APIStatus:
         else:
             return self._err_list[-1]
 
-    async def set_repository_state(self, repo_state: RepositoryCheckoutStatus) -> None:
-        async with self._condition:
-            self._condition.notify_all()
-            self._repositories_checked_out = repo_state
+    def get_repository_state(self) -> ComponentState:
+        """
+        Iterates over all components (like RIC, gNB, UE or RAN) and
+        """
+        if len(self.get_component_status().values()) == 0:
+            return ComponentState.NOT_CHECKED_OUT
 
-    def get_repository_state(self) -> RepositoryCheckoutStatus:
-        return self._repositories_checked_out
+        checkout_state = any(state == ComponentState.FAILED for state in self.get_component_status().values())
+        if checkout_state:
+            return ComponentState.FAILED
+
+        # When a component is in built or running state it indicates that it has been checked out
+        return ComponentState.CHECKED_OUT if all(
+            state != ComponentState.CONFIGURED and state != ComponentState.NOT_CONFIGURED and
+            state != ComponentState.CHECKING_OUT and state != ComponentState.NOT_CHECKED_OUT
+            for state in self.get_component_status().values()) else ComponentState.NOT_CHECKED_OUT
 
     def to_dict(self) -> dict:
         return {"api_status": self._status.value,
                 "last_error": self.get_last_error(),
                 "component_states": {comp: state.value for comp, state in
                                      self.get_component_status().items()},
-                "repositories_checked_out": self._repositories_checked_out.value,
                 }
 
     def get_condition(self):

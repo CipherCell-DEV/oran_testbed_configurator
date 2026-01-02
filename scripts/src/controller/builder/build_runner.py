@@ -77,7 +77,7 @@ class BuildRunner:
             log_buffer
         )
 
-    def build_ues(self, log_buffer: Optional[LogQueue] = None) -> bool:
+    def build_ues(self, log_buffers: Optional[list[LogQueue]] = None) -> bool:
         """
         Build the gNB and UE components based on the specified build types.
         Returns: None
@@ -87,7 +87,7 @@ class BuildRunner:
         os.chdir(self.setup_cfg.environment.build_dir)
 
         already_build_natively = False
-        for ue in self.setup_cfg.ue.ues:
+        for ue, log_buffer in zip(self.setup_cfg.ue.ues, log_buffers):
             if ue.build_type == BuildType.DOCKER:
                 if not UEDockerBuildRunner(self.setup_cfg, ue).build(log_buffer):
                     os.chdir(curr_dir)

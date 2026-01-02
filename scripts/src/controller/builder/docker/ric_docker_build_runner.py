@@ -1,5 +1,7 @@
 import os
+from typing import Optional
 
+from api.api_state import LogQueue
 from controller.builder.docker.docker_builder_base import DockerBuilderBase
 from model.ric_config import RICImplementation
 
@@ -12,13 +14,13 @@ class NearRTRICDockerBuildRunner(DockerBuilderBase):
     def __init__(self, setup_cfg):
         super().__init__(setup_cfg)
 
-    def build(self) -> bool:
+    def build(self, log_buffer: Optional[LogQueue] = None) -> bool:
         result = False
         curr_dir = os.getcwd()
         os.chdir(self.setup_cfg.environment.build_dir)
         if self.setup_cfg.get_used_ric().implementation == RICImplementation.ORAN_SC_RIC:
-            result = self.docker_compose_build_helper('oran-sc-ric', ORAN_SC_RIC_CONTAINERS)
+            result = self.docker_compose_build_helper('oran-sc-ric', ORAN_SC_RIC_CONTAINERS, log_buffer)
         if self.setup_cfg.get_used_ric().implementation == RICImplementation.FLEX_RIC:
-            result = self.docker_compose_build_helper('flexric', ["docker", "compose", "build", "flexric"])
+            result = self.docker_compose_build_helper('flexric', ["docker", "compose", "build", "flexric"], log_buffer)
         os.chdir(curr_dir)
         return result

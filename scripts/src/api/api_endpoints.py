@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import json
 import logging
@@ -11,7 +12,7 @@ from fastapi.responses import StreamingResponse
 from starlette.responses import JSONResponse
 
 from api.api_state import ComponentState, APIStateEnum, LogQueue
-from api.api_utils import check_configuration, StatusResponse, run_checkout, RepositoryCheckoutStatus, run_build, \
+from api.api_utils import check_configuration, StatusResponse, run_checkout, run_build, \
     APIConfig, format_time_difference
 from api.meta_data import API_IP, API_PORT, API_VERSION, AGENT_NAME, MAX_API_QUEUE_LEN
 from model.core_config import Core5GCfg
@@ -65,6 +66,7 @@ async def get_status():
     status_msg["uptime"] = format_time_difference(
         int((datetime.datetime.now() - api_config.get_up_time()).total_seconds()))
     status_msg["timestamp"] = datetime.datetime.now().strftime("%H-%M-%S.%f")
+    status_msg['repositories_checked_out'] = api_config.get_api_status().get_repository_state()
     logging.debug(f"Return status message: {status_msg}")
     return status_msg
 
@@ -73,7 +75,8 @@ async def get_status():
 
 async def _process_component_config(config: Any, component_type: ComponentIdentifiers):
     """
-    Helper function which does some basic checks, sets the API status, initializes the logging queue and set the configuration.
+    Helper function which does some basic checks, sets the API status, initializes the logging queue and set the
+    configuration.
     """
     if config.implementation is None:
         await api_config.get_api_status().add_error(f"Invalid {component_type.value} config object parsed")
@@ -192,17 +195,18 @@ async def checkout_repositories(background_tasks: BackgroundTasks):
     """
     Checkout all required repositories based on the current setup configuration.
     """
-    if api_config.get_api_status().get_repository_state() == RepositoryCheckoutStatus.CHECKED_OUT:
+    if api_config.get_api_status().get_repository_state() == ComponentState.CHECKED_OUT:
         logging.info(f"Repositories already cloned")
-        return {"status": RepositoryCheckoutStatus.CHECKED_OUT}
+        return {"status": ComponentState.CHECKED_OUT}
     else:
         logging.debug(f"Start cloning repositories")
         ret = check_configuration(api_config.get_setup_config())
         if ret:
             raise ret
         try:
-            if api_config.get_api_status().get_repository_state() != RepositoryCheckoutStatus.CHECKED_OUT:
-                background_tasks.add_task(run_checkout, api_config.get_setup_config(), api_config.get_api_status())
+            if api_config.get_api_status().get_repository_state() != ComponentState.CHECKED_OUT:
+                background_tasks.add_task(run_checkout, api_config.get_setup_config(), api_config.get_api_status(),
+                                          asyncio.get_running_loop())
         except Exception as e:
             await api_config.get_api_status().add_error(f"Failed to checkout repositories: {e}")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
@@ -224,12 +228,15 @@ async def build_component(component: Literal["all"] | ComponentIdentifiers, back
     """
     logging.info(f"Start building components {component}")
     if component == 'all':
-        params = (run_build, None, api_config.get_setup_config(), api_config.get_api_status(), True)
+        params = (
+            run_build, None, api_config.get_setup_config(), api_config.get_api_status(), asyncio.get_running_loop(),
+            True)
     else:
         try:
             component_identifier = ComponentIdentifiers(component)
             params = (
-                run_build, component_identifier, api_config.get_setup_config(), api_config.get_api_status(), False)
+                run_build, component_identifier, api_config.get_setup_config(), api_config.get_api_status(),
+                asyncio.get_running_loop(), False)
         except ValueError as e:
             await api_config.get_api_status().add_error(f"Invalid parameter returned error: {e}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -272,9 +279,10 @@ async def state_watcher():
     while True:
         async with api_config.get_api_status().get_condition():
             await api_config.get_api_status().get_condition().wait()
-            logging.info("State Change detected push state information")
-            print(json.dumps(api_config.get_api_status().to_dict()))
-            yield f"data: {json.dumps(api_config.get_api_status().to_dict())}\n\n"
+            logging.debug(f"State Change detected push state information {json.dumps(api_config.get_api_status().to_dict())}")
+            ret_dict = api_config.get_api_status().to_dict()
+            ret_dict['repositories_checked_out'] = api_config.get_api_status().get_repository_state().value
+            yield f"data: {json.dumps(ret_dict)}\n\n"
 
 
 @app.get("/register-state-watcher")
@@ -298,7 +306,7 @@ async def websocket_endpoint(component: str, websocket: WebSocket):
             if len(lines) > 0:
                 await websocket.send_text("".join(lines))
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        await api_config.get_api_status().add_error(str(e))
 
 
 # **************************************************

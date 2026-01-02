@@ -3,8 +3,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional, List
 
-from pydantic import BaseModel
-
 from model.gnb_config import DefaultValuesGNB
 from model.utils_config import BuildType
 
@@ -68,7 +66,7 @@ class USIMCfg:
 
 
 @dataclass
-class UEInstCfg(BaseModel):
+class UEInstCfg:
     implementation: Optional[UEImplementation] = None
     repository : Optional[str] = None
     commit: str = "latest"
@@ -93,7 +91,7 @@ class UEInstCfg(BaseModel):
 
 
 @dataclass
-class UECfg(BaseModel):
+class UECfg:
     ip_range: Optional[ipaddress.IPv4Address] = None
     gateway: Optional[ipaddress.IPv4Network] = None
     ues: List[UEInstCfg] = field(default_factory=list)
