@@ -43,12 +43,7 @@ class NearRTRICConfigParser:
                 cfg.repository = ParsingUtils.parse_repository(impl, ComponentIdentifiers.CFG_NEAR_RT_RIC)
 
                 if RICFieldIdentifiers.RELEASE in impl:
-                    if impl[RICFieldIdentifiers.RELEASE] == 'i':
-                        cfg.release = RICRelease.RELEASE_i
-                    elif impl[RICFieldIdentifiers.RELEASE] == 'l':
-                        cfg.release = RICRelease.RELEASE_l
-                    else:
-                        raise ValueError(f"Unsupported Release: {impl[RICFieldIdentifiers.RELEASE]}")
+                    cfg.release = RICRelease.get_version_from_field_identifier(impl[RICFieldIdentifiers.RELEASE])
                 else:
                     cfg.release = DefaultValuesRIC.DEFAULT_RELEASE
                     if cfg.implementation is RICImplementation.ORAN_SC_RIC:
