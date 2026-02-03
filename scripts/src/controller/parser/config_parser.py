@@ -37,7 +37,8 @@ class ConfigParser:
                 for element in implementation:
                     if element.value == params[identifier]:
                         return element
-                raise KeyError(f"Invalid {identifier.replace("_", " ")} {params[identifier]}")
+                raise KeyError(f"Invalid %s %s", identifier.replace('_', ' '),
+                               params[identifier])
             logging.warning("No %s identified", identifier.replace("_", " "))
             return None
 
