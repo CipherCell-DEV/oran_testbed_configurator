@@ -50,7 +50,7 @@ class ConfigParser:
             'ric_implementation', RICImplementation)
 
         if 'log_level' in params:
-            if params['log_level'] in LogLevel:
+            if params['log_level'] in LogLevel.values():
                 cfg.log_level = params['log_level']
             else:
                 raise ValueError(f"Unsupported log level: {params['log_level']}")
