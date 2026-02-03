@@ -20,7 +20,7 @@ class TestUEConfigParser(unittest.TestCase):
                         UEFieldIdentifiers.SRATE: 10,
                         UEFieldIdentifiers.USIM: {
                             UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.MODE: "soft",
-                            UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.ALGO: "mileage",
+                            UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.ALGO: "milenage",
                             UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.OPC: "opc_val",
                             UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.KEY: "key_val",
                             UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.IMSI: "imsi_val",
@@ -74,7 +74,7 @@ class TestUEConfigParser(unittest.TestCase):
                     "UE1": {
                         UEFieldIdentifiers.USIM: {
                             UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.MODE: "soft",
-                            UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.ALGO: "mileage",
+                            UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.ALGO: "milenage",
                             UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.OPC: "opc_val",
                             UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.KEY: "key_val",
                             UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.IMSI: "imsi_val",
@@ -99,7 +99,7 @@ class TestUEConfigParser(unittest.TestCase):
                         UEFieldIdentifiers.IP_ADDR: "300.0.0.1",
                         UEFieldIdentifiers.USIM: {
                             UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.MODE: "soft",
-                            UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.ALGO: "mileage",
+                            UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.ALGO: "milenage",
                             UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.OPC: "opc_val",
                             UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.KEY: "key_val",
                             UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.IMSI: "imsi_val",
@@ -120,7 +120,7 @@ class TestUEConfigParser(unittest.TestCase):
                         UEFieldIdentifiers.IP_ADDR: "192.168.1.10",
                         UEFieldIdentifiers.USIM: {
                             # Missing MODE
-                            UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.ALGO: "mileage",
+                            UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.ALGO: "milenage",
                             UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.OPC: "opc_val",
                             UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.KEY: "key_val",
                             UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.IMSI: "imsi_val",
