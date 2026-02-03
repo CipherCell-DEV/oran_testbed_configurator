@@ -14,7 +14,7 @@ from model.gnb_config import GNBImplementation
 from model.program_descr_config import ProgramDescriptionCfg
 from model.ric_config import RICImplementation
 from model.setup_configuration import EnvironmentCfg, SetupConfiguration, ComponentIdentifiers
-from model.utils_config import FILE_DIR
+from model.utils_config import FILE_DIR, LogLevel
 
 
 class ConfigParser:
@@ -28,36 +28,19 @@ class ConfigParser:
         logging.info("Parse Environment Configuration")
         cfg = EnvironmentCfg()
 
-        if 'core_implementation' in params:
-            valid_core = False
-            for core in CoreImplementation:
-                if core.value == params['core_implementation']:
-                    valid_core = True
-                    cfg.core_implementation = core
-            if not valid_core:
-                logging.error(f"Invalid core implementation {params['core_implementation']}")
+        def parse_component_implementation(identifier: str, implementation):
+            if identifier in params:
+                for element in implementation:
+                    if element.value == params[identifier]:
+                        return element
+                logging.error(f"Invalid {identifier.replace("_", " ")} {params[identifier]}")
 
-        if 'gnb_implementation' in params:
-            valid_gnb = False
-            for gnb in GNBImplementation:
-                if gnb.value == params['gnb_implementation']:
-                    valid_gnb = True
-                    cfg.gnb_implementation = gnb
-            if not valid_gnb:
-                logging.error(f"Invalid gNB implementation {params['gnb_implementation']}")
-
-        if 'ric_implementation' in params:
-            valid_ric = False
-            for ric in RICImplementation:
-                if ric.value == params['ric_implementation']:
-                    valid_ric = True
-                    cfg.ric_implementation = ric
-            if not valid_ric:
-                logging.error(f"Invalid RIC implementation {params['ric_implementation']}")
-
+        cfg.core_implementation = parse_component_implementation('core_implementation', CoreImplementation)
+        cfg.gnb_implementation = parse_component_implementation('gnb_implementation', GNBImplementation)
+        cfg.ric_implementation = parse_component_implementation('ric_implementation', RICImplementation)
 
         if 'log_level' in params:
-            if params['log_level'] in ['DEBUG', 'INFO', 'WARNING', 'ERROR']:
+            if params['log_level'] in LogLevel:
                 cfg.log_level = params['log_level']
             else:
                 raise ValueError(f"Unsupported log level: {params['log_level']}")
@@ -88,6 +71,10 @@ class ConfigParser:
 
     @staticmethod
     def parse_config_file(file_path: str) -> SetupConfiguration:
+        """
+        Loads and parses a YAML setup configuration file, converting each
+        configuration section into its corresponding configuration object.
+        """
         setup_config = SetupConfiguration()
 
         with open(file_path, "r") as f:
@@ -97,20 +84,27 @@ class ConfigParser:
                     case ComponentIdentifiers.CFG_NEAR_RT_RIC.value:
                         setup_config.near_rt_rics = NearRTRICConfigParser.parse_near_rt_ric_cfgs(
                             parsed_config[ComponentIdentifiers.CFG_NEAR_RT_RIC.value])
+
                     case ComponentIdentifiers.CFG_5GC.value:
                         setup_config.cores_5g = Core5GConfigParser.parse_5g_cfgs(
                             parsed_config[ComponentIdentifiers.CFG_5GC.value])
+
                     case ComponentIdentifiers.CFG_UE.value:
-                        setup_config.ue = UEConfigParser.parse_ue_cfg(parsed_config[ComponentIdentifiers.CFG_UE.value])
+                        setup_config.ue = UEConfigParser.parse_ue_cfg(
+                            parsed_config[ComponentIdentifiers.CFG_UE.value])
+
                     case ComponentIdentifiers.CFG_GNB.value:
-                        setup_config.gnbs = GNBConfigParser.parse_gnb_cfgs(parsed_config[ComponentIdentifiers.CFG_GNB.value])
+                        setup_config.gnbs = GNBConfigParser.parse_gnb_cfgs(
+                            parsed_config[ComponentIdentifiers.CFG_GNB.value])
+
                     case ComponentIdentifiers.CFG_ZMQ_PROXY.value:
                         setup_config.zmq_proxy = ZMQProxyParser.parse_zmq_proxy_cfg(
                             parsed_config[ComponentIdentifiers.CFG_ZMQ_PROXY.value])
+
                     case ComponentIdentifiers.CFG_ENVIRONMENT.value:
-                        print(ComponentIdentifiers.CFG_ENVIRONMENT.value)
                         setup_config.environment = ConfigParser._parse_environment_cfg(
                             parsed_config[ComponentIdentifiers.CFG_ENVIRONMENT.value])
+
                     case _:
                         raise KeyError(f"Unknown configuration section: '{config_entry}'")
 
