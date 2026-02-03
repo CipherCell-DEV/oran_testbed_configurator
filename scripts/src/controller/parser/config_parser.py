@@ -1,3 +1,7 @@
+"""
+Parsers for loading and translating YAML-based configuration files into
+internal configuration models used by the system.
+"""
 import logging
 import os
 
@@ -33,11 +37,16 @@ class ConfigParser:
                 for element in implementation:
                     if element.value == params[identifier]:
                         return element
-                logging.error(f"Invalid {identifier.replace("_", " ")} {params[identifier]}")
+                raise KeyError(f"Invalid {identifier.replace("_", " ")} {params[identifier]}")
+            logging.warning("No %s identified", identifier.replace("_", " "))
+            return None
 
-        cfg.core_implementation = parse_component_implementation('core_implementation', CoreImplementation)
-        cfg.gnb_implementation = parse_component_implementation('gnb_implementation', GNBImplementation)
-        cfg.ric_implementation = parse_component_implementation('ric_implementation', RICImplementation)
+        cfg.core_implementation = parse_component_implementation(
+            'core_implementation', CoreImplementation)
+        cfg.gnb_implementation = parse_component_implementation(
+            'gnb_implementation', GNBImplementation)
+        cfg.ric_implementation = parse_component_implementation(
+            'ric_implementation', RICImplementation)
 
         if 'log_level' in params:
             if params['log_level'] in LogLevel:
@@ -77,7 +86,7 @@ class ConfigParser:
         """
         setup_config = SetupConfiguration()
 
-        with open(file_path, "r") as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             parsed_config = yaml.safe_load(f)
             for config_entry in parsed_config:
                 match config_entry:
@@ -116,9 +125,10 @@ class ConfigParser:
         Each program may have a specified working directory.
         In case the working directory is not specified, the environment build path is used instead.
         """
-        with open(file_path, "r") as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             parsed_config = yaml.safe_load(f)
-            program_config = ProgramConfigParser.parse_program_cfg(file_path, parsed_config, env_build_path)
+            program_config = ProgramConfigParser.parse_program_cfg(file_path, parsed_config,
+                                                                   env_build_path)
             if not program_config.check_validity():
                 logging.error("Failed to validate program setup configuration")
             return program_config
