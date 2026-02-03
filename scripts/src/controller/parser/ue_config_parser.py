@@ -219,7 +219,7 @@ class UEConfigParser:
         """
         logging.info("Parse USIM Algo Configuration")
         if UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.ALGO in usim_param:
-            if usim_param[UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.ALGO] == "mileage":
+            if usim_param[UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.ALGO] == "milenage":
                 cfg.algo = USIMAlgo.MILENAGE
             elif usim_param[UEFieldIdentifiers.USIM_FIELD_IDENTIFIERS.ALGO] == "xor":
                 cfg.algo = USIMAlgo.XOR
