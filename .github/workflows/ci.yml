@@ -10,7 +10,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Ein kombinierter Job ist schneller und stabiler auf dem Hypervisor
   verify:
     runs-on: self-hosted
     steps:
@@ -26,10 +25,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r scripts/src/requirements.txt
-          pip install pytest
+          pip install pytest pytest-md-report
 
       - name: Run Tests
         env:
           PYTHONPATH: ${{ github.workspace }}/scripts/src
         run: |
-          pytest scripts/tests
+          pytest scripts/tests --md-report --md-report-verbose --md-report-color never > summary.md
+          cat summary.md >> $GITHUB_STEP_SUMMARY
