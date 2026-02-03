@@ -73,7 +73,7 @@ class UEInstCfg:
     name: Optional[str] = None
     build_type : BuildType = BuildType.DOCKER
     ip: Optional[ipaddress.IPv4Address] = None
-    srate: Optional[int] = None
+    srate: Optional[float] = None
     usim: Optional[USIMCfg] = None
     gateway: Optional[UEGatewayCfg] = None
 
@@ -92,8 +92,8 @@ class UEInstCfg:
 
 @dataclass
 class UECfg:
-    ip_range: Optional[ipaddress.IPv4Address] = None
-    gateway: Optional[ipaddress.IPv4Network] = None
+    ip_range: Optional[ipaddress.IPv4Network] = None
+    gateway: Optional[ipaddress.IPv4Address] = None
     ues: List[UEInstCfg] = field(default_factory=list)
 
     def __str__(self):
