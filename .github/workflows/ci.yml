@@ -31,5 +31,5 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}/scripts/src
         run: |
-          pytest scripts/tests --md-report --md-report-verbose --md-report-color never > summary.md
+          pytest scripts/tests --md-report --md-report-verbose 1 --md-report-color never > summary.md
           cat summary.md >> $GITHUB_STEP_SUMMARY
