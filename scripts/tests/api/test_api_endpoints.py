@@ -6,8 +6,8 @@ from api.api_endpoints import (
     app
 )
 from api.api_state import APIStateEnum
-from tests.api.api_tester import ue_list_payload
-from tests.api.sample_requests import ue_payload, ric_payload
+from api_tester import ue_list_payload
+from sample_requests import ue_payload, ric_payload
 
 
 class TestAPIEndpoints:
