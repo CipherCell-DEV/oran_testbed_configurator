@@ -2,11 +2,9 @@ name: continuous_integration
 
 on:
   push:
-    branches:
-      - feature/cleanup_and_refactor
+    branches: ["**"]
   pull_request:
-    branches:
-      - feature/cleanup_and_refactor
+    branches: ["**"]
   workflow_dispatch:
 
 jobs:
