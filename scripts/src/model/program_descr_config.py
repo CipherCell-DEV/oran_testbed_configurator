@@ -30,7 +30,7 @@ class ProgramGroupIdentifier(Enum):
 
 
 class TerminalIdentifiers(Enum):
-    USED_TERMINAL = "default_terminal"
+    DEFAULT_TERMINAL = "default_terminal"
     TERMINALS = "terminals"
     SUBPROC_PREFIX = "subprocess_prefix"
     SUBPROC_POSTFIX = "subprocess_postfix"
@@ -257,6 +257,12 @@ class ProgramDescriptionCfg:
         for group in self.program_groups:
             ret_str += group.__str__()
         return ret_str
+
+    def get_used_terminal(self) -> TerminalDescription:
+        return self._used_terminal
+
+    def set_used_terminal(self, term: TerminalDescription | None):
+        self._used_terminal = term
 
     def _set_terminal_by_name_pref(self, name_prefix : str, preferred_terminal: TerminalDescription = None) -> None:
         suitable_terms: List[TerminalDescription] = []

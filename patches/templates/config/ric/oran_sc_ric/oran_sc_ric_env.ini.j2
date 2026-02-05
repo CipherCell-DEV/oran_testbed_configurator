@@ -12,18 +12,18 @@ RMR_LOG_VLEVEL=0
 RIC_SUBNET={{ near_rt_ric.ip_config.subnet }}
 
 # E2 Termination point
-E2TERM_VER=6.0.4
+E2TERM_VER={{ ric_sub_versions.e2term_ver }}
 E2TERM_NAME=e2term
-E2TERM_IP= {{ near_rt_ric.ip_config.e2term_ip }}
+E2TERM_IP={{ near_rt_ric.ip_config.e2term_ip }}
 E2TERM_SCTP_PORT=36421
 
 # E2 Manager
-E2MGR_VER=6.0.4
+E2MGR_VER={{ ric_sub_versions.e2mgr_ver }}
 E2MGR_NAME=e2mgr
 E2MGR_IP={{ near_rt_ric.ip_config.e2mgr_ip }}
 
 # Database
-DBAAS_VER=0.6.4
+DBAAS_VER={{ ric_sub_versions.dbaas_ver }}
 DBAAS_NAME=dbaas
 DBAAS_IP={{ near_rt_ric.ip_config.dbaas_ip }}
 DBAAS_PORT=6379
@@ -33,12 +33,12 @@ DBAAS_SERVICE_HOST=${DBAAS_IP}
 DBAAS_SERCE_PORT=${DBAAS_PORT}
 
 # Subscription Manager
-SUBMGR_VER=0.10.1
+SUBMGR_VER={{ ric_sub_versions.submgr_ver }}
 SUBMGR_NAME=submgr
 SUBMGR_IP= {{ near_rt_ric.ip_config.submgr_ip }}
 
 # xApps Manager
-APPMGR_VER=0.5.7
+APPMGR_VER={{ ric_sub_versions.appmgr_ver }}
 APPMGR_NAME=appmgr
 APPMGR_IP={{ near_rt_ric.ip_config.appmgr_ip }}
 
