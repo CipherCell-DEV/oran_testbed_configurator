@@ -1,3 +1,7 @@
+"""
+This module contains all API endpoints which are provided via FastAPI.
+"""
+
 import asyncio
 import datetime
 import json
@@ -52,22 +56,23 @@ async def get_health_status():
                      "uptime": format_time_difference(
                          int((datetime.datetime.now() - api_config.get_up_time()).total_seconds())),
                      "timestamp": datetime.datetime.now().strftime("%H-%M-%S.%f")}
-    logging.debug(f"Return health status: {health_status}")
+    logging.debug("Return health status: %s", health_status)
     return health_status
 
 
 @app.get("/status", status_code=status.HTTP_200_OK)
 async def get_status():
     """
-    Get the current status of the API. The message contains the API status, the state of different components, such
-    as additional information such as if all repositories are checked out.
+    Get the current status of the API. The message contains the API status,
+    the state of different components, such as additional information such
+    as if all repositories are checked out.
     """
     status_msg = api_config.get_api_status().to_dict()
     status_msg["uptime"] = format_time_difference(
         int((datetime.datetime.now() - api_config.get_up_time()).total_seconds()))
     status_msg["timestamp"] = datetime.datetime.now().strftime("%H-%M-%S.%f")
     status_msg['repositories_checked_out'] = api_config.get_api_status().get_repository_state()
-    logging.debug(f"Return status message: {status_msg}")
+    logging.debug("Return status message: %s", status_msg)
     return status_msg
 
 
@@ -75,11 +80,12 @@ async def get_status():
 
 async def _process_component_config(config: Any, component_type: ComponentIdentifiers):
     """
-    Helper function which does some basic checks, sets the API status, initializes the logging queue and set the
-    configuration.
+    Helper function which does some basic checks, sets the API status,
+    initializes the logging queue and set the configuration.
     """
     if config.implementation is None:
-        await api_config.get_api_status().add_error(f"Invalid {component_type.value} config object parsed")
+        await api_config.get_api_status().add_error(
+            f"Invalid {component_type.value} config object parsed")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"{component_type.value} implementation must be set")
@@ -102,8 +108,9 @@ async def _process_component_config(config: Any, component_type: ComponentIdenti
         case _:
             raise ValueError(f"Unknown component type: {component_type}")
 
-    await api_config.get_api_status().set_component_status(component_type, ComponentState.CONFIGURED)
-    logging.debug(f"Set {component_type.value} config: {config}")
+    await api_config.get_api_status().set_component_status(component_type,
+                                                           ComponentState.CONFIGURED)
+    logging.debug("Set %s config: %s", component_type.value, config)
 
 
 @app.post("/gnb-config", response_model=StatusResponse, status_code=status.HTTP_200_OK)
@@ -112,7 +119,7 @@ async def set_gnb_config(config: GNBCfg):
     Endpoint to add the configuration of a single gNB.
     """
     await _process_component_config(config, ComponentIdentifiers.CFG_GNB)
-    return StatusResponse(status=APIStateEnum.OK)
+    return StatusResponse(status=APIStateEnum.OK.value)
 
 
 @app.put("/core5g-config", response_model=StatusResponse, status_code=status.HTTP_200_OK)
@@ -121,7 +128,7 @@ async def set_5g_core_config(config: Core5GCfg):
     Endpoint to set the configuration of the 5G core network.
     """
     await _process_component_config(config, ComponentIdentifiers.CFG_5GC)
-    return StatusResponse(status=APIStateEnum.OK)
+    return StatusResponse(status=APIStateEnum.OK.value)
 
 
 @app.post("/near-rt-ric-config", response_model=StatusResponse, status_code=status.HTTP_200_OK)
@@ -130,7 +137,7 @@ async def set_near_rt_ric_config(config: NearRtRICCFG):
     Endpoint to set the configuration of the 5G core network.
     """
     await _process_component_config(config, ComponentIdentifiers.CFG_NEAR_RT_RIC)
-    return StatusResponse(status=APIStateEnum.OK)
+    return StatusResponse(status=APIStateEnum.OK.value)
 
 
 @app.put("/ue-config-list", response_model=StatusResponse, status_code=status.HTTP_200_OK)
@@ -147,10 +154,11 @@ async def set_ue_config_list(ue_cfg: UECfg):
             detail="UE IP Range or Gateway not set")
 
     for ue_inst in ue_cfg.ues:
-        api_config.get_api_status().add_log_queue(ue_inst.name, LogQueue(queue_size=MAX_API_QUEUE_LEN))
+        api_config.get_api_status().add_log_queue(ue_inst.name,
+                                                  LogQueue(queue_size=MAX_API_QUEUE_LEN))
         await api_config.get_api_status().set_ue_status(ue_inst.name, ComponentState.CONFIGURED)
-    logging.debug(f"Set UE-config: {ue_cfg}")
-    return StatusResponse(status=APIStateEnum.OK)
+    logging.debug("Set UE-config: %s", ue_cfg)
+    return StatusResponse(status=APIStateEnum.OK.value)
 
 
 @app.post("/ue-config", response_model=StatusResponse, status_code=status.HTTP_200_OK)
@@ -162,13 +170,14 @@ async def set_ue_config(ue_inst: UEInstCfg):
         await api_config.get_api_status().add_error(
             "UE configuration list is not initialized. Run ue-config-list first.")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="UE configuration list is not initialized. Run ue-config-list first.")
+                            detail="UE configuration list is "
+                                   "not initialized. Run ue-config-list first.")
 
     api_config.get_setup_config().ue.ues.append(ue_inst)
     api_config.get_api_status().add_log_queue(ue_inst.name, LogQueue(queue_size=MAX_API_QUEUE_LEN))
     await api_config.get_api_status().set_ue_status(ue_inst.name, ComponentState.CONFIGURED)
-    logging.debug(f"Add single UE: {ue_inst}")
-    return StatusResponse(status=APIStateEnum.OK)
+    logging.debug("Add single UE: %s", ue_inst)
+    return StatusResponse(status=APIStateEnum.OK.value)
 
 
 @app.put("/zmq-proxy-config", response_model=StatusResponse, status_code=status.HTTP_200_OK)
@@ -177,7 +186,8 @@ async def set_zmq_proxy_config(zmq_proxy_cfg: ZMQProxyCfg):
     Add a single UE configuration to the list of UEs
     """
     if zmq_proxy_cfg.ip_addr is None or zmq_proxy_cfg.component_proxy_cfgs is None:
-        await api_config.get_api_status().add_error("IP or proxy configuration for ZMQ Proxy not set")
+        await api_config.get_api_status().add_error("IP or proxy configuration for "
+                                                    "ZMQ Proxy not set")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="IP or proxy configuration for ZMQ Proxy not set")
 
@@ -186,8 +196,8 @@ async def set_zmq_proxy_config(zmq_proxy_cfg: ZMQProxyCfg):
     await api_config.get_api_status().set_component_status(ComponentIdentifiers.CFG_ZMQ_PROXY,
                                                            ComponentState.CONFIGURED)
     api_config.get_setup_config().zmq_proxy = zmq_proxy_cfg
-    logging.debug(f"Set ZMQ Proxy settings: {zmq_proxy_cfg}")
-    return StatusResponse(status=APIStateEnum.OK)
+    logging.debug("Set ZMQ Proxy settings: %s", zmq_proxy_cfg)
+    return StatusResponse(status=APIStateEnum.OK.value)
 
 
 @app.post("/checkout-repositories", status_code=status.HTTP_200_OK)
@@ -196,26 +206,29 @@ async def checkout_repositories(background_tasks: BackgroundTasks):
     Checkout all required repositories based on the current setup configuration.
     """
     if api_config.get_api_status().get_repository_state() == ComponentState.CHECKED_OUT:
-        logging.info(f"Repositories already cloned")
+        logging.info("Repositories already cloned")
         return {"status": ComponentState.CHECKED_OUT}
-    else:
-        logging.debug(f"Start cloning repositories")
-        ret = check_configuration(api_config.get_setup_config())
-        if ret:
-            raise ret
-        try:
-            if api_config.get_api_status().get_repository_state() != ComponentState.CHECKED_OUT:
-                background_tasks.add_task(run_checkout, api_config.get_setup_config(), api_config.get_api_status(),
-                                          asyncio.get_running_loop())
-        except Exception as e:
-            await api_config.get_api_status().add_error(f"Failed to checkout repositories: {e}")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail=f"Failed to checkout repositories: {e}")
-    return StatusResponse(status=APIStateEnum.OK)
+    logging.debug("Start cloning repositories")
+    ret = check_configuration(api_config.get_setup_config())
+    if ret:
+        raise ret
+    try:
+        if api_config.get_api_status().get_repository_state() != ComponentState.CHECKED_OUT:
+            background_tasks.add_task(run_checkout,
+                                api_config.get_setup_config(),
+                                      api_config.get_api_status(),
+                                      asyncio.get_running_loop())
+    except HTTPException as e:
+        await (api_config.get_api_status().
+               add_error(f"Failed to checkout repositories: {e}"))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Failed to checkout repositories: {e}") from e
+    return StatusResponse(status=APIStateEnum.OK.value)
 
 
 @app.post("/build/{component}", status_code=status.HTTP_200_OK)
-async def build_component(component: Literal["all"] | ComponentIdentifiers, background_tasks: BackgroundTasks):
+async def build_component(component: Literal["all"] |
+                                     ComponentIdentifiers, background_tasks: BackgroundTasks):
     """
     Build a component or all components of a delivered configuration.
     Valid parameters are "all" to build every component or to build
@@ -226,23 +239,24 @@ async def build_component(component: Literal["all"] | ComponentIdentifiers, back
     - gnb
     - zmq_proxy
     """
-    logging.info(f"Start building components {component}")
+    logging.info("Start building components %s", component)
     if component == 'all':
         params = (
-            run_build, None, api_config.get_setup_config(), api_config.get_api_status(), asyncio.get_running_loop(),
+            run_build, None, api_config.get_setup_config(), api_config.get_api_status(),
+            asyncio.get_running_loop(),
             True)
     else:
         try:
             component_identifier = ComponentIdentifiers(component)
             params = (
-                run_build, component_identifier, api_config.get_setup_config(), api_config.get_api_status(),
-                asyncio.get_running_loop(), False)
+                run_build, component_identifier, api_config.get_setup_config(),
+                api_config.get_api_status(), asyncio.get_running_loop(), False)
         except ValueError as e:
             await api_config.get_api_status().add_error(f"Invalid parameter returned error: {e}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                detail=f"Invalid parameter returned error: {e}")
+                                detail=f"Invalid parameter returned error: {e}") from e
     background_tasks.add_task(*params)
-    return StatusResponse(status=APIStateEnum.OK)
+    return StatusResponse(status=APIStateEnum.OK.value)
 
 
 @app.delete("/clear-errors", status_code=status.HTTP_200_OK)
@@ -250,15 +264,15 @@ async def clear_errors():
     """
     Clears the error cache.
     """
-    logging.info(f"Clear API error buffer")
+    logging.info("Clear API error buffer")
     await api_config.get_api_status().clear_errors()
-    return StatusResponse(status=APIStateEnum.OK)
+    return StatusResponse(status=APIStateEnum.OK.value)
 
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """
-    Handles exceptions
+    Handles exceptions thrown by the API.
     """
     await api_config.get_api_status().add_error(f"err: {exc.errors()}")
     return JSONResponse(
@@ -276,27 +290,44 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 # **************************************************
 
 async def state_watcher():
+    """
+    Starts a state watcher which notifies, for example when a state transition occurs.
+    Furthermore, it notifies registered listeners, e.g. the GUI.
+    """
     while True:
         async with api_config.get_api_status().get_condition():
             await api_config.get_api_status().get_condition().wait()
-            logging.debug(f"State Change detected push state information {json.dumps(api_config.get_api_status().to_dict())}")
+            logging.debug(
+                "State Change detected push state information %s",
+                json.dumps(api_config.get_api_status().to_dict()),
+            )
             ret_dict = api_config.get_api_status().to_dict()
-            ret_dict['repositories_checked_out'] = api_config.get_api_status().get_repository_state().value
+            ret_dict["repositories_checked_out"] = (
+                api_config.get_api_status().get_repository_state().value
+            )
             yield f"data: {json.dumps(ret_dict)}\n\n"
 
 
 @app.get("/register-state-watcher")
 async def register_state_watcher():
+    """
+    Register watcher especially for state change detected, e.g. when a starting components
+    transition from initializing to running.
+    """
     return StreamingResponse(state_watcher(), media_type="text/event-stream")
 
 
 @app.websocket("/ws/register-logging_websocket/{component}")
 async def websocket_endpoint(component: str, websocket: WebSocket):
-    logging.info(f"Register Websocket for logging component: {component}")
+    """
+    Open a websocket endpoint sending logged data from the logging queue of this application.
+    Specifically the log messages from parsing and building the dedicated components.
+    """
+    logging.info("Register Websocket for logging component: %s", component)
     try:
         api_config.get_api_status().get_log_queue(component)
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
     await websocket.accept()
     try:
@@ -305,7 +336,7 @@ async def websocket_endpoint(component: str, websocket: WebSocket):
             lines = await log_queue.retrieve_logs()
             if len(lines) > 0:
                 await websocket.send_text("".join(lines))
-    except Exception as e:
+    except (RuntimeError, KeyError, OSError) as e:
         await api_config.get_api_status().add_error(str(e))
 
 
@@ -316,7 +347,7 @@ def start_api_server():
     """
     Start the API server using Uvicorn.
     """
-    logging.info(f"Start FastAPI server at {API_IP}:{API_PORT}")
+    logging.info("Start FastAPI server at %s:%d", API_IP, API_PORT)
     uvicorn.run(
         app,
         host=API_IP,

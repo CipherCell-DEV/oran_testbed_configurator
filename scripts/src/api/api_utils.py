@@ -18,6 +18,8 @@ from model.setup_configuration import SetupConfiguration, EnvironmentCfg, Compon
 
 setup_configuration = SetupConfiguration()
 
+current_directory = os.path.dirname(os.path.realpath(__file__))
+
 
 class APIConfig:
     def __init__(self):
@@ -67,8 +69,8 @@ def mount_folders(app):
     """
     Mounter folder containing figures required by the landing page.
     """
-    app.mount("/doc", StaticFiles(directory="./doc"), name="doc")
-    return Jinja2Templates(directory="scripts/src/api/templates")
+    app.mount("/doc", StaticFiles(directory=f"{current_directory}/../../../doc"), name="doc")
+    return Jinja2Templates(directory=f"{current_directory}/../../../scripts/src/api/templates")
 
 
 def setup_fast_api():
