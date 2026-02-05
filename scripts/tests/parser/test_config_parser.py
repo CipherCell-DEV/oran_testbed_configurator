@@ -1,8 +1,6 @@
 import pytest
-from unittest.mock import patch, MagicMock
 
 from controller.parser.config_parser import ConfigParser
-from model.setup_configuration import ComponentIdentifiers
 from model.core_config import CoreImplementation
 from model.gnb_config import GNBImplementation
 from model.ric_config import RICImplementation

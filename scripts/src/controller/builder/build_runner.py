@@ -87,6 +87,9 @@ class BuildRunner:
         os.chdir(self.setup_cfg.environment.build_dir)
 
         already_build_natively = False
+        if log_buffers is None:
+            log_buffers = [None] * len(self.setup_cfg.ue.ues)
+
         for ue, log_buffer in zip(self.setup_cfg.ue.ues, log_buffers):
             if ue.build_type == BuildType.DOCKER:
                 if not UEDockerBuildRunner(self.setup_cfg, ue).build(log_buffer):
