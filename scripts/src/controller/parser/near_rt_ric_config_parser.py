@@ -64,7 +64,7 @@ class NearRTRICConfigParser:
                     cfg.release = DefaultValuesRIC.DEFAULT_RELEASE
                     if cfg.implementation is RICImplementation.ORAN_SC_RIC:
                         logging.warning("No sc ric release defined use default release %s",
-                                        {DefaultValuesRIC.DEFAULT_RELEASE})
+                                        DefaultValuesRIC.DEFAULT_RELEASE)
                 rics.append(cfg)
 
         if len(rics) == 0:
