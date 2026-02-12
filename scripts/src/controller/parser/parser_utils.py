@@ -34,7 +34,7 @@ class ParsingUtils:
             )
         raise KeyError(
             f"Missing required parameter for {component_name} config: "
-            f"'{params[GeneralIdentifiers.BUILD_TYPE]}'"
+            f"'{GeneralIdentifiers.BUILD_TYPE}'"
         )
 
     @staticmethod
