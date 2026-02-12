@@ -2,7 +2,7 @@ import unittest
 
 from controller.parser.ue_config_parser import UEConfigParser
 from model.ue_config import USIMMode, USIMAlgo, UEGatewayCfg, UEInstCfg, UECfg
-from model.ue_config import DefaultValuesUE, UEFieldIdentifiers
+from model.ue_config import UEFieldIdentifiers
 
 class TestUEConfigParser(unittest.TestCase):
 
