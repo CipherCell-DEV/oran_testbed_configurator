@@ -44,7 +44,7 @@ fi
 source .venv/bin/activate
 
 echo "Install python dependencies"
-pip3 install --upgrade pip --no-index
+pip3 install --upgrade pip
 pip3 install -r requirements.txt
 
 python3 src/main.py --api_endpoint=true
