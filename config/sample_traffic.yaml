@@ -14,7 +14,7 @@ parameters:
       service: ue3  # Name of the UE docker service. Irrelevant if using NIST Deployment.
       address: 10.45.1.4
   direction: DL  # Direction of traffic. Either DL (Download), UL (Upload) or BI (Bidirectional) (currently not supported)
-  workdir: ../../repositories/  # The directory of the main docker-compose file.
+  workdir: ../repositories/  # The directory of the main docker-compose file.
   granularity: 100ms  # The granularity of time intervals, i.e. the timespan of one slot in the traffic array.
                       # Anything under 100 ms is probably less than the RTT between UE and gNB and thus not sensible.
   loop: false  # Whether to repeat the pattern forever.

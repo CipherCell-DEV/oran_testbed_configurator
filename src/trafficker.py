@@ -10,7 +10,7 @@ from model.traffic.traffic_config import TrafficParameters
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Execute periodic traffic in the Docker Compose container.')
     parser.add_argument('--config', type=str,
-                        default=os.path.join(os.path.dirname(__file__), 'config/sample_traffic.yaml'),
+                        default=os.path.join(os.path.dirname(__file__), '../config/sample_traffic.yaml'),
                         help='Path to sample_traffic.yaml config')
     args = parser.parse_args()
 
