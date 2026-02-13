@@ -1,10 +1,11 @@
 import logging
 import os
 import subprocess
-from typing import List
+from typing import List, Optional
 
 from tqdm import tqdm
 
+from api.api_state import LogQueue
 from controller.folder_manager import FolderManager
 from model.setup_configuration import SetupConfiguration
 
@@ -20,7 +21,8 @@ class BuildUtils:
         return os.path.join(self.setup_cfg.environment.log_dir, f"{component_name}.log")
 
     @staticmethod
-    def command_helper(working_dir: str, component_name: str, command: List[str], log_file, log_path: str):
+    def command_helper(working_dir: str, component_name: str, command: List[str], log_file, log_path: str,
+                       log_buffer: Optional[LogQueue] = None):
         process = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
@@ -32,6 +34,8 @@ class BuildUtils:
 
         with tqdm(desc=f"Building {component_name}", unit="line") as pbar:
             for line in process.stdout:
+                if log_buffer is not None:
+                    log_buffer.add_element(line)
                 log_file.write(line)
                 pbar.update(1)
 

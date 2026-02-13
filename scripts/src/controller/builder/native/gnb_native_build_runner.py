@@ -1,7 +1,8 @@
 import logging
 import os
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
+from api.api_state import LogQueue
 from controller.builder.native.native_builder_base import NativeBuilderBase
 from controller.folder_manager import FolderManager
 from model.gnb_config import GNBImplementation, SRSRAN_GNB_DEPENDENCIES_LINUX
@@ -14,7 +15,7 @@ class GNBNativeBuildRunner(NativeBuilderBase):
     def __init__(self, setup_cfg: SetupConfiguration):
         super().__init__(setup_cfg)
 
-    def build(self) -> bool:
+    def build(self, log_buffer: Optional[LogQueue] = None) -> bool:
         logging.info(f"Building gNB native...")
         build_commands, working_dir, dependencies = self.get_implementation_specific_config()
         if not build_commands:

@@ -1,7 +1,9 @@
 import logging
 import os
 import subprocess
+from typing import Optional
 
+from api.api_state import LogQueue
 from controller.builder.docker.ric_docker_build_runner import NearRTRICDockerBuildRunner
 from controller.builder.native.ric_native_build_runner import NearRTRICNativeBuildRunner
 
@@ -27,15 +29,16 @@ class BuildRunner:
     def __init__(self, setup_configuration: SetupConfiguration):
         self.setup_cfg = setup_configuration
 
-    def _build_helper(self, component_cfg, docker_builder_cls, native_builder_cls) -> bool:
+    def _build_helper(self, component_cfg, docker_builder_cls, native_builder_cls,
+                      log_buffer: Optional[LogQueue] = None) -> bool:
         """
         Generic build method for components that support DOCKER and NATIVE build types.
         """
         builder_cls = docker_builder_cls if component_cfg.build_type == BuildType.DOCKER else native_builder_cls
         builder = builder_cls(self.setup_cfg)
-        return builder.build()
+        return builder.build(log_buffer)
 
-    def build_ric(self) -> bool:
+    def build_ric(self, log_buffer: Optional[LogQueue] = None) -> bool:
         """
         Build the RIC component based on the specified implementation and build type.
         Returns: None
@@ -44,34 +47,37 @@ class BuildRunner:
         return self._build_helper(
             self.setup_cfg.get_used_ric(),
             NearRTRICDockerBuildRunner,
-            NearRTRICNativeBuildRunner
+            NearRTRICNativeBuildRunner,
+            log_buffer
         )
 
-    def build_5g_core(self) -> bool:
+    def build_5g_core(self, log_buffer: Optional[LogQueue] = None) -> bool:
         """
         Build the 5G Core Network component based on the specified implementation and build type.
         Returns:
         """
         logging.info("Running 5g core build process...")
         return self._build_helper(
-            self.setup_cfg.get_used_ric(),
+            self.setup_cfg.get_used_core(),
             Core5GDockerBuildRunner,
-            Core5GNativeBuildRunner
+            Core5GNativeBuildRunner,
+            log_buffer
         )
 
-    def build_gnb(self) -> bool:
+    def build_gnb(self, log_buffer: Optional[LogQueue] = None) -> bool:
         """
         Build the gNB and UE components based on the specified build types.
         Returns: None
         """
         logging.info("Running gNB build process...")
         return self._build_helper(
-            self.setup_cfg.get_used_ric(),
+            self.setup_cfg.get_used_gnb(),
             GNBDockerBuildRunner,
-            GNBNativeBuildRunner
+            GNBNativeBuildRunner,
+            log_buffer
         )
 
-    def build_ues(self) -> bool:
+    def build_ues(self, log_buffers: Optional[list[LogQueue]] = None) -> bool:
         """
         Build the gNB and UE components based on the specified build types.
         Returns: None
@@ -81,9 +87,12 @@ class BuildRunner:
         os.chdir(self.setup_cfg.environment.build_dir)
 
         already_build_natively = False
-        for ue in self.setup_cfg.ue.ues:
+        if log_buffers is None:
+            log_buffers = [None] * len(self.setup_cfg.ue.ues)
+
+        for ue, log_buffer in zip(self.setup_cfg.ue.ues, log_buffers):
             if ue.build_type == BuildType.DOCKER:
-                if not UEDockerBuildRunner(self.setup_cfg, ue).build():
+                if not UEDockerBuildRunner(self.setup_cfg, ue).build(log_buffer):
                     os.chdir(curr_dir)
                     return False
             elif ue.build_type == BuildType.NATIVE and not already_build_natively:

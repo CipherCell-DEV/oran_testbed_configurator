@@ -2,6 +2,7 @@ import ipaddress
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
+
 from model.utils_config import BuildType
 
 
@@ -34,7 +35,7 @@ class Core5GCfg:
     implementation: Optional[CoreImplementation] = None
     build_type: BuildType = BuildType.DOCKER
     commit: str = "latest"
-    repository : str = ""
+    repository: str = ""
     network: Optional[Core5GNetworkCfg] = None
 
     def __str__(self):

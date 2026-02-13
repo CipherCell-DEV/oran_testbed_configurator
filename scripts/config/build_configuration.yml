@@ -1,7 +1,7 @@
 environment:
   core_implementation: "open5gs"
   gnb_implementation: "srs"
-  ric_implementation: "flexric"
+  ric_implementation: "oran_sc_ric"
   log_level: "INFO"
   log_dir: "logs"
   build_dir: "./repositories"
@@ -25,7 +25,7 @@ near_rt_ric:
       repository: "https://github.com/srsran/oran-sc-ric.git"
       commit: "e44a7ce239b3c908e842163f1d57cbb4ba43fd0a"
       build_type: "docker"
-      release: 'i'
+      release: 'm'
     - implementation: "flexric"
       repository: "https://gitlab.eurecom.fr/mosaic5g/flexric.git"
       commit: "1f04cc558ebc8da9de6a620762bc02f5db4ecb4a"
@@ -56,7 +56,7 @@ ue:
     - ue1:
         implementation: "srs_4g"
         repository: "https://github.com/srsran/srsRAN_4G.git"
-        commit: "ec29b0c1ff79ceb1cbe66caa6d6b90778261c42b8"
+        commit: "1fab3df863f66fdb6c3b34f1b39e745dbcb12d5e"
         build_type: "docker"
         ue_type: "srsUE"
         ip_addr: 10.45.1.2

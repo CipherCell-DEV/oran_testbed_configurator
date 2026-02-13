@@ -1,7 +1,8 @@
 import logging
 import os
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
+from api.api_state import LogQueue
 from controller.builder.native.native_builder_base import NativeBuilderBase
 from controller.folder_manager import FolderManager
 from model.setup_configuration import SetupConfiguration
@@ -15,7 +16,7 @@ class UENativeBuilder(NativeBuilderBase):
         super().__init__(setup_cfg)
         self._ue = ue
 
-    def build(self) -> bool:
+    def build(self, log_buffer: Optional[LogQueue] = None) -> bool:
         logging.info(f"Building UE ({self._ue.name}) native...")
         build_commands, working_dir, dependencies = self.get_implementation_specific_config()
         if not build_commands:

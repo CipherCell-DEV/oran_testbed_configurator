@@ -12,17 +12,17 @@ class UEImplementation(Enum):
 
 
 class USIMMode(Enum):
-    SOFT = 0
-    HARD = 1
+    SOFT = "soft"
+    HARD = "hard"
 
 
 class USIMAlgo(Enum):
-    MILENAGE = 0
-    XOR = 1
-    COMP = 2
-    COMP128_1 = 3
-    COMP128_2 = 4
-    COMP128_3 = 5
+    MILENAGE = "milenage"
+    XOR = "xor"
+    COMP = "comp"
+    COMP128_1 = "comp128_1"
+    COMP128_2 = "comp128_2"
+    COMP128_3 = "comp128_3"
 
 
 @dataclass
@@ -57,7 +57,7 @@ class USIMCfg:
                 f"    algo={self.algo}, \n"
                 f"    opc={self.opc}, \n"
                 f"    opc_value={self.opc_value}, \n"
-                f"    key={self.k}, \n"
+                f"    key={self.key}, \n"
                 f"    k2={self.k2}, \n"
                 f"    k3={self.k3}, \n"
                 f"    imsi={self.imsi}, \n"
@@ -73,7 +73,7 @@ class UEInstCfg:
     name: Optional[str] = None
     build_type : BuildType = BuildType.DOCKER
     ip: Optional[ipaddress.IPv4Address] = None
-    srate: Optional[int] = None
+    srate: Optional[float] = None
     usim: Optional[USIMCfg] = None
     gateway: Optional[UEGatewayCfg] = None
 
@@ -92,8 +92,8 @@ class UEInstCfg:
 
 @dataclass
 class UECfg:
-    ip_range: Optional[ipaddress.IPv4Address] = None
-    gateway: Optional[ipaddress.IPv4Network] = None
+    ip_range: Optional[ipaddress.IPv4Network] = None
+    gateway: Optional[ipaddress.IPv4Address] = None
     ues: List[UEInstCfg] = field(default_factory=list)
 
     def __str__(self):

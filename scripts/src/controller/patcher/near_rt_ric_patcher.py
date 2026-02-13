@@ -7,7 +7,7 @@ import yaml
 from controller.folder_manager import FolderManager
 from controller.patcher.patcher_utils import PatcherUtils
 from controller.patcher.single_patcher_base import SinglePatcherBase
-from model.ric_config import RICImplementation, ORAN_SC_RIC_SERVICE_IP_MAP
+from model.ric_config import RICImplementation, ORAN_SC_RIC_SERVICE_IP_MAP, RICRelease
 from model.setup_configuration import SetupConfiguration
 from model.utils_config import BuildType
 
@@ -149,7 +149,9 @@ class NearRTRICPatcher(SinglePatcherBase):
             env = Environment(loader=FileSystemLoader(template_path))
             template = env.get_template("oran_sc_ric_env.ini.j2")
             rendered = template.render(
-                near_rt_ric=self._setup_cfg.get_used_ric())
+                near_rt_ric=self._setup_cfg.get_used_ric(),
+                ric_sub_versions=RICRelease.lookup_subversion(self._setup_cfg.get_used_ric().release)
+                )
 
             env_dict_oran_sc_ric = PatcherUtils.load_env_file_str_helper(rendered.split('\n'))
             return env_dict | env_dict_oran_sc_ric

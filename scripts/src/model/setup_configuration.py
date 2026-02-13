@@ -1,6 +1,7 @@
 import logging
 import os
 from dataclasses import dataclass, field
+from enum import Enum
 from pprint import pformat
 from typing import Optional, List
 
@@ -16,7 +17,7 @@ from model.program_descr_config import ProgramGroupIdentifier
 from model.zmq_proxy_config import ZMQProxyCfg
 
 
-class ComponentIdentifiers:
+class ComponentIdentifiers(Enum):
     CFG_NEAR_RT_RIC = "near_rt_ric"
     CFG_5GC = "5gc"
     CFG_UE = "ue"

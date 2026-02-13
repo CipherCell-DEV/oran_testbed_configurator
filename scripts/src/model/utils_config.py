@@ -8,8 +8,8 @@ DEFAULT_DEMO_CFG_FILE: str = os.path.join(FILE_DIR, '../config/demo_configuratio
 
 
 class BuildType(Enum):
-    NATIVE = 0
-    DOCKER = 1
+    NATIVE = "native"
+    DOCKER = "docker"
 
 
 class LogLevel(Enum):
@@ -17,6 +17,11 @@ class LogLevel(Enum):
     INFO = "INFO"
     WARNING = "WARNING"
     ERROR = "ERROR"
+
+    @classmethod
+    def values(cls) -> list[str]:
+        """Return a list of all log level values."""
+        return [level.value for level in cls]
 
 
 MAX_DISPLAY_LINE_LENGTH = 120

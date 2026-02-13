@@ -1,7 +1,9 @@
+from __future__ import annotations
 import ipaddress
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
+
 from model.utils_config import BuildType
 
 
@@ -11,16 +13,77 @@ class RICImplementation(Enum):
 
 
 class RICRelease(Enum):
-    RELEASE_i = 0,
-    RELEASE_l = 1
+    RELEASE_i = 'i'
+    RELEASE_j = 'j'
+    RELEASE_k = 'k'
+    RELEASE_l = 'l'
+    RELEASE_m = 'm'
 
     def __str__(self):
-        if self == RICRelease.RELEASE_i:
-            return 'i'
-        elif self == RICRelease.RELEASE_l:
-            return 'l'
         return str(self.value)
 
+    @staticmethod
+    def get_version_from_field_identifier(field_identifier: str) -> RICRelease:
+        try:
+            return RICRelease(field_identifier.lower())
+        except ValueError as exc:
+            raise ValueError(
+                f"Unsupported RIC Release field identifier: {field_identifier}"
+            ) from exc
+
+    @staticmethod
+    def lookup_subversion(release: RICRelease) -> dict:
+        match release:
+            case RICRelease.RELEASE_i:
+                return {
+                    'e2term_ver': '6.0.4',
+                    'e2mgr_ver': '6.0.4',
+                    'dbaas_ver': '0.6.4',
+                    'submgr_ver': '0.10.1',
+                    'appmgr_ver': '0.5.7',
+                    'a1_ver': '3.2.2',
+                }
+
+            case RICRelease.RELEASE_j:
+                return {
+                    'e2term_ver': '6.0.6',
+                    'e2mgr_ver': '6.0.6',
+                    'dbaas_ver': '0.6.4',
+                    'submgr_ver': '0.10.2',
+                    'appmgr_ver': '0.5.8',
+                    'a1_ver': '3.2.2',
+                }
+
+            case RICRelease.RELEASE_k:
+                return {
+                    'e2term_ver': '6.0.6',
+                    'e2mgr_ver': '6.0.6',
+                    'dbaas_ver': '0.6.4',
+                    'submgr_ver': '0.10.2',
+                    'appmgr_ver': '0.5.8',
+                    'a1_ver': '3.2.2',
+                }
+
+            case RICRelease.RELEASE_l:
+                return {
+                    'e2term_ver': '6.0.6',
+                    'e2mgr_ver': '6.0.6',
+                    'dbaas_ver': '0.6.4',
+                    'submgr_ver': '0.10.2',
+                    'appmgr_ver': '0.5.8',
+                    'a1_ver': '3.2.2',
+                }
+
+            case RICRelease.RELEASE_m:
+                return {
+                    'e2term_ver': '6.0.7',
+                    'e2mgr_ver': '6.0.7',
+                    'dbaas_ver': '0.6.5',
+                    'submgr_ver': '0.10.3',
+                    'appmgr_ver': '0.5.9',
+                    'a1_ver': '3.2.3',
+                }
+        raise ValueError(f"Unsupported RIC Release: {release}")
 
 
 ORAN_SC_RIC_SERVICE_IP_MAP = {
@@ -63,7 +126,7 @@ class NearRtRICCFG:
     repository: str = ""
     commit: str = "latest"
     release: Optional[RICRelease] = None
-    build_type : BuildType = BuildType.DOCKER
+    build_type: BuildType = BuildType.DOCKER
     ip_config: Optional[NearRTRICNetworkConfig] = None
 
     def __str__(self):

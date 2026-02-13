@@ -1,8 +1,9 @@
 import logging
 import os
 from abc import ABCMeta, abstractmethod
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
+from api.api_state import LogQueue
 from controller.builder.builder_base import BuilderBase
 from controller.utils import get_operating_system, OperatingSystem
 from model.setup_configuration import SetupConfiguration
@@ -13,7 +14,7 @@ class NativeBuilderBase(BuilderBase, metaclass=ABCMeta):
         super().__init__(setup_cfg)
 
     @abstractmethod
-    def build(self) -> bool:
+    def build(self, log_buffer: Optional[LogQueue] = None) -> bool:
         pass
 
     @abstractmethod
