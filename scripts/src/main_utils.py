@@ -1,4 +1,5 @@
 import os
+from typing import Tuple, Any
 
 from controller.builder.build_runner import BuildRunner
 from controller.component_checkout_manager import ComponentCheckoutManager
@@ -9,7 +10,7 @@ from model.utils_config import FILE_DIR
 from view.live_console_view import LiveView
 
 
-def patch_firmware(setup_cfg: SetupConfiguration):
+def patch_firmware(setup_cfg: SetupConfiguration) -> Tuple[bool, list[Any]]:
     """
     Apply required firmware and Docker image patches for the demo environment.
     """
@@ -18,7 +19,7 @@ def patch_firmware(setup_cfg: SetupConfiguration):
                                  patch_file_path=os.path.join(FILE_DIR, "../..", "patches"))
 
     if not fw_patcher.patch_single_docker_compose():
-        return False
+        return False, []
 
     fw_patcher.copy_files_to_location()
     return True, fw_patcher.get_images_to_push()
@@ -47,8 +48,9 @@ def build_firmware(setup_cfg: SetupConfiguration, images_to_push: list[str]) -> 
         if not build_runner.build_ues():
             return False
 
-    if not build_runner.push_images(images_to_push):
-        return False
+    if len(images_to_push) > 0:
+        if not build_runner.push_images(images_to_push):
+            return False
 
     return True
 
