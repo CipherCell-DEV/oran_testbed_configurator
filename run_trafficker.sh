@@ -40,6 +40,6 @@ fi
 source .trafficker_venv/bin/activate
 echo "Install python dependencies"
 pip3 install --upgrade pip
-pip3 install -r requirements_trafficker.txt
+pip3 install -r requirements.txt
 
 python3 src/trafficker.py "$@"
