@@ -58,7 +58,7 @@ class BuildRunner:
         """
         logging.info("Running 5g core build process...")
         return self._build_helper(
-            self.setup_cfg.get_used_ric(),
+            self.setup_cfg.get_used_core(),
             Core5GDockerBuildRunner,
             Core5GNativeBuildRunner,
             log_buffer
@@ -71,7 +71,7 @@ class BuildRunner:
         """
         logging.info("Running gNB build process...")
         return self._build_helper(
-            self.setup_cfg.get_used_ric(),
+            self.setup_cfg.get_used_gnb(),
             GNBDockerBuildRunner,
             GNBNativeBuildRunner,
             log_buffer
