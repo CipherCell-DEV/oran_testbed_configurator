@@ -22,12 +22,10 @@ jobs:
       - name: Install All Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r src/requirements.txt
+          pip install -r requirements.txt
           pip install pytest pytest-md-report pytest-asyncio
 
       - name: Run Tests
-        env:
-          PYTHONPATH: ${{ github.workspace }}/src
         run: |
           pytest tests --junit-xml=test-results.xml
 
