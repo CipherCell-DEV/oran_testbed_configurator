@@ -37,8 +37,9 @@ async def root(request: Request):
     """
     logging.debug("Requested '/' -> return landing page")
     return api_config.get_templates().TemplateResponse(
+        request,
         "index.html",
-        {"request": request, "title": "API Landing Page", "version": API_VERSION}
+        {"title": "API Landing Page", "version": API_VERSION}
     )
 
 
