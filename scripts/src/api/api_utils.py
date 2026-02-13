@@ -178,7 +178,7 @@ def run_build(component: Optional[ComponentIdentifiers], setup_cfg: SetupConfigu
               loop, build_all: bool = False) -> bool:
     """Executes component-specific build steps and updates API status on failure."""
     patch_firmware(setup_cfg)
-    build_runner = BuildRunner(setup_configuration=setup_configuration)
+    build_runner = BuildRunner(setup_configuration=setup_cfg)
 
     if component == ComponentIdentifiers.CFG_NEAR_RT_RIC or build_all:
         api_queue_ric = api_status.get_log_queue(ComponentIdentifiers.CFG_NEAR_RT_RIC.value)
