@@ -15,6 +15,7 @@ from controller.builder.build_runner import BuildRunner
 from controller.component_checkout_manager import ComponentCheckoutManager
 from main_utils import patch_firmware
 from model.setup_configuration import SetupConfiguration, EnvironmentCfg, ComponentIdentifiers
+from model.utils_config import LogLevel
 
 setup_configuration = SetupConfiguration()
 
@@ -22,7 +23,10 @@ current_directory = os.path.dirname(os.path.realpath(__file__))
 
 
 class APIConfig:
+    """Container for FastAPI app, templates, configuration, and runtime status."""
+
     def __init__(self):
+        """Initializes application components and middleware."""
         self._app, self._templates = setup_fast_api()
         self._setup_configuration = setup_default_setup_configuration()
         self._api_status = APIStatus()
@@ -53,44 +57,50 @@ class APIConfig:
 
 
 class StatusResponse(BaseModel):
+    """Generic API response model containing a status string."""
     status: str
 
 
 def setup_default_setup_configuration() -> SetupConfiguration:
+    """Initializes environment defaults for the setup configuration."""
+
     setup_configuration.environment = EnvironmentCfg()
     setup_configuration.environment.log_dir = os.path.join(os.getcwd(), "logs")
-    setup_configuration.environment.log_level = "INFO"
+    setup_configuration.environment.log_level = LogLevel.INFO
     setup_configuration.environment.build_dir = os.path.join(os.getcwd(), "repositories")
-    setup_configuration.environment.push_local_images = "false"
+    setup_configuration.environment.push_local_images = False
     return setup_configuration
 
 
 def mount_folders(app):
-    """
-    Mounter folder containing figures required by the landing page.
-    """
+    """Mounter folder containing figures required by the landing page."""
+
     app.mount("/doc", StaticFiles(directory=f"{current_directory}/../../../doc"), name="doc")
     return Jinja2Templates(directory=f"{current_directory}/../../../scripts/src/api/templates")
 
 
 def setup_fast_api():
+    """Creates the FastAPI instance and attaches static mounts."""
+
     app = FastAPI()
     return app, mount_folders(app)
 
 
 def check_configuration(setup_cfg: SetupConfiguration) -> HTTPException | None:
+    """Validates mandatory configuration sections before execution."""
+
     if not setup_cfg.near_rt_rics:
         return HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                             detail=f"Near RT RIC configuration is missing. Run near-rt-ric-config first.")
+                             detail="Near RT RIC configuration is missing. Run near-rt-ric-config first.")
     elif not setup_cfg.cores_5g:
         return HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                             detail=f"Core 5G configuration is missing. Run core5g-config first.")
+                             detail="Core 5G configuration is missing. Run core5g-config first.")
     elif not setup_cfg.gnbs:
         return HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                             detail=f"gNB configuration is missing. Run gnb-config first.")
+                             detail="gNB configuration is missing. Run gnb-config first.")
     elif not setup_cfg.ue:
         return HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                             detail=f"UE configuration is missing. Run ue-config-list and ue-config first.")
+                             detail="UE configuration is missing. Run ue-config-list and ue-config first.")
     return None
 
 
@@ -218,7 +228,7 @@ def run_build(component: Optional[ComponentIdentifiers], setup_cfg: SetupConfigu
                     await api_status.set_ue_status(ue_inst.name, state)
 
             asyncio.run_coroutine_threadsafe(set_all_ue_states(ComponentState.BUILDING), loop)
-            if build_runner.build_ues(log_buffer_list):  # TODO queue for each seperate ue build
+            if build_runner.build_ues(log_buffer_list):  # TODO queue for each separate ue build
                 logging.error("build_ues returned an error")
                 for _ in setup_cfg.ue.ues:
                     asyncio.run_coroutine_threadsafe(set_all_ue_states(ComponentState.BUILD_FAILED), loop)
