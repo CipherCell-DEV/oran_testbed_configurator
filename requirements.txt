@@ -21,3 +21,4 @@ pydantic_core==2.41.5
 pydantic_extra_types==2.10.6
 pydantic_settings==2.12.0
 uvicorn==0.40.0
+matplotlib==3.10.0

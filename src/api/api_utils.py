@@ -69,8 +69,8 @@ def mount_folders(app):
     """
     Mounter folder containing figures required by the landing page.
     """
-    app.mount("/doc", StaticFiles(directory=f"{current_directory}/../../../doc"), name="doc")
-    return Jinja2Templates(directory=f"{current_directory}/../../../scripts/src/api/templates")
+    app.mount("/doc", StaticFiles(directory=f"{current_directory}/../../doc"), name="doc")
+    return Jinja2Templates(directory=f"{current_directory}/../src/api/templates")
 
 
 def setup_fast_api():

@@ -57,7 +57,7 @@ cd oran-deploy-manager[README.md](README.md)
  This command will:  
  1. Create a virtual Python environment and install all required Python packages  
  2. Set up the Docker containers  
- 3. Start the Near-Real-Time RIC, 5G Core, gNB, and UE in the correct order as defined in the [Demo Configuration File](scripts/config/demo_configuration.yml)
+ 3. Start the Near-Real-Time RIC, 5G Core, gNB, and UE in the correct order as defined in the [Demo Configuration File](config/demo_configuration.yml)
 
 All components run in a fully Dockerized environment, ready for immediate experimentation.
 
@@ -69,7 +69,7 @@ Full setup and usage instructions are available in the [CipherCell Wiki](https:/
 
 #### Demo Configuration file
 
-The (run_all.sh)[run_all.sh] script builds all containers and binaries. To freely configure the programs to be run afterwards the [Demo Configuration File](scripts/config/demo_configuration.yml) can be adjusted. 
+The (run_all.sh)[run_all.sh] script builds all containers and binaries. To freely configure the programs to be run afterwards the [Demo Configuration File](config/demo_configuration.yml) can be adjusted. 
 
 All Program output will be logged to the [logs/run_logs](logs/run_logs), unless otherwise specified in the demo config.
 
@@ -88,14 +88,14 @@ A program is running if:
 
 In Python mode, a Python [Live Display](https://rich.readthedocs.io/en/latest/live.html) will show the output of all programs on screen. 
 
-> ⚠️ **Note:** If the output data is too large to fit on a single screen, it will not show all output data. You can adjust the amount of output lines shown per program in the [Demo Configuration File](scripts/config/demo_configuration.yml)
+> ⚠️ **Note:** If the output data is too large to fit on a single screen, it will not show all output data. You can adjust the amount of output lines shown per program in the [Demo Configuration File](config/demo_configuration.yml)
 
-In tmux mode, each program is started as a tmux pane. For better visibility, the amount of panes per session can be configured in the [Demo Configuration File](scripts/config/demo_configuration.yml). The run script will generate as many sessions as needed to accomodate all programs. 
+In tmux mode, each program is started as a tmux pane. For better visibility, the amount of panes per session can be configured in the [Demo Configuration File](config/demo_configuration.yml). The run script will generate as many sessions as needed to accomodate all programs. 
 
-After all programs have been started, the run script will ask to open the generated sessions using the terminal configured in the [Demo Configuration File](scripts/config/demo_configuration.yml). If declined, the tmux sessions will keep running in the background until the script is stopped.
+After all programs have been started, the run script will ask to open the generated sessions using the terminal configured in the [Demo Configuration File](config/demo_configuration.yml). If declined, the tmux sessions will keep running in the background until the script is stopped.
 
 ##### Terminal configuration
-To automatically open tmux session windows, the hosts terminal needs to be configured. Since this may differ vastly between (Linux-) distributions, you can add/configure custom terminals as follows in the [Demo Configuration File](scripts/config/demo_configuration.yml):
+To automatically open tmux session windows, the hosts terminal needs to be configured. Since this may differ vastly between (Linux-) distributions, you can add/configure custom terminals as follows in the [Demo Configuration File](config/demo_configuration.yml):
 
 ```yaml
 used_terminal: "my-own-terminal"
@@ -112,7 +112,7 @@ The prefix/postfix systax is used to wrap the underlying python subprocess call 
 If this solution does not work for you, you can connect to the running tmux sessions at any time using your own systems using `tmux attach-session -t [session_name]`. You can list all active sessions using `tmux ls`.
 
 ##### Program Configuration
-You can easily configure the programs to be run in the [Demo Configuration File](scripts/config/demo_configuration.yml).
+You can easily configure the programs to be run in the [Demo Configuration File](config/demo_configuration.yml).
 
 A individual program has the following structure:
 ```yaml
@@ -139,7 +139,7 @@ There are 5 logical groups of programs. Each group shares a restart timeout, whi
 ### Interface Monitoring
 
 The srsran gNB can generate `.pcap` files for various interfaces. 
-Those files are stored in the [log](logs/) directory, which is defined in the [setup configuration](scripts/config/sample_configuration.yml). Traffic logging can be de-/activated by modifying the `pcap` section the the [srsran gNB configuration file](repositories/srsRAN_Project/configs/gnb_zmq.yaml). 
+Those files are stored in the [log](logs/) directory, which is defined in the [setup configuration](config/sample_configuration.yml). Traffic logging can be de-/activated by modifying the `pcap` section the the [srsran gNB configuration file](repositories/srsRAN_Project/configs/gnb_zmq.yaml). 
 
 See the [official documantation](https://docs.srsran.com/projects/project/en/latest/user_manuals/source/config_ref.html) for further information.
 

@@ -90,7 +90,7 @@ class TrafficHandler(ABC):
             FileNotFoundError: If the local script file does not exist.
             RuntimeError: If the SCP command fails or any other error occurs during copying.
         """
-        script_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..',
+        script_path = os.path.join(os.path.dirname(__file__), '..', '..', '..',
                                    'patches', 'templates', 'traffic', file_name)
         script_path = os.path.abspath(script_path)
 

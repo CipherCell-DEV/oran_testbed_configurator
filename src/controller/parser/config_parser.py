@@ -60,12 +60,12 @@ class ConfigParser:
             cfg.log_level = 'INFO'
 
         if 'log_dir' in params:
-            cfg.log_dir = os.path.join(FILE_DIR, '../..', params['log_dir'])
+            cfg.log_dir = os.path.join(FILE_DIR, '..', params['log_dir'])
         else:
             logging.warning("No log directory specified -> Logging to console only")
 
         if 'build_dir' in params:
-            cfg.build_dir = os.path.join(FILE_DIR, '../..', params['build_dir'])
+            cfg.build_dir = os.path.join(FILE_DIR, '..', params['build_dir'])
         else:
             raise KeyError("Missing required parameter for Environment config: 'build_dir'")
 

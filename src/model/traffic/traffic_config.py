@@ -78,7 +78,7 @@ class TrafficParameters:
                 user_equipments=data['parameters'].get('user-equipments', {}),
                 direction=Direction(data['parameters'].get('direction', 'core->ue')),
                 workdir=os.path.abspath(
-                    os.path.join(os.path.dirname(path), data['parameters'].get('workdir', '../..'))),
+                    os.path.join(os.path.dirname(path), data['parameters'].get('workdir', '..'))),
                 loop=data['parameters'].get('loop', False),
                 use_nist=data['parameters'].get('use_nist', False),
                 nist_vm=data['parameters'].get('nist_vm_ssh', 'local'),

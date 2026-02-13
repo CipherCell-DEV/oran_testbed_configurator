@@ -129,7 +129,7 @@ def parse_command_line_arguments(argv: List[str]) -> CommandLineConfig:
         elif v.startswith("--config_file="):
             cfg.config_file = v.split("=", 1)[1]
             if not cfg.config_file.startswith('/'):
-                cfg.config_file = os.path.join(FILE_DIR, "../..", cfg.config_file)
+                cfg.config_file = os.path.join(FILE_DIR, "..", cfg.config_file)
             if not os.path.exists(cfg.config_file):
                 raise ValueError(f"Config file does not exist: {cfg.config_file}")
             logging.info(f"Using configuration file: {cfg.config_file}")
