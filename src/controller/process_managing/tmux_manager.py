@@ -17,6 +17,9 @@ from controller.process_managing.process_manager_base import ProcessManager, GEN
 from controller.process_managing.program_state_monitor import ProgramRecord, ProgramStateData
 from model.utils_config import ProgramState
 
+# Maximum time to wait for tmux pane to become ready after sending commands
+PANE_READY_TIMEOUT = 1.0  # seconds
+
 
 class TmuxRunnerThread:
     def __init__(self, state: ProgramStateData, record: ProgramRecord, tmux_pane: Pane):
@@ -95,6 +98,25 @@ class TmuxManager(ProcessManager):
                                 stderr=subprocess.PIPE)
         # Expected output is e.g.: tmux 3.2a
         return re.search("^tmux ", result.stdout) is not None
+
+    def _wait_for_pane_ready(self, pane: Pane, timeout_seconds: float = 1.0) -> bool:
+        """
+        Wait for a tmux pane to be ready (shell is idle and can accept new commands).
+        This ensures that previous send_keys commands (like pipe-pane, cd) have completed.
+
+        Returns True if pane is ready, False if timeout occurred.
+        """
+        idle_command = os.path.basename(self._server.show_environment()['SHELL'])
+        start_time = time.time()
+        poll_interval = 0.01
+
+        while (time.time() - start_time) < timeout_seconds:
+            if pane.pane_current_command == idle_command:
+                return True
+            time.sleep(poll_interval)
+
+        logging.warning(f"Pane {pane.pane_id} did not become ready within {timeout_seconds}s")
+        return False
 
     def _get_session_index(self, name: str) -> int:
         """
@@ -307,9 +329,11 @@ class TmuxManager(ProcessManager):
                 # change working directory:
                 program_pane.send_keys(f"cd {cur_program.program.working_directory}")
 
-                # Wait to ensure tmux has processed the pipe-pane and cd commands
-                # Necessary for programs (like zmq_proxy) that output within 100ms
-                sleep(0.15)
+                # Wait for pane to be ready before starting the program
+                # This ensures pipe-pane and cd commands have completed processing
+                # Necessary for fast-starting programs (like zmq_proxy) that output within ~100ms
+                if not self._wait_for_pane_ready(program_pane, timeout_seconds=PANE_READY_TIMEOUT):
+                    logging.warning(f"Pane for {cur_program.program.name} may not be fully ready, proceeding anyway")
 
                 # execute command inside thread
                 starter_thread = TmuxRunnerThread(cur_program, self._program_record, program_pane)
