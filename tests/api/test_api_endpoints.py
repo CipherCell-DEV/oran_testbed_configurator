@@ -2,11 +2,9 @@ import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
 
-from api.api_endpoints import (
-    app
-)
+from api.api_endpoints import app
 from api.api_state import APIStateEnum
-from scripts.tests.api.sample_requests import ue_payload, ric_payload, ue_list_payload
+from .sample_requests import ue_payload, ric_payload, ue_list_payload
 
 
 class TestAPIEndpoints:

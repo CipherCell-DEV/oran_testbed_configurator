@@ -45,6 +45,6 @@ source .venv/bin/activate
 
 echo "Install python dependencies"
 pip3 install --upgrade pip
-pip3 install -r scripts/src/requirements.txt
+pip3 install -r requirements.txt
 
-python3 scripts/src/main.py --suppress_welcome_header --config_file=scripts/config/build_configuration.yml
+python3 src/main.py --suppress_welcome_header --config_file=config/build_configuration.yml

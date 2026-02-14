@@ -74,9 +74,13 @@ def setup_default_setup_configuration() -> SetupConfiguration:
 
 def mount_folders(app):
     """Mounter folder containing figures required by the landing page."""
+    project_root = current_directory + "/../.."
 
-    app.mount("/doc", StaticFiles(directory=f"{current_directory}/../../../doc"), name="doc")
-    return Jinja2Templates(directory=f"{current_directory}/../../../scripts/src/api/templates")
+    doc_dir = os.path.join(project_root, "doc")
+    app.mount("/doc", StaticFiles(directory=doc_dir), name="doc")
+
+    templates_dir = os.path.join(current_directory, "templates")
+    return Jinja2Templates(directory=templates_dir)
 
 
 def setup_fast_api():

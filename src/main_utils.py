@@ -16,7 +16,7 @@ def patch_firmware(setup_cfg: SetupConfiguration) -> Tuple[bool, list[Any]]:
     """
     print("\n***********Patch Components***********\n")
     fw_patcher = FirmwarePatcher(setup_configuration=setup_cfg,
-                                 patch_file_path=os.path.join(FILE_DIR, "../..", "patches"))
+                                 patch_file_path=os.path.join(FILE_DIR, "..", "patches"))
 
     if not fw_patcher.patch_single_docker_compose():
         return False, []
