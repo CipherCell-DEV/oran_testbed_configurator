@@ -29,10 +29,22 @@ class TmuxRunnerThread:
     def _runner_thread_funct(self):
         while self.running:
             if not self._program_state.are_preconditions_met():
-                with self._record.cv_finished_programs:
-                    self._record.cv_finished_programs.wait(GENERAL_SUBPROCESS_TIMEOUT)
-                    if not self._program_state.are_preconditions_met():
-                        continue
+                # Wait for dependencies to be met. Programs can have two types of dependencies:
+                # - depends_on: Programs that must be RUNNING (notified via cv_finished_programs)
+                # - depends_on_init: Programs that must be INITIALIZING (notified via cv_initialised_programs)
+
+                if len(self._program_state.program.depends_on_init_names) > 0:
+                    with self._record.cv_initialised_programs:
+                        self._record.cv_initialised_programs.wait(GENERAL_SUBPROCESS_TIMEOUT)
+                elif len(self._program_state.program.depends_on_names) > 0:
+                    with self._record.cv_finished_programs:
+                        self._record.cv_finished_programs.wait(GENERAL_SUBPROCESS_TIMEOUT)
+                else:
+                    sleep(CHECKUP_PERIOD)
+
+                if not self._program_state.are_preconditions_met():
+                    continue
+
             # can now start program
             logging.debug(f"Start Program {self._program_state.program.name}")
             self._pane.send_keys(" ".join(self._program_state.program.command))
