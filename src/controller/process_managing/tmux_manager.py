@@ -12,8 +12,8 @@ import libtmux
 from libtmux import Session, Pane
 
 from controller.demo_runner import DemoRunner
-from controller.process_managing.process_manager_base import ProcessManager, GENERAL_SUBPROCESS_TIMEOUT, CHECKUP_PERIOD
 from controller.process_managing.output_piping import OutputPipeListenerThread, OutputPipe
+from controller.process_managing.process_manager_base import ProcessManager, GENERAL_SUBPROCESS_TIMEOUT, CHECKUP_PERIOD
 from controller.process_managing.program_state_monitor import ProgramRecord, ProgramStateData
 from model.utils_config import ProgramState
 
@@ -80,7 +80,7 @@ class TmuxManager(ProcessManager):
         self._panes_per_session = runner.cfg.programs.panes_per_session
 
         # Which program state is associated with which pane?
-        self._pane_state_pair: dict[str: ProgramStateData] = {}
+        self._pane_state_pair: dict[str, ProgramStateData] = {}
 
         # Threads
         self._program_starter_threads: List[TmuxRunnerThread] = []
@@ -176,7 +176,7 @@ class TmuxManager(ProcessManager):
         if not isinstance(args[1], ProgramStateData):
             logging.error("Invalid parameter for restart handler function!")
             return False
-        state : ProgramStateData = args[1]
+        state: ProgramStateData = args[1]
         for paneid in self._pane_state_pair:
             if self._pane_state_pair[paneid].program.name == state.program.name:
                 # send command to this pane to end
@@ -206,6 +206,7 @@ class TmuxManager(ProcessManager):
                 return False
         logging.error(f"Program name {state.program.name} not found!")
         return False
+
     # endregion
 
     # region public_override
@@ -282,7 +283,8 @@ class TmuxManager(ProcessManager):
                 logging.error(f"Cannot open program in session pane: session: {session_nr}, pane: {pane_nr}")
             else:
                 # start a thread which checks all state changes
-                state_check = Thread(target=self._state_checker_thread_func, args=[cur_program, self._handle_restart, cur_program])
+                state_check = Thread(target=self._state_checker_thread_func,
+                                     args=[cur_program, self._handle_restart, cur_program])
                 state_check.start()
                 self._state_checkers.append(state_check)
 
