@@ -187,11 +187,11 @@ class TmuxManager(ProcessManager):
                         logging.info(f"Program {state.program.name} has stopped. Restarting ...")
                         state.change_state_to(ProgramState.STOPPED)
                         self._sessions[sess_nr].panes[pane_nr].send_keys(" ".join(state.program.command))
-                        break
+                        return True
                     sleep(CHECKUP_PERIOD)
                     seconds_waited = seconds_waited + CHECKUP_PERIOD
                 logging.error(f"Failed to restart program {state.program.name}. Please try to restart it manually.")
-                return True
+                return False
         logging.error(f"Program name {state.program.name} not found!")
         return False
     # endregion
