@@ -293,6 +293,10 @@ class TmuxManager(ProcessManager):
                 # change working directory:
                 program_pane.send_keys(f"cd {cur_program.program.working_directory}")
 
+                # Wait to ensure tmux has processed the pipe-pane and cd commands
+                # Necessary for programs (like zmq_proxy) that output within 100ms
+                sleep(0.15)
+
                 # execute command inside thread
                 starter_thread = TmuxRunnerThread(cur_program, self._program_record, program_pane)
                 self._program_starter_threads.append(starter_thread)
