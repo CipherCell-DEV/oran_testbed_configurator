@@ -128,7 +128,7 @@ programs:
         implementation: "grc"
         depends_on: ["ric"]
         depends_on_init: ["ue1", "ue2", "ue3"]
-        command: ["docker", "compose", "up", "--force-recreate", "zmq_proxy"]
+        command: ["docker", "compose", "up", "--menu=false", "--force-recreate", "zmq_proxy"]
         state_transitions:
           stop_to_init: "ZMQ Proxy initialising."
           init_to_running: "ZMQ Proxy running."
