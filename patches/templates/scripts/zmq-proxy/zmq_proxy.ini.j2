@@ -54,25 +54,25 @@ class ZMQProxy(gr.top_block):
 
 
 if __name__ == '__main__':
+    shutdown_event = threading.Event()
+
+    def signal_handler(signum, frame):
+        print(f'Received signal {signum}, shutting down gracefully...')
+        shutdown_event.set()
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     print('ZMQ Proxy initialising.')
     proxy = ZMQProxy()
-
-    def sig_handler(sig=None, frame=None):
-        proxy.stop()
-        proxy.wait()
-
-        sys.exit(0)
-
-    signal.signal(signal.SIGINT, sig_handler)
-    signal.signal(signal.SIGTERM, sig_handler)
 
     proxy.start()
     proxy.flowgraph_started.set()
     print('ZMQ Proxy running.')
 
-    try:
-        input('Press Enter to quit: ')
-    except EOFError:
-        pass
+    shutdown_event.wait()
+
+    print('Stopping ZMQ Proxy...')
     proxy.stop()
     proxy.wait()
+    print('ZMQ Proxy stopped.')

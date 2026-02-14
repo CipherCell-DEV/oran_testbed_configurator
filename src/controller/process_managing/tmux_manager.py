@@ -12,10 +12,13 @@ import libtmux
 from libtmux import Session, Pane
 
 from controller.demo_runner import DemoRunner
-from controller.process_managing.process_manager_base import ProcessManager, GENERAL_SUBPROCESS_TIMEOUT, CHECKUP_PERIOD
 from controller.process_managing.output_piping import OutputPipeListenerThread, OutputPipe
+from controller.process_managing.process_manager_base import ProcessManager, GENERAL_SUBPROCESS_TIMEOUT, CHECKUP_PERIOD
 from controller.process_managing.program_state_monitor import ProgramRecord, ProgramStateData
 from model.utils_config import ProgramState
+
+# Maximum time to wait for tmux pane to become ready after sending commands
+PANE_READY_TIMEOUT = 1.0  # seconds
 
 
 class TmuxRunnerThread:
@@ -29,10 +32,22 @@ class TmuxRunnerThread:
     def _runner_thread_funct(self):
         while self.running:
             if not self._program_state.are_preconditions_met():
-                with self._record.cv_finished_programs:
-                    self._record.cv_finished_programs.wait(GENERAL_SUBPROCESS_TIMEOUT)
-                    if not self._program_state.are_preconditions_met():
-                        continue
+                # Wait for dependencies to be met. Programs can have two types of dependencies:
+                # - depends_on: Programs that must be RUNNING (notified via cv_finished_programs)
+                # - depends_on_init: Programs that must be INITIALIZING (notified via cv_initialised_programs)
+
+                if len(self._program_state.program.depends_on_init_names) > 0:
+                    with self._record.cv_initialised_programs:
+                        self._record.cv_initialised_programs.wait(GENERAL_SUBPROCESS_TIMEOUT)
+                elif len(self._program_state.program.depends_on_names) > 0:
+                    with self._record.cv_finished_programs:
+                        self._record.cv_finished_programs.wait(GENERAL_SUBPROCESS_TIMEOUT)
+                else:
+                    sleep(CHECKUP_PERIOD)
+
+                if not self._program_state.are_preconditions_met():
+                    continue
+
             # can now start program
             logging.debug(f"Start Program {self._program_state.program.name}")
             self._pane.send_keys(" ".join(self._program_state.program.command))
@@ -68,7 +83,7 @@ class TmuxManager(ProcessManager):
         self._panes_per_session = runner.cfg.programs.panes_per_session
 
         # Which program state is associated with which pane?
-        self._pane_state_pair: dict[str: ProgramStateData] = {}
+        self._pane_state_pair: dict[str, ProgramStateData] = {}
 
         # Threads
         self._program_starter_threads: List[TmuxRunnerThread] = []
@@ -83,6 +98,25 @@ class TmuxManager(ProcessManager):
                                 stderr=subprocess.PIPE)
         # Expected output is e.g.: tmux 3.2a
         return re.search("^tmux ", result.stdout) is not None
+
+    def _wait_for_pane_ready(self, pane: Pane, timeout_seconds: float = 1.0) -> bool:
+        """
+        Wait for a tmux pane to be ready (shell is idle and can accept new commands).
+        This ensures that previous send_keys commands (like pipe-pane, cd) have completed.
+
+        Returns True if pane is ready, False if timeout occurred.
+        """
+        idle_command = os.path.basename(self._server.show_environment()['SHELL'])
+        start_time = time.time()
+        poll_interval = 0.01
+
+        while (time.time() - start_time) < timeout_seconds:
+            if pane.pane_current_command == idle_command:
+                return True
+            time.sleep(poll_interval)
+
+        logging.warning(f"Pane {pane.pane_id} did not become ready within {timeout_seconds}s")
+        return False
 
     def _get_session_index(self, name: str) -> int:
         """
@@ -164,7 +198,7 @@ class TmuxManager(ProcessManager):
         if not isinstance(args[1], ProgramStateData):
             logging.error("Invalid parameter for restart handler function!")
             return False
-        state : ProgramStateData = args[1]
+        state: ProgramStateData = args[1]
         for paneid in self._pane_state_pair:
             if self._pane_state_pair[paneid].program.name == state.program.name:
                 # send command to this pane to end
@@ -187,13 +221,14 @@ class TmuxManager(ProcessManager):
                         logging.info(f"Program {state.program.name} has stopped. Restarting ...")
                         state.change_state_to(ProgramState.STOPPED)
                         self._sessions[sess_nr].panes[pane_nr].send_keys(" ".join(state.program.command))
-                        break
+                        return True
                     sleep(CHECKUP_PERIOD)
                     seconds_waited = seconds_waited + CHECKUP_PERIOD
                 logging.error(f"Failed to restart program {state.program.name}. Please try to restart it manually.")
-                return True
+                return False
         logging.error(f"Program name {state.program.name} not found!")
         return False
+
     # endregion
 
     # region public_override
@@ -270,7 +305,8 @@ class TmuxManager(ProcessManager):
                 logging.error(f"Cannot open program in session pane: session: {session_nr}, pane: {pane_nr}")
             else:
                 # start a thread which checks all state changes
-                state_check = Thread(target=self._state_checker_thread_func, args=[cur_program, self._handle_restart, cur_program])
+                state_check = Thread(target=self._state_checker_thread_func,
+                                     args=[cur_program, self._handle_restart, cur_program])
                 state_check.start()
                 self._state_checkers.append(state_check)
 
@@ -292,6 +328,12 @@ class TmuxManager(ProcessManager):
                 program_pane.send_keys(f"tmux pipe-pane -t {pane_id_str} 'cat > {output_piping.pipe_name}'")
                 # change working directory:
                 program_pane.send_keys(f"cd {cur_program.program.working_directory}")
+
+                # Wait for pane to be ready before starting the program
+                # This ensures pipe-pane and cd commands have completed processing
+                # Necessary for fast-starting programs (like zmq_proxy) that output within ~100ms
+                if not self._wait_for_pane_ready(program_pane, timeout_seconds=PANE_READY_TIMEOUT):
+                    logging.warning(f"Pane for {cur_program.program.name} may not be fully ready, proceeding anyway")
 
                 # execute command inside thread
                 starter_thread = TmuxRunnerThread(cur_program, self._program_record, program_pane)
