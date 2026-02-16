@@ -54,29 +54,29 @@ class TrafficConfigParser:
             return None
 
         match traffic_type:
-            case TrafficType.overlap:
+            case TrafficType.OVERLAP:
                 config = OverlapTrafficConfig([])
-                for item in source[TrafficType.overlap.value]:
+                for item in source[TrafficType.OVERLAP.value]:
                     if 'offset' in item:
                         continue
                     key = next((t.value for t in TrafficType if t.value in item), None)
-                    if key == TrafficType.overlap.value:
+                    if key == TrafficType.OVERLAP.value:
                         offset = next((k['offset'] for k in item[key] if 'offset' in k), '0ms')
                     else:
                         offset = item[key].get('offset', '0s')
 
                     config.overlaps.append((parse_time(offset), TrafficConfigParser.__parse_dict(item)))
                 return config
-            case TrafficType.pause:
-                return Pause.from_duration(source[TrafficType.pause.value])
-            case TrafficType.periodic:
-                return PeriodicTrafficConfig.from_dict(source[TrafficType.periodic.value])
-            case TrafficType.random:
-                return RandomTrafficConfig.from_dict(source[TrafficType.random.value])
-            case TrafficType.distribution:
-                return DistributedTrafficConfig.from_dict(source[TrafficType.distribution.value])
-            case TrafficType.loop:
-                loop_config = source[TrafficType.loop.value]
+            case TrafficType.PAUSE:
+                return Pause.from_duration(source[TrafficType.PAUSE.value])
+            case TrafficType.PERIODIC:
+                return PeriodicTrafficConfig.from_dict(source[TrafficType.PERIODIC.value])
+            case TrafficType.RANDOM:
+                return RandomTrafficConfig.from_dict(source[TrafficType.RANDOM.value])
+            case TrafficType.DISTRIBUTION:
+                return DistributedTrafficConfig.from_dict(source[TrafficType.DISTRIBUTION.value])
+            case TrafficType.LOOP:
+                loop_config = source[TrafficType.LOOP.value]
                 sequence = TrafficSequenceConfig([])
                 for config in loop_config['elements']:
                     sequence.sequence.append(TrafficConfigParser.__parse_dict(config))
