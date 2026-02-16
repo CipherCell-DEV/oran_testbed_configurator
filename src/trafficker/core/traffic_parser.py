@@ -4,6 +4,7 @@ YAML configuration parser for traffic patterns.
 Parses traffic configuration files and converts them into TrafficConfig objects.
 """
 
+import yaml
 from trafficker.model.traffic_config import *
 from trafficker.model.traffic_type import TrafficType
 
@@ -50,7 +51,7 @@ class TrafficConfigParser:
         try:
             traffic_type = TrafficType(next(iter(source.keys())))
         except ValueError:
-            print(f'Unknown traffic type: {traffic_type}')
+            print(f'Unknown traffic type')
             return None
 
         match traffic_type:

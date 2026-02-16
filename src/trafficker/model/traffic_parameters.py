@@ -1,9 +1,13 @@
+"""Module for defining and loading traffic generation parameters from a YAML configuration file."""
+
 import os
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
 import yaml
+
+from trafficker.model.utils import parse_time
 
 
 class Direction(Enum):
