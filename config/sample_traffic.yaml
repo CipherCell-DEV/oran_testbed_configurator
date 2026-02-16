@@ -20,7 +20,7 @@ parameters:
   nist_vm_ssh: root@132.231.14.134
   use_udp: false
 
-# See TRAFFICKER.md for full documentation on all parameters and pattern types.
+# See doc/Trafficker.md for full documentation on all parameters and pattern types.
 
 traffic:
   ue1:

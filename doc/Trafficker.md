@@ -34,12 +34,12 @@ python src/trafficker.py --config my_traffic.yaml --plot --no-exec
 
 #### CLI Options
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--config` | `config/sample_traffic.yaml` | Path to the traffic YAML configuration file |
-| `--plot` | off | Show a matplotlib plot of the traffic plan before execution |
-| `--no-exec` | off | Skip execution (useful with `--plot` for preview only) |
-| `--time-unit` | `m` | Time axis unit for the plot: `ms`, `s`, `m`, or `h` |
+| Flag          | Default                      | Description                                                                                                 |
+|---------------|------------------------------|-------------------------------------------------------------------------------------------------------------|
+| `--config`    | `config/sample_traffic.yaml` | Path to the traffic YAML configuration file                                                                 |
+| `--plot`      | off                          | Show a matplotlib plot of the traffic plan before execution. Execution only starts once the plot is closed. |
+| `--no-exec`   | off                          | Skip execution (useful with `--plot` for preview only)                                                      |
+| `--time-unit` | `m`                          | Time axis unit for the plot: `ms`, `s`, `m`, or `h`                                                         |
 
 ### Writing Your First Config
 
@@ -74,10 +74,10 @@ More information about the parameters and traffic patterns is available in the [
 
 Values throughout the config accept human-readable units:
 
-| Category | Supported Units |
-|----------|-----------------|
-| Time | `ms`, `s`, `m`, `h` |
-| Size | `B`, `kB`, `MB`, `GB` |
+| Category | Supported Units       |
+|----------|-----------------------|
+| Time     | `ms`, `s`, `m`, `h`   |
+| Size     | `B`, `kB`, `MB`, `GB` |
 
 Decimal values are supported (e.g. `1.5s`, `2.5kB`).
 
@@ -95,7 +95,7 @@ parameters:
     service: <string>       # Docker service name of the 5G Core
     address: <string>       # IP address of the Core in the deployment
   user-equipments:
-    <ue_id>:                # Arbitrary identifier, must match a key in the traffic section
+    <ue_id>: # Arbitrary identifier, must match a key in the traffic section
       service: <string>     # Docker service name of this UE
       address: <string>     # IP address of this UE
   direction: <DL|UL|BI>     # Traffic direction
@@ -109,25 +109,29 @@ parameters:
 
 #### Direction
 
-| Value | Meaning |
-|-------|---------|
-| `DL` | **Downlink** — Core sends to UEs. One sender at the Core per UE, one receiver per UE. |
-| `UL` | **Uplink** — UEs send to Core. One sender per UE, a single shared receiver at the Core. |
-| `BI` | **Bidirectional** — Not currently supported for socket handlers. Use the Ping handler for bidirectional ICMP traffic. |
+| Value | Meaning                                                                                                               |
+|-------|-----------------------------------------------------------------------------------------------------------------------|
+| `DL`  | **Downlink** — Core sends to UEs. One sender at the Core per UE, one receiver per UE.                                 |
+| `UL`  | **Uplink** — UEs send to Core. One sender per UE, a single shared receiver at the Core.                               |
+| `BI`  | **Bidirectional** — Not currently supported for socket handlers. Use the Ping handler for bidirectional ICMP traffic. |
 
 #### Granularity
 
-The granularity defines the time resolution of the traffic plan. Traffic is discretized into slots of this length. Each slot specifies how many bytes to send during that interval.
+The granularity defines the time resolution of the traffic plan. Traffic is discretized into slots of this length. Each
+slot specifies how many bytes to send during that interval.
 
-Lower granularity means finer control but more overhead. Values below `100ms` are typically not sensible since they approach the RTT between UE and gNB.
+Lower granularity means finer control but more overhead. Values below `100ms` are typically not sensible since they
+approach the RTT between UE and gNB.
 
 #### UDP Limitations
 
-When `use_udp: true`, each packet is limited to 65 kB (the UDP datagram size limit). One packet is sent per time slot per UE, so the effective maximum throughput per UE is `65 kB / granularity`.
+When `use_udp: true`, each packet is limited to 65 kB (the UDP datagram size limit). One packet is sent per time slot
+per UE, so the effective maximum throughput per UE is `65 kB / granularity`.
 
 ### Traffic Patterns
 
-The `traffic` section maps each UE ID to a list of traffic patterns. Patterns in the list are executed **sequentially** (one after another). Every UE listed here must also be defined in `user-equipments`.
+The `traffic` section maps each UE ID to a list of traffic patterns. Patterns in the list are executed **sequentially
+** (one after another). Every UE listed here must also be defined in `user-equipments`.
 
 ```yaml
 traffic:
@@ -149,7 +153,8 @@ Sends a fixed-size packet at regular intervals.
     offset: 0ms         # (Optional) Start delay when used inside an overlap
 ```
 
-If the interval is smaller than the granularity, multiple packets may land in the same time slot and their sizes are summed.
+If the interval is smaller than the granularity, multiple packets may land in the same time slot and their sizes are
+summed.
 
 #### `random`
 
@@ -175,7 +180,8 @@ Inserts a gap with zero traffic.
 
 #### `distribution`
 
-Distributes a total number of bytes across the duration according to a statistical distribution. The sum of all slot values equals `cumulative_size`.
+Distributes a total number of bytes across the duration according to a statistical distribution. The sum of all slot
+values equals `cumulative_size`.
 
 ```yaml
 - distribution:
@@ -191,10 +197,10 @@ Distributes a total number of bytes across the duration according to a statistic
 
 Bell curve centered at `mean` (as a fraction of the duration).
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `mean` | `0.5` | Center of the bell curve as a fraction of the duration (0.0 = start, 1.0 = end) |
-| `variance` | auto | Variance of the distribution. If omitted, set so 99.7% of traffic falls within the duration (`std = num_slots / 6`). |
+| Parameter  | Default | Description                                                                                                          |
+|------------|---------|----------------------------------------------------------------------------------------------------------------------|
+| `mean`     | `0.5`   | Center of the bell curve as a fraction of the duration (0.0 = start, 1.0 = end)                                      |
+| `variance` | auto    | Variance of the distribution. If omitted, set so 99.7% of traffic falls within the duration (`std = num_slots / 6`). |
 
 ```yaml
 - distribution:
@@ -222,10 +228,10 @@ No additional parameters.
 
 Exponential growth or decay across the duration.
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `lambda` | `3.0 / num_slots` | Rate parameter. Higher values produce steeper curves. |
-| `reverse` | `false` | If `true`, traffic decays instead of growing (or vice versa). |
+| Parameter | Default           | Description                                                   |
+|-----------|-------------------|---------------------------------------------------------------|
+| `lambda`  | `3.0 / num_slots` | Rate parameter. Higher values produce steeper curves.         |
+| `reverse` | `false`           | If `true`, traffic decays instead of growing (or vice versa). |
 
 ```yaml
 - distribution:
@@ -238,7 +244,8 @@ Exponential growth or decay across the duration.
 
 #### `overlap`
 
-Runs multiple patterns **simultaneously**, adding their traffic together slot by slot. Each sub-pattern can have an `offset` to delay its start.
+Runs multiple patterns **simultaneously**, adding their traffic together slot by slot. Each sub-pattern can have an
+`offset` to delay its start.
 
 ```yaml
 - overlap:
@@ -288,7 +295,8 @@ Repeats a sequence of patterns a given number of times.
       - pause: 1s
 ```
 
-The `elements` list is treated as a sequence — patterns run one after another, and the whole sequence repeats `iterations` times.
+The `elements` list is treated as a sequence — patterns run one after another, and the whole sequence repeats
+`iterations` times.
 
 ### Composing Patterns
 
@@ -301,11 +309,13 @@ Patterns can be freely nested and combined:
 
 ### Traffic Handlers
 
-The Trafficker uses pluggable handler pairs (sender + receiver) for actual data transmission. The handler is selected in code, not in the YAML config.
+The Trafficker uses pluggable handler pairs (sender + receiver) for actual data transmission. The handler is selected in
+code, not in the YAML config.
 
 #### PySocket (default)
 
-Persistent Python socket connections. A sender script runs inside the container and reads packet sizes from stdin, sending random data of that size. The receiver runs a Python socket server.
+Persistent Python socket connections. A sender script runs inside the container and reads packet sizes from stdin,
+sending random data of that size. The receiver runs a Python socket server.
 
 - Lowest overhead (persistent connection, no per-packet process spawning)
 - Supports TCP and UDP
@@ -333,6 +343,8 @@ ICMP echo requests using the `ping` command. No explicit receiver needed — the
 1. **Parse** — The YAML config is parsed into traffic config objects.
 2. **Generate** — The plan generator converts configs into NumPy arrays of bytes-per-slot, one array per UE.
 3. **Plot** _(optional)_ — Matplotlib renders the traffic plan as a step plot (instantaneous kB per slot over time).
-4. **Execute** — The executor sets up sender/receiver pairs for each UE based on the direction, then iterates through the traffic arrays slot by slot. Each slot, all UE senders fire in parallel using a thread pool. After sending, the executor sleeps for the remainder of the granularity interval to maintain timing.
+4. **Execute** — The executor sets up sender/receiver pairs for each UE based on the direction, then iterates through
+   the traffic arrays slot by slot. Each slot, all UE senders fire in parallel using a thread pool. After sending, the
+   executor sleeps for the remainder of the granularity interval to maintain timing.
 
 If `loop` is enabled in parameters, the entire plan restarts after completing.
