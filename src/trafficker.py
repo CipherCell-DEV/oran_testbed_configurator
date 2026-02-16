@@ -1,11 +1,11 @@
 import argparse
 import os
 
-from controller.traffic.traffic_executor import TrafficExecutor
-from controller.traffic.traffic_parser import TrafficConfigParser
-from controller.traffic.traffic_plan_generator import TrafficPlanGenerator
-from model.traffic.pysocket_handler import PySocketReceiver, PySocketSender
-from model.traffic.traffic_config import TrafficParameters
+from trafficker.core.traffic_executor import TrafficExecutor
+from trafficker.core.traffic_parser import TrafficConfigParser
+from trafficker.core.traffic_plan_generator import TrafficPlanGenerator
+from trafficker.traffic_handler.pysocket_handler import PySocketReceiver, PySocketSender
+from trafficker.model.traffic_config import TrafficParameters
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Execute periodic traffic in the Docker Compose container.')

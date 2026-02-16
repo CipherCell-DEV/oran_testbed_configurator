@@ -2,8 +2,8 @@ import os
 import time
 from typing import override
 
-from model.traffic.traffic_config import TrafficParameters
-from model.traffic.traffic_handler import TrafficReceiver, TrafficSender
+from trafficker.model.traffic_config import TrafficParameters
+from trafficker.traffic_handler.traffic_handler import TrafficReceiver, TrafficSender
 
 
 class PySocketReceiver(TrafficReceiver):
@@ -12,7 +12,7 @@ class PySocketReceiver(TrafficReceiver):
     def __init__(self, parameters: TrafficParameters, service_name: str, server_address: str):
         super().__init__(parameters, service_name, server_address)
         if parameters.use_nist:
-            self._script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..',
+            self._script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../model', '..', '..',
                                                              'patches', 'templates', 'traffic', 'pysocket_receiver.py'))
         else:
             self._script_path = '/trafficker/pysocket_receiver.py'
@@ -80,7 +80,7 @@ class PySocketSender(TrafficSender):
     def __init__(self, parameters: TrafficParameters, service_name: str, server_address: str):
         super().__init__(parameters, service_name, server_address)
         if parameters.use_nist:
-            self._script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..',
+            self._script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../model', '..', '..',
                                                              'patches', 'templates', 'traffic', 'pysocket_sender.py'))
         else:
             self._script_path = '/trafficker/pysocket_sender.py'

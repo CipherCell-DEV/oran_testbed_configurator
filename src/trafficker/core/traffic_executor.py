@@ -2,9 +2,9 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Type
 
-from model.traffic.netcat_handler import NetcatReceiver, NetcatSender
-from model.traffic.traffic_config import TrafficParameters, Direction
-from model.traffic.traffic_handler import TrafficReceiver, TrafficSender
+from trafficker.traffic_handler.netcat_handler import NetcatReceiver, NetcatSender
+from trafficker.model.traffic_config import TrafficParameters, Direction
+from trafficker.traffic_handler.traffic_handler import TrafficReceiver, TrafficSender
 
 
 class TrafficExecutor:

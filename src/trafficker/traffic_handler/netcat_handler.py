@@ -1,7 +1,7 @@
 import time
 from typing import override
 
-from model.traffic.traffic_handler import TrafficReceiver, TrafficSender
+from trafficker.traffic_handler.traffic_handler import TrafficReceiver, TrafficSender
 
 
 class NetcatReceiver(TrafficReceiver):
