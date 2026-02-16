@@ -75,6 +75,11 @@ All Program output will be logged to the [logs/run_logs](logs/run_logs), unless 
 
 > ⚠️ **Note:** If the programs are started by tmux (see section Output Mode), they will pipe the entire pane output and input to the log file. (See tmux documentation for [tmux pipe-pane](https://man7.org/linux/man-pages/man1/tmux.1.html)).
 
+#### Trafficker
+
+The Trafficker generates and executes configurable network traffic patterns across connected UEs in your O-RAN deployment.
+For detailed information on how to configure and run traffic patterns, see the [Trafficker documentation](doc/Trafficker.md).
+
 ##### Output Mode
 
 The demo programs are either run by Python (as [subprocesses](https://docs.python.org/3/library/subprocess.html)) or are started inside dedicated [tmux](https://man7.org/linux/man-pages/man1/tmux.1.html) sessions, depending on the configuration. 
