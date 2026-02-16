@@ -36,12 +36,19 @@ if __name__ == '__main__':
     parser.add_argument('--plot', action='store_true', help='Visualize traffic plan before execution')
     parser.add_argument('--time-unit', choices=['ms', 's', 'm', 'h'], default='m', help='Time unit for plot')
     parser.add_argument('--no-exec', action='store_false', help='Do not execute traffic plan')
+    parser.add_argument('--verbose', '-v', action='store_true', help='Enable debug logging')
     args = parser.parse_args()
+
+    if args.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
 
     try:
         logging.info(f"Loading config: {args.config}")
         params = TrafficParameters.load_yaml(args.config)
         traffic = TrafficConfigParser.load_yaml(args.config)
+
+        logging.debug(f"Parameters: granularity={params.granularity}ms, direction={params.direction.value}, "
+                      f"loop={params.loop}, UEs={list(params.user_equipments.keys())}")
 
         gen = TrafficPlanGenerator(params)
         gen.from_plan(traffic)
@@ -53,7 +60,7 @@ if __name__ == '__main__':
         if args.no_exec:
             logging.info("Executing traffic...")
             TrafficExecutor(gen.traffic).execute(params, PySocketReceiver, PySocketSender)
-            logging.info("Complete")
+            logging.info("Traffic execution complete")
 
     except KeyboardInterrupt:
         logging.warning("Interrupted by user")
