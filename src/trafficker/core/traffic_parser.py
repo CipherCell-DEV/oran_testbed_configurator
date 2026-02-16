@@ -5,6 +5,7 @@ Parses traffic configuration files and converts them into TrafficConfig objects.
 """
 
 from trafficker.model.traffic_config import *
+from trafficker.model.traffic_type import TrafficType
 
 
 class TrafficConfigParser:
@@ -45,38 +46,39 @@ class TrafficConfigParser:
         Returns:
             Appropriate TrafficConfig subclass instance
         """
-        traffic_type = next(iter(source.keys()))
+
+        try:
+            traffic_type = TrafficType(next(iter(source.keys())))
+        except ValueError:
+            print(f'Unknown traffic type: {traffic_type}')
+            return None
 
         match traffic_type:
-            case 'overlap':  # TODO: Introduce enum for this
+            case TrafficType.overlap:
                 config = OverlapTrafficConfig([])
-                for item in source['overlap']:
+                for item in source[TrafficType.overlap.value]:
                     if 'offset' in item:
                         continue
-                    key = next(
-                        k for k in ('periodic', 'random', 'distribution', 'loop', 'overlap', 'pause') if k in item)
-                    if key == 'overlap':
+                    key = next((t.value for t in TrafficType if t.value in item), None)
+                    if key == TrafficType.overlap.value:
                         offset = next((k['offset'] for k in item[key] if 'offset' in k), '0ms')
                     else:
                         offset = item[key].get('offset', '0s')
 
                     config.overlaps.append((parse_time(offset), TrafficConfigParser.__parse_dict(item)))
                 return config
-            case 'pause':
-                return Pause.from_duration(source['pause'])
-            case 'periodic':
-                return PeriodicTrafficConfig.from_dict(source['periodic'])
-            case 'random':
-                return RandomTrafficConfig.from_dict(source['random'])
-            case 'distribution':
-                return DistributedTrafficConfig.from_dict(source['distribution'])
-            case 'loop':
-                loop_config = source['loop']
+            case TrafficType.pause:
+                return Pause.from_duration(source[TrafficType.pause.value])
+            case TrafficType.periodic:
+                return PeriodicTrafficConfig.from_dict(source[TrafficType.periodic.value])
+            case TrafficType.random:
+                return RandomTrafficConfig.from_dict(source[TrafficType.random.value])
+            case TrafficType.distribution:
+                return DistributedTrafficConfig.from_dict(source[TrafficType.distribution.value])
+            case TrafficType.loop:
+                loop_config = source[TrafficType.loop.value]
                 sequence = TrafficSequenceConfig([])
                 for config in loop_config['elements']:
                     sequence.sequence.append(TrafficConfigParser.__parse_dict(config))
                 sequence.sequence *= loop_config['iterations']
                 return sequence
-            case _:
-                print(f'Unknown traffic type: {traffic_type}')
-                return None
