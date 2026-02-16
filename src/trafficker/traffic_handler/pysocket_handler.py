@@ -7,6 +7,7 @@ reducing connection overhead compared to netcat.
 This should be the preferred handler for most use cases.
 """
 
+import logging
 import os
 import time
 from typing import override
@@ -58,10 +59,10 @@ class PySocketReceiver(TrafficReceiver):
                 f'{self._cmd_prefix} ss -lnp | grep ":{self._server_port}"', f':{self._server_port}')
 
             if not self._server_running:
-                print('Starting PySocket server failed.')
+                logging.error("Starting PySocket receiver failed")
 
         except Exception as e:
-            print(f"Failed to start PySocket server: {e}")
+            logging.error(f"Failed to start PySocket receiver: {e}")
             self._server_running = False
             raise
 
@@ -72,7 +73,7 @@ class PySocketReceiver(TrafficReceiver):
             return
 
         if not self.process:
-            print("No active session")
+            logging.warning("No active session to stop PySocket receiver")
             return
 
         try:
@@ -80,11 +81,11 @@ class PySocketReceiver(TrafficReceiver):
             self._execute_cmd(f'{kill_cmd}; echo "KILLED"')
 
             if not self._wait_for_marker('KILLED'):
-                print('Failed to stop PySocket server')
+                logging.warning("Failed to confirm PySocket receiver stop")
             self._server_running = False
 
         except Exception as e:
-            print(f"Error stopping PySocket server: {e}")
+            logging.error(f"Error stopping PySocket receiver: {e}")
             self._server_running = False
 
     @property
@@ -147,7 +148,7 @@ class PySocketSender(TrafficSender):
             self._execute_cmd(str(packet_size))
             return True
         except Exception as e:
-            print(f"PySocket client failed: {e}")
+            logging.error(f"PySocket send failed: {e}")
             return False
 
     @override
@@ -158,5 +159,5 @@ class PySocketSender(TrafficSender):
                 self._execute_cmd('exit')
                 time.sleep(0.1)
             except Exception as e:
-                print(f"Exception occurred while closing PySocketSender session: {e}")
+                logging.error(f"Exception while closing PySocketSender session: {e}")
         super().close_session()

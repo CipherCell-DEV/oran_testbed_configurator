@@ -5,6 +5,7 @@ Converts high-level traffic configurations into time-slotted traffic arrays
 that define how much traffic is sent at which time from / to which UE.
 """
 
+import logging
 from functools import singledispatchmethod
 from random import randint
 from typing import Any
@@ -43,9 +44,12 @@ class TrafficPlanGenerator:
         Args:
             sequence_config: Dictionary mapping UE IDs to TrafficSequenceConfig
         """
+        logging.info(f"Generating traffic plan for {len(sequence_config)} UE(s)")
         for ue_id, traffic in sequence_config.items():
+            logging.debug(f"Generating traffic for {ue_id} ({len(traffic.sequence)} segment(s))")
             for config in traffic.sequence:
                 self.__append_traffic(ue_id, self.__generate_traffic(config))
+            logging.debug(f"Generated {self.__traffic[ue_id].size} time slots for {ue_id}")
 
     @property
     def traffic(self):
@@ -71,13 +75,14 @@ class TrafficPlanGenerator:
     @singledispatchmethod
     def __generate_traffic(self, config) -> ndarray[tuple[int], dtype[Any]]:
         """Default handler for unknown traffic config types."""
-        print('Unknown traffic config ', config)
+        logging.warning(f"Unknown traffic config type: {type(config).__name__}")
         return np.zeros(0, dtype=int)
 
     @__generate_traffic.register
     def _(self, config: PeriodicTrafficConfig) -> ndarray[tuple[int], dtype[Any]]:
         """Generate periodic traffic with fixed interval and packet size."""
         num_slots = int(config.duration / self.__granularity)
+        logging.debug(f"Periodic: {config.packet_size}B every {config.interval}ms for {config.duration}ms ({num_slots} slots)")
         generated_traffic = np.zeros(num_slots, dtype=int)
 
         current_time = 0.0
@@ -93,6 +98,7 @@ class TrafficPlanGenerator:
     def _(self, config: RandomTrafficConfig) -> ndarray[tuple[int], dtype[Any]]:
         """Generate random traffic with uniformly distributed packet sizes."""
         num_slots = int(config.duration / self.__granularity)
+        logging.debug(f"Random: {config.min_size}-{config.max_size}B for {config.duration}ms ({num_slots} slots)")
         generated_traffic = np.zeros(num_slots, dtype=int)
 
         current_time = 0.0
@@ -120,6 +126,7 @@ class TrafficPlanGenerator:
             Array of bytes per time slot
         """
         num_slots = int(config.duration / self.__granularity)
+        logging.debug(f"Distribution: {config.distribution.value}, {config.cumulative_size}B over {config.duration}ms ({num_slots} slots)")
         generated_traffic = np.zeros(num_slots, dtype=int)
 
         if num_slots == 0:
@@ -140,7 +147,7 @@ class TrafficPlanGenerator:
             multiplier = num_slots - 1 - slot_indices if config.reverse else slot_indices
             weights = np.exp(-lambda_ * multiplier)
         else:
-            print('Unknown distribution type')
+            logging.error(f"Unknown distribution type: {config.distribution}")
             return np.zeros(0, dtype=int)
 
         # Normalize and distribute cumulative_size across slots

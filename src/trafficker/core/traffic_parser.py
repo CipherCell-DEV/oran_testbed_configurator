@@ -4,6 +4,8 @@ YAML configuration parser for traffic patterns.
 Parses traffic configuration files and converts them into TrafficConfig objects.
 """
 
+import logging
+
 import yaml
 from trafficker.model.traffic_config import *
 from trafficker.model.traffic_type import TrafficType
@@ -26,7 +28,7 @@ class TrafficConfigParser:
         with open(path, 'r') as f:
             data = yaml.safe_load(f)
         if 'traffic' not in data:
-            print('Config file needs to contain traffic config!')
+            logging.error("Config file needs to contain a 'traffic' section")
             return {}
         traffic_by_ue = {}
         for ue_id, traffic in data['traffic'].items():
@@ -34,6 +36,7 @@ class TrafficConfigParser:
                 if ue_id not in traffic_by_ue:
                     traffic_by_ue[ue_id] = TrafficSequenceConfig([])
                 traffic_by_ue[ue_id].sequence.append(TrafficConfigParser.__parse_dict(part))
+        logging.debug(f"Parsed traffic config for {len(traffic_by_ue)} UE(s): {list(traffic_by_ue.keys())}")
         return traffic_by_ue
 
     @staticmethod
@@ -51,7 +54,7 @@ class TrafficConfigParser:
         try:
             traffic_type = TrafficType(next(iter(source.keys())))
         except ValueError:
-            print(f'Unknown traffic type')
+            logging.error(f"Unknown traffic type: {next(iter(source.keys()), 'N/A')}")
             return None
 
         match traffic_type:

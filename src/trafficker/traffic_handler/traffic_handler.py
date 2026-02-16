@@ -5,6 +5,7 @@ Provides abstract interfaces for traffic senders and receivers,
 with common functionality for session management and command execution.
 """
 
+import logging
 import os
 import select
 import subprocess
@@ -13,8 +14,6 @@ from abc import abstractmethod, ABC
 from typing import override
 
 from trafficker.model.traffic_parameters import TrafficParameters
-
-_DEBUG_ = False
 
 
 class TrafficHandler(ABC):
@@ -47,8 +46,7 @@ class TrafficHandler(ABC):
 
     def _execute_cmd(self, cmd: str) -> None:
         """Execute command in the persistent shell session."""
-        if _DEBUG_:
-            print(f'{self.__service_name}: {cmd}')
+        logging.debug(f"[{self.__service_name}] exec: {cmd.strip()}")
         if not cmd.endswith('\n'):
             cmd += '\n'
         self.process.stdin.write(cmd)
@@ -62,13 +60,16 @@ class TrafficHandler(ABC):
         commands interactively.
         """
         if self.process is not None:
+            logging.debug(f"[{self.__service_name}] Session already active, skipping start")
             return
 
         if self._parameters.use_nist:
             if self._parameters.nist_vm == 'local':
                 cmd = ['bash']
+                logging.debug(f"[{self.__service_name}] Starting local bash session")
             else:
                 cmd = ['ssh', self._parameters.nist_vm]
+                logging.debug(f"[{self.__service_name}] Starting SSH session to {self._parameters.nist_vm}")
         else:
             compose_files = ['docker-compose.yml', 'docker-compose.yaml', 'compose.yml', 'compose.yaml']
             compose_file_exists = any(os.path.isfile(os.path.join(self._parameters.workdir, f)) for f in compose_files)
@@ -76,6 +77,7 @@ class TrafficHandler(ABC):
                 raise FileNotFoundError(f"No docker-compose file found in {self._parameters.workdir}")
 
             cmd = ['docker', 'compose', 'exec', '-T', self.__service_name, 'bash']
+            logging.debug(f"[{self.__service_name}] Starting Docker exec session")
 
         self.process = subprocess.Popen(
             cmd,
@@ -86,12 +88,13 @@ class TrafficHandler(ABC):
             cwd=self._parameters.workdir
         )
         self.initialize_shell()
+        logging.info(f"[{self.__service_name}] Session started")
 
     def initialize_shell(self):
         """Verify shell is ready by sending echo command."""
         self._execute_cmd('echo READY')
         if not self._wait_for_marker('READY'):
-            print('Initializing shell timed out')
+            logging.warning(f"[{self.__service_name}] Shell initialization timed out")
 
     def close_session(self):
         """Close the persistent session gracefully."""
@@ -103,6 +106,7 @@ class TrafficHandler(ABC):
                 self.process.terminate()
             finally:
                 self.process = None
+                logging.info(f"[{self.__service_name}] Session closed")
 
     def _copy_script_to_remote(self, file_name: str) -> str:
         """
@@ -137,10 +141,13 @@ class TrafficHandler(ABC):
 
         try:
             scp_cmd = ['scp', script_path, f"{self._parameters.nist_vm}:{target_path}"]
+            logging.debug(f"[{self.__service_name}] Copying {file_name} to {self._parameters.nist_vm}:{target_path}")
             result = subprocess.run(scp_cmd, capture_output=True, text=True)
 
             if result.returncode != 0:
                 raise RuntimeError(f"Failed to copy script to remote host: {result.stderr}")
+
+            logging.debug(f"[{self.__service_name}] Script copied successfully")
 
         except Exception as e:
             raise RuntimeError(f"Error copying script to remote host: {e}")
@@ -189,8 +196,7 @@ class TrafficHandler(ABC):
             ready, _, _ = select.select([self.process.stdout], [], [], 0.1)
             if ready:
                 line = self.process.stdout.readline().strip()
-                if _DEBUG_ and line:
-                    print(line)
+                logging.debug(f"[{self.__service_name}] stdout: {line}")
                 if line and marker in line:
                     return True
         return False

@@ -5,6 +5,7 @@ Uses standard ping command for generating ICMP traffic.
 No receiver needed as ICMP echo replies are handled by the kernel.
 """
 
+import logging
 import time
 from typing import override
 
@@ -54,13 +55,12 @@ class PingSender(TrafficSender):
             raise RuntimeError("No active session. Call start_session() first.")
 
         if packet_size > MAX_PING_PACKET_SIZE:
-            print(f'Packet size cannot be bigger than {MAX_PING_PACKET_SIZE // 1000} kB! '
-                  f'Reducing to {MAX_PING_PACKET_SIZE // 1000} kB.')
+            logging.warning(f"Packet size {packet_size}B exceeds max {MAX_PING_PACKET_SIZE // 1000}kB, clamping")
             packet_size = MAX_PING_PACKET_SIZE
 
         ping_cmd = f'{self._cmd_prefix} ping -s {packet_size} -c 1 {self._server_address}'
         cmd = f'{ping_cmd}; echo "EXIT_CODE:$?"'
-        print(ping_cmd)
+        logging.debug(f"Ping: {ping_cmd}")
 
         try:
             self._execute_cmd(cmd)
@@ -78,16 +78,16 @@ class PingSender(TrafficSender):
                             exit_code = int(line.split(":")[1])
                             success = exit_code == 0
                             if not success:
-                                print(f"Ping failed with exit code {exit_code}")
+                                logging.warning(f"Ping failed with exit code {exit_code}")
                             return success
 
                 if self.process.poll() is not None:
-                    print("Session terminated unexpectedly")
+                    logging.error("Session terminated unexpectedly during ping")
                     return False
 
-            print(f"Ping timed out after {timeout}ms")
+            logging.warning(f"Ping timed out after {timeout}ms")
             return False
 
         except Exception as e:
-            print(f"Ping failed: {e}")
+            logging.error(f"Ping failed: {e}")
             return False
