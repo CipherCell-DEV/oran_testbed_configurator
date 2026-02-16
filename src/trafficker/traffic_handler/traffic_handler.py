@@ -124,9 +124,8 @@ class TrafficHandler(ABC):
             FileNotFoundError: If local script doesn't exist
             RuntimeError: If SCP transfer fails
         """
-        script_path = os.path.join(os.path.dirname(__file__), '../../model', '..',
-                                   'patches', 'templates', 'traffic', file_name)
-        script_path = os.path.abspath(script_path)
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+        script_path = os.path.join(repo_root, 'patches', 'templates', 'traffic', file_name)
 
         if not os.path.exists(script_path):
             raise FileNotFoundError(f"Template script not found: {script_path}")
