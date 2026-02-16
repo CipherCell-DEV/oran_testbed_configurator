@@ -64,6 +64,10 @@ class TrafficConfigParser:
                     if 'offset' in item:
                         continue
                     key = next((t.value for t in TrafficType if t.value in item), None)
+                    if key is None:
+                        logging.error(f"Overlap item does not contain any known traffic pattern key."
+                                      f"Item keys: {list(item.keys())}")
+                        continue
                     if key == TrafficType.OVERLAP.value:
                         offset = next((k['offset'] for k in item[key] if 'offset' in k), '0ms')
                     else:
