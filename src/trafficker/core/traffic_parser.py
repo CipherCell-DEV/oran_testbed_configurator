@@ -35,7 +35,11 @@ class TrafficConfigParser:
             for part in traffic:
                 if ue_id not in traffic_by_ue:
                     traffic_by_ue[ue_id] = TrafficSequenceConfig([])
-                traffic_by_ue[ue_id].sequence.append(TrafficConfigParser.__parse_dict(part))
+                parsed = TrafficConfigParser.__parse_dict(part)
+                if parsed is None:
+                    logging.warning(f"Skipping invalid traffic config entry for {ue_id}: {part}")
+                    continue
+                traffic_by_ue[ue_id].sequence.append(parsed)
         logging.debug(f"Parsed traffic config for {len(traffic_by_ue)} UE(s): {list(traffic_by_ue.keys())}")
         return traffic_by_ue
 
@@ -87,6 +91,10 @@ class TrafficConfigParser:
                 loop_config = source[TrafficType.LOOP.value]
                 sequence = TrafficSequenceConfig([])
                 for config in loop_config['elements']:
-                    sequence.sequence.append(TrafficConfigParser.__parse_dict(config))
+                    parsed = TrafficConfigParser.__parse_dict(config)
+                    if parsed is None:
+                        logging.warning(f"Skipping invalid traffic config in loop: {config}")
+                        continue
+                    sequence.sequence.append(parsed)
                 sequence.sequence *= loop_config['iterations']
                 return sequence
