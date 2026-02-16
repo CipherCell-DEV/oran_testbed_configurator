@@ -66,7 +66,7 @@ class TrafficParameters:
                 core_service=data['parameters']['core'].get('service', '5gc'),
                 core_address=data['parameters']['core'].get('address', '10.45.1.1'),
                 user_equipments=data['parameters'].get('user-equipments', {}),
-                direction=Direction(data['parameters'].get('direction', 'core->ue')),
+                direction=Direction(data['parameters'].get('direction', 'DL')),
                 workdir=os.path.abspath(
                     os.path.join(os.path.dirname(path), data['parameters'].get('workdir', '..'))),
                 loop=data['parameters'].get('loop', False),

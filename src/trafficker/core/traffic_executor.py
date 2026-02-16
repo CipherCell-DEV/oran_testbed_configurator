@@ -54,7 +54,8 @@ class TrafficExecutor:
             KeyError: If UEs in traffic plan don't match parameters
         """
         if parameters.direction == Direction.BIDIRECTIONAL:
-            logging.error("Bidirectional traffic is not supported. Use the ping sender/receiver instead.")
+            logging.error("Bidirectional traffic is currently unsupported. Use the ping sender/receiver instead.")
+            raise RuntimeError("Bidirectional traffic is currently unsupported. Use the ping sender/receiver instead.")
         else:
             if parameters.user_equipments.keys() != self.traffic_plan.keys():
                 raise KeyError('Mismatch between the specified UEs and the UEs used for traffic generation. Make sure '
