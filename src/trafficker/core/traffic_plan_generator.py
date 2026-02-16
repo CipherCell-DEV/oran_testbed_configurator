@@ -136,6 +136,9 @@ class TrafficPlanGenerator:
         if config.distribution == DistributionType.NORMAL:
             mean = num_slots / 2 if config.mean is None else config.mean * num_slots
             std = num_slots / 6 if config.variance is None else np.sqrt(config.variance)
+            if std <= 0:
+                raise ValueError(
+                    f"Normal distribution requires variance > 0, got {config.variance} (std={std})")
             slot_indices = np.arange(num_slots)
             weights = np.exp(-0.5 * ((slot_indices - mean) / std) ** 2)
             weights /= (std * np.sqrt(2 * np.pi))
