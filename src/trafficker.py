@@ -24,7 +24,7 @@ import sys
 from trafficker.core.traffic_executor import TrafficExecutor
 from trafficker.core.traffic_parser import TrafficConfigParser
 from trafficker.core.traffic_plan_generator import TrafficPlanGenerator
-from trafficker.model.traffic_config import TrafficParameters
+from trafficker.model.traffic_parameters import TrafficParameters
 from trafficker.traffic_handler.pysocket_handler import PySocketReceiver, PySocketSender
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

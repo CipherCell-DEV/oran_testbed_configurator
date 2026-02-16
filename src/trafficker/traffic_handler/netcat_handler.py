@@ -1,3 +1,9 @@
+"""
+Netcat-based traffic handlers for UDP/TCP traffic.
+
+Uses netcat (nc) command-line tool for sending and receiving traffic packets.
+"""
+
 import time
 from typing import override
 
@@ -5,11 +11,18 @@ from trafficker.traffic_handler.traffic_handler import TrafficReceiver, TrafficS
 
 
 class NetcatReceiver(TrafficReceiver):
-    """Netcat UDP server that listens for incoming traffic"""
+    """Netcat server for receiving traffic."""
 
     @override
     def start_receiver(self) -> None:
-        """Start the netcat server in a separate process"""
+        """
+        Start netcat server listening on configured port.
+
+        Verifies server is running by checking if port is in LISTEN state.
+
+        Raises:
+            RuntimeError: If shell process died or server fails to start
+        """
         if self._server_running:
             print("Netcat server is already running")
             return
@@ -27,7 +40,6 @@ class NetcatReceiver(TrafficReceiver):
             print(f"Starting netcat server on port {self._server_port}")
             self._execute_cmd(f'{server_cmd} &')
 
-            # Wait for server to start
             time.sleep(0.5)
 
             # Verify server is running by checking if port is listening
@@ -58,7 +70,7 @@ class NetcatReceiver(TrafficReceiver):
                 self._server_running = True
                 print(f"Netcat server successfully started and verified on port {self._server_port}")
             else:
-                # Fallback: assume server started even if verification failed
+                # Fallback: assume started even if verification failed
                 self._server_running = True
                 print(f"Netcat server started on port {self._server_port} (verification failed, assuming success)")
 
@@ -69,7 +81,7 @@ class NetcatReceiver(TrafficReceiver):
 
     @override
     def stop_receiver(self) -> None:
-        """Stop the netcat server"""
+        """Stop netcat server by killing the process."""
         if not self._server_running:
             print("Netcat server is not running")
             return
@@ -100,16 +112,27 @@ class NetcatReceiver(TrafficReceiver):
 
     @property
     def is_running(self) -> bool:
-        """Check if the server is currently running"""
+        """Check if the server is currently running."""
         return self._server_running
 
 
 class NetcatSender(TrafficSender):
-    """Netcat UDP client that sends random data packets"""
+    """Netcat client for sending traffic packets."""
 
     @override
     def send_traffic(self, packet_size: int, timeout: int = 100) -> bool:
-        """Send traffic using netcat with random data"""
+        """
+        Send random data packet using netcat.
+
+        Generates random data from /dev/urandom and sends via netcat.
+
+        Args:
+            packet_size: Number of bytes to send
+            timeout: Timeout in milliseconds
+
+        Returns:
+            True if packet sent successfully, False otherwise
+        """
         if packet_size == 0:
             return True
 
@@ -117,7 +140,7 @@ class NetcatSender(TrafficSender):
             raise RuntimeError("No active session. Call start_session() first.")
 
         netcat_cmd = (f'{self._cmd_prefix} dd if=/dev/urandom bs={packet_size} count=1 | '
-                     f'nc {"-u " if self._parameters.use_udp else ""}-q 0 {self._server_address} {self._server_port}')
+                      f'nc {"-u " if self._parameters.use_udp else ""}-q 0 {self._server_address} {self._server_port}')
         cmd = f'{netcat_cmd}; echo "EXIT_CODE:$?"'
 
         try:
@@ -140,7 +163,6 @@ class NetcatSender(TrafficSender):
                                 print(f"Netcat failed with exit code {exit_code}")
                             return success
 
-                # Check if process is still alive
                 if self.process.poll() is not None:
                     print("Session terminated unexpectedly")
                     return False
@@ -153,10 +175,9 @@ class NetcatSender(TrafficSender):
             return False
 
     def close_session(self):
-        """Override to ensure any running netcat processes are cleaned up"""
+        """Close session and cleanup any remaining netcat processes."""
         if self.process:
             try:
-                # Kill any remaining netcat processes before closing
                 cleanup_cmd = f'{self._cmd_prefix} pkill -f "nc.*{self._server_address}.*{self._server_port}"'
                 self._execute_cmd(cleanup_cmd)
                 time.sleep(0.1)

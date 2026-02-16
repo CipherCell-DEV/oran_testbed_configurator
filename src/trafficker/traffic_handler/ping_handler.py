@@ -1,33 +1,62 @@
+"""
+ICMP ping-based traffic handler for bidirectional testing.
+
+Uses standard ping command for generating ICMP traffic.
+No receiver needed as ICMP echo replies are handled by the kernel.
+"""
+
 import time
 from typing import override
 
 from trafficker.traffic_handler.traffic_handler import TrafficReceiver, TrafficSender
 
 
+# Maximum ICMP packet payload size (65,507 bytes theoretical max for IPv4)
+# Keeping 65,000 as safe practical limit
+MAX_PING_PACKET_SIZE = 65_000
+
+
 class PingReceiver(TrafficReceiver):
-    """Ping server that does nothing - no server needed for ping"""
+    """
+    Ping receiver (no-op implementation).
+
+    ICMP echo replies are handled automatically by the kernel,
+    so no explicit receiver process is needed.
+    """
 
     @override
     def start_receiver(self) -> None:
+        """No-op: ICMP replies handled by kernel."""
         pass
 
     @override
     def stop_receiver(self) -> None:
+        """No-op: ICMP replies handled by kernel."""
         pass
 
 
 class PingSender(TrafficSender):
-    """Ping client that sends ICMP packets"""
+    """Ping client for sending ICMP echo requests."""
 
     @override
     def send_traffic(self, packet_size: int, timeout: int = 100) -> bool:
-        """Run a ping command in the persistent session"""
+        """
+        Send ICMP ping packet.
+
+        Args:
+            packet_size: Payload size in bytes (clamped to 65,000 max)
+            timeout: Timeout in milliseconds
+
+        Returns:
+            True if ping successful (received echo reply), False otherwise
+        """
         if not self.process:
             raise RuntimeError("No active session. Call start_session() first.")
 
-        if packet_size > 65000:
-            print('Packet size cannot be bigger than 65 kB! Reducing it to 65 kB.')
-            packet_size = 65000
+        if packet_size > MAX_PING_PACKET_SIZE:
+            print(f'Packet size cannot be bigger than {MAX_PING_PACKET_SIZE // 1000} kB! '
+                  f'Reducing to {MAX_PING_PACKET_SIZE // 1000} kB.')
+            packet_size = MAX_PING_PACKET_SIZE
 
         ping_cmd = f'{self._cmd_prefix} ping -s {packet_size} -c 1 {self._server_address}'
         cmd = f'{ping_cmd}; echo "EXIT_CODE:$?"'
@@ -52,7 +81,6 @@ class PingSender(TrafficSender):
                                 print(f"Ping failed with exit code {exit_code}")
                             return success
 
-                # Check if process is still alive
                 if self.process.poll() is not None:
                     print("Session terminated unexpectedly")
                     return False
