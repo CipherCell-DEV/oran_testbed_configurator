@@ -1,22 +1,55 @@
+"""
+Traffic executor for coordinating traffic transmission.
+
+Manages sender and receiver instances for each UE and orchestrates
+time-synchronized traffic transmission based on the traffic plan.
+"""
+
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Type
 
-from trafficker.traffic_handler.netcat_handler import NetcatReceiver, NetcatSender
 from trafficker.model.traffic_config import TrafficParameters, Direction
+from trafficker.traffic_handler.netcat_handler import NetcatReceiver, NetcatSender
 from trafficker.traffic_handler.traffic_handler import TrafficReceiver, TrafficSender
 
 
 class TrafficExecutor:
+    """
+    Executes traffic plan.
+
+    Coordinates multiple UE connections and ensures traffic is sent
+    according to the time-slotted traffic plan.
+    """
 
     def __init__(self, traffic_plan: dict):
+        """
+        Initialize traffic executor.
+
+        Args:
+            traffic_plan: Dictionary mapping UE IDs to arrays of traffic
+        """
         self.traffic_plan: dict = traffic_plan
 
     def execute(self,
                 parameters: TrafficParameters,
                 receiver_class: Type[TrafficReceiver] = NetcatReceiver,
                 sender_class: Type[TrafficSender] = NetcatSender):
-        if parameters.direction == Direction.bidirectional:
+        """
+        Execute traffic plan with configured senders and receivers.
+
+        Sets up sender/receiver pairs for each UE based on traffic direction,
+        then executes the traffic plan with time synchronization.
+
+        Args:
+            parameters: Global traffic parameters
+            receiver_class: Class to use for receiving traffic
+            sender_class: Class to use for sending traffic
+
+        Raises:
+            KeyError: If UEs in traffic plan don't match parameters
+        """
+        if parameters.direction == Direction.BIDIRECTIONAL:
             print('Generating bidirectional traffic is currently not supported. You can use the ping sender / receiver'
                   'for this.')
         else:
@@ -24,54 +57,56 @@ class TrafficExecutor:
                 raise KeyError('Mismatch between the specified UEs and the UEs used for traffic generation. Make sure '
                                'all UEs specified in the traffic section are defined in the user-equipments section.')
 
-            # For UL: Clients are connections from each UE to the Core. There is only one server handling all incoming
-            # traffic from the UEs.
-            # For DL: Clients are distinct connection from the Core to each UE. There is one server running on each UE
-            # handling all incoming traffic from the Core.
-            sender = {}
+            # Configure sender/receiver topology based on traffic direction:
+            # UL: Single receiver at Core, senders at each UE
+            # DL: Receivers at each UE, senders at Core (one per UE)
+            senders = {}
             receivers = {}
-            receiver = receiver_class(parameters, parameters.core_service, parameters.core_address) \
-                if parameters.direction == Direction.ueToCore else None
+            core_receiver = receiver_class(parameters, parameters.core_service, parameters.core_address) \
+                if parameters.direction == Direction.UE_TO_CORE else None
+
             for ue_id, conn_info in parameters.user_equipments.items():
-                if parameters.direction == Direction.ueToCore:
+                if parameters.direction == Direction.UE_TO_CORE:
                     server_address = parameters.core_address
                     client_service = conn_info['service']
-
-                    receivers[ue_id] = receiver  # Only a single server in Core for receiving UL traffic from UEs.
+                    receivers[ue_id] = core_receiver  # Only a single server in Core for receiving UL traffic from UEs.
                 else:
                     server_address = conn_info['address']
                     client_service = parameters.core_service
-
                     receivers[ue_id] = receiver_class(parameters, conn_info['service'], server_address)
 
-                sender[ue_id] = sender_class(parameters, client_service, server_address)
+                senders[ue_id] = sender_class(parameters, client_service, server_address)
 
+            # Start all receivers and senders
             for ue_id in parameters.user_equipments.keys():
                 receivers[ue_id].start_session()
                 receivers[ue_id].start_receiver()
-
-                sender[ue_id].start_session()
+                senders[ue_id].start_session()
 
             try:
-                stop = False
-                with ThreadPoolExecutor(max_workers=len(sender)) as executor:
-                    while not stop:
+                should_stop = False
+                with ThreadPoolExecutor(max_workers=len(senders)) as executor:
+                    while not should_stop:
+                        # Execute traffic plan in time-synchronized steps
                         for values in zip(*self.traffic_plan.values()):
                             start_time = time.time()
                             step = dict(zip(self.traffic_plan.keys(), values))
 
-                            futures = [executor.submit(sender[key].send_traffic, val) for key, val in step.items()]
+                            # Send traffic for all UEs in parallel
+                            futures = [executor.submit(senders[key].send_traffic, val) for key, val in step.items()]
 
                             for future in as_completed(futures):
                                 future.result()
 
+                            # Sleep (when necessary) to maintain precise time granularity
                             rest_duration = (start_time + (parameters.granularity / 1000)) - time.time()
                             if rest_duration > 0:
                                 time.sleep(rest_duration)
-                        stop = not parameters.loop
+                        should_stop = not parameters.loop
 
             finally:
+                # Clean shutdown of all connections
                 for ue_id in parameters.user_equipments.keys():
                     receivers[ue_id].stop_receiver()
                     receivers[ue_id].close_session()
-                    sender[ue_id].close_session()
+                    senders[ue_id].close_session()

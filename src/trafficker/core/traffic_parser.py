@@ -1,13 +1,26 @@
-import yaml
+"""
+YAML configuration parser for traffic patterns.
 
-from trafficker.model.traffic_config import TrafficSequenceConfig, OverlapTrafficConfig, Pause, PeriodicTrafficConfig, \
-    RandomTrafficConfig, DistributedTrafficConfig, parse_time
+Parses traffic configuration files and converts them into TrafficConfig objects.
+"""
+
+from trafficker.model.traffic_config import *
 
 
 class TrafficConfigParser:
+    """Parser for YAML traffic configuration files."""
 
     @staticmethod
     def load_yaml(path: str) -> dict:
+        """
+        Load and parse traffic configurations from YAML file.
+
+        Args:
+            path: Path to YAML configuration file
+
+        Returns:
+            Dictionary mapping UE IDs to TrafficSequenceConfigs
+        """
         with open(path, 'r') as f:
             data = yaml.safe_load(f)
         if 'traffic' not in data:
@@ -23,10 +36,19 @@ class TrafficConfigParser:
 
     @staticmethod
     def __parse_dict(source: dict):
-        t_type = next(iter(source.keys()))
+        """
+        Recursively parse traffic configuration dictionary.
 
-        match t_type:
-            case 'overlap':
+        Args:
+            source: Dictionary containing traffic pattern configuration
+
+        Returns:
+            Appropriate TrafficConfig subclass instance
+        """
+        traffic_type = next(iter(source.keys()))
+
+        match traffic_type:
+            case 'overlap':  # TODO: Introduce enum for this
                 config = OverlapTrafficConfig([])
                 for item in source['overlap']:
                     if 'offset' in item:
@@ -49,12 +71,12 @@ class TrafficConfigParser:
             case 'distribution':
                 return DistributedTrafficConfig.from_dict(source['distribution'])
             case 'loop':
-                source = source['loop']
-                god = TrafficSequenceConfig([])
-                for config in source['elements']:
-                    god.sequence.append(TrafficConfigParser.__parse_dict(config))
-                god.sequence *= source['iterations']
-                return god
+                loop_config = source['loop']
+                sequence = TrafficSequenceConfig([])
+                for config in loop_config['elements']:
+                    sequence.sequence.append(TrafficConfigParser.__parse_dict(config))
+                sequence.sequence *= loop_config['iterations']
+                return sequence
             case _:
-                print(f'Unknown traffic type: {t_type}')
+                print(f'Unknown traffic type: {traffic_type}')
                 return None
