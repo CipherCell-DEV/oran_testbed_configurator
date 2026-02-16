@@ -9,7 +9,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Type
 
-from trafficker.model.traffic_config import TrafficParameters, Direction
+from trafficker.model.traffic_config import Direction
+from trafficker.model.traffic_parameters import TrafficParameters
 from trafficker.traffic_handler.netcat_handler import NetcatReceiver, NetcatSender
 from trafficker.traffic_handler.traffic_handler import TrafficReceiver, TrafficSender
 

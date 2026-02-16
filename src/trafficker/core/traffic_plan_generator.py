@@ -14,6 +14,7 @@ from matplotlib import pyplot as plt
 from numpy import dtype, ndarray
 
 from trafficker.model.traffic_config import *
+from trafficker.model.traffic_parameters import TrafficParameters
 
 
 class TrafficPlanGenerator:
