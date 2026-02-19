@@ -1,17 +1,31 @@
+"""
+Netcat-based traffic handlers for UDP/TCP traffic.
+
+Uses netcat (nc) command-line tool for sending and receiving traffic packets.
+"""
+
+import logging
 import time
 from typing import override
 
-from model.traffic.traffic_handler import TrafficReceiver, TrafficSender
+from trafficker.traffic_handler.traffic_handler import TrafficReceiver, TrafficSender
 
 
 class NetcatReceiver(TrafficReceiver):
-    """Netcat UDP server that listens for incoming traffic"""
+    """Netcat server for receiving traffic."""
 
     @override
     def start_receiver(self) -> None:
-        """Start the netcat server in a separate process"""
+        """
+        Start netcat server listening on configured port.
+
+        Verifies server is running by checking if port is in LISTEN state.
+
+        Raises:
+            RuntimeError: If shell process died or server fails to start
+        """
         if self._server_running:
-            print("Netcat server is already running")
+            logging.debug("Netcat receiver already running, skipping start")
             return
 
         if not self.process:
@@ -24,10 +38,9 @@ class NetcatReceiver(TrafficReceiver):
         server_cmd = f'{self._cmd_prefix} nc {"-u " if self._parameters.use_udp else ""}-k -l -p {self._server_port}'
 
         try:
-            print(f"Starting netcat server on port {self._server_port}")
+            logging.debug(f"Starting netcat receiver on port {self._server_port}")
             self._execute_cmd(f'{server_cmd} &')
 
-            # Wait for server to start
             time.sleep(0.5)
 
             # Verify server is running by checking if port is listening
@@ -56,26 +69,26 @@ class NetcatReceiver(TrafficReceiver):
 
             if server_verified:
                 self._server_running = True
-                print(f"Netcat server successfully started and verified on port {self._server_port}")
+                logging.info(f"Netcat receiver started on port {self._server_port}")
             else:
-                # Fallback: assume server started even if verification failed
+                # Fallback: assume started even if verification failed
                 self._server_running = True
-                print(f"Netcat server started on port {self._server_port} (verification failed, assuming success)")
+                logging.warning(f"Netcat receiver started on port {self._server_port} (verification failed, assuming success)")
 
         except Exception as e:
-            print(f"Failed to start netcat server: {e}")
+            logging.error(f"Failed to start netcat receiver: {e}")
             self._server_running = False
             raise
 
     @override
     def stop_receiver(self) -> None:
-        """Stop the netcat server"""
+        """Stop netcat server by killing the process."""
         if not self._server_running:
-            print("Netcat server is not running")
+            logging.debug("Netcat receiver is not running, nothing to stop")
             return
 
         if not self.process:
-            print("No active session")
+            logging.warning("No active session to stop netcat receiver")
             return
 
         try:
@@ -91,25 +104,36 @@ class NetcatReceiver(TrafficReceiver):
                     if "KILL_DONE" in line:
                         break
 
-            print("Netcat server stopped")
+            logging.info("Netcat receiver stopped")
             self._server_running = False
 
         except Exception as e:
-            print(f"Error stopping netcat server: {e}")
+            logging.error(f"Error stopping netcat receiver: {e}")
             self._server_running = False
 
     @property
     def is_running(self) -> bool:
-        """Check if the server is currently running"""
+        """Check if the server is currently running."""
         return self._server_running
 
 
 class NetcatSender(TrafficSender):
-    """Netcat UDP client that sends random data packets"""
+    """Netcat client for sending traffic packets."""
 
     @override
     def send_traffic(self, packet_size: int, timeout: int = 100) -> bool:
-        """Send traffic using netcat with random data"""
+        """
+        Send random data packet using netcat.
+
+        Generates random data from /dev/urandom and sends via netcat.
+
+        Args:
+            packet_size: Number of bytes to send
+            timeout: Timeout in milliseconds
+
+        Returns:
+            True if packet sent successfully, False otherwise
+        """
         if packet_size == 0:
             return True
 
@@ -117,7 +141,7 @@ class NetcatSender(TrafficSender):
             raise RuntimeError("No active session. Call start_session() first.")
 
         netcat_cmd = (f'{self._cmd_prefix} dd if=/dev/urandom bs={packet_size} count=1 | '
-                     f'nc {"-u " if self._parameters.use_udp else ""}-q 0 {self._server_address} {self._server_port}')
+                      f'nc {"-u " if self._parameters.use_udp else ""}-q 0 {self._server_address} {self._server_port}')
         cmd = f'{netcat_cmd}; echo "EXIT_CODE:$?"'
 
         try:
@@ -137,26 +161,24 @@ class NetcatSender(TrafficSender):
                             exit_code = int(line.split(":")[1])
                             success = exit_code == 0
                             if not success:
-                                print(f"Netcat failed with exit code {exit_code}")
+                                logging.warning(f"Netcat send failed with exit code {exit_code}")
                             return success
 
-                # Check if process is still alive
                 if self.process.poll() is not None:
-                    print("Session terminated unexpectedly")
+                    logging.error("Session terminated unexpectedly during netcat send")
                     return False
 
-            print(f"Netcat client timed out after {timeout}ms")
+            logging.warning(f"Netcat send timed out after {timeout}ms")
             return False
 
         except Exception as e:
-            print(f"Netcat client failed: {e}")
+            logging.error(f"Netcat send failed: {e}")
             return False
 
     def close_session(self):
-        """Override to ensure any running netcat processes are cleaned up"""
+        """Close session and cleanup any remaining netcat processes."""
         if self.process:
             try:
-                # Kill any remaining netcat processes before closing
                 cleanup_cmd = f'{self._cmd_prefix} pkill -f "nc.*{self._server_address}.*{self._server_port}"'
                 self._execute_cmd(cleanup_cmd)
                 time.sleep(0.1)

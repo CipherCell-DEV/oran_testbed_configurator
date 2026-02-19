@@ -1,3 +1,11 @@
+"""
+Traffic plan generator for time-based traffic scheduling.
+
+Converts high-level traffic configurations into time-slotted traffic arrays
+that define how much traffic is sent at which time from / to which UE.
+"""
+
+import logging
 from functools import singledispatchmethod
 from random import randint
 from typing import Any
@@ -6,32 +14,56 @@ import numpy as np
 from matplotlib import pyplot as plt
 from numpy import dtype, ndarray
 
-from model.traffic.traffic_config import Pause, TrafficParameters, OverlapTrafficConfig, TrafficSequenceConfig, \
-    DistributedTrafficConfig, RandomTrafficConfig, PeriodicTrafficConfig, DistributionType
+from trafficker.model.traffic_config import *
+from trafficker.model.traffic_parameters import TrafficParameters
 
 
 class TrafficPlanGenerator:
+    """
+    Generates time-slotted traffic plans from configuration.
+
+    Traffic is discretized into time slots based on the granularity parameter.
+    Each slot contains the number of bytes to send during that time interval from / to a specific UE.
+    """
 
     def __init__(self, parameters: TrafficParameters):
+        """
+        Initialize traffic plan generator.
+
+        Args:
+            parameters: Global traffic parameters including granularity
+        """
         self.__traffic = {}
         self.__granularity = parameters.granularity
         self.__parameters = parameters
 
     def from_plan(self, sequence_config: dict):
+        """
+        Generate traffic from configuration dict.
+
+        Args:
+            sequence_config: Dictionary mapping UE IDs to TrafficSequenceConfig
+        """
+        logging.info(f"Generating traffic plan for {len(sequence_config)} UE(s)")
         for ue_id, traffic in sequence_config.items():
+            logging.debug(f"Generating traffic for {ue_id} ({len(traffic.sequence)} segment(s))")
             for config in traffic.sequence:
                 self.__append_traffic(ue_id, self.__generate_traffic(config))
+            logging.debug(f"Generated {self.__traffic[ue_id].size} time slots for {ue_id}")
 
     @property
     def traffic(self):
+        """Get copy of generated traffic dictionary."""
         return self.__traffic.copy()
 
     def __append_traffic(self, ue_id: str, appended_traffic: ndarray[tuple[int], dtype[Any]]):
+        """Append traffic to end of existing traffic for a UE."""
         if ue_id not in self.__traffic:
             self.__traffic[ue_id] = np.zeros(0, dtype=int)
         self.__traffic[ue_id] = np.append(self.__traffic[ue_id], appended_traffic)
 
     def __overlap_traffic(self, ue_id: str, overlapped_traffic: ndarray[tuple[int], dtype[Any]], offset_ms: int):
+        """Add overlapping traffic at specified time offset."""
         if ue_id not in self.__traffic:
             self.__traffic[ue_id] = np.zeros(0, dtype=int)
         offset_slots = int(offset_ms / self.__granularity)
@@ -41,14 +73,16 @@ class TrafficPlanGenerator:
         self.__traffic[ue_id] = old_traffic + new_traffic
 
     @singledispatchmethod
-    def __generate_traffic(self, config) -> ndarray[
-        tuple[int], dtype[Any]]:  # noqa: ARG001 pylint: disable=unused-argument
-        print('Unknown traffic config')
+    def __generate_traffic(self, config) -> ndarray[tuple[int], dtype[Any]]:
+        """Default handler for unknown traffic config types."""
+        logging.warning(f"Unknown traffic config type: {type(config).__name__}")
         return np.zeros(0, dtype=int)
 
     @__generate_traffic.register
     def _(self, config: PeriodicTrafficConfig) -> ndarray[tuple[int], dtype[Any]]:
+        """Generate periodic traffic with fixed interval and packet size."""
         num_slots = int(config.duration / self.__granularity)
+        logging.debug(f"Periodic: {config.packet_size}B every {config.interval}ms for {config.duration}ms ({num_slots} slots)")
         generated_traffic = np.zeros(num_slots, dtype=int)
 
         current_time = 0.0
@@ -62,7 +96,9 @@ class TrafficPlanGenerator:
 
     @__generate_traffic.register
     def _(self, config: RandomTrafficConfig) -> ndarray[tuple[int], dtype[Any]]:
+        """Generate random traffic with uniformly distributed packet sizes."""
         num_slots = int(config.duration / self.__granularity)
+        logging.debug(f"Random: {config.min_size}-{config.max_size}B for {config.duration}ms ({num_slots} slots)")
         generated_traffic = np.zeros(num_slots, dtype=int)
 
         current_time = 0.0
@@ -77,40 +113,51 @@ class TrafficPlanGenerator:
     @__generate_traffic.register
     def _(self, config: DistributedTrafficConfig) -> ndarray[tuple[int], dtype[Any]]:
         """
-        Generates a traffic pattern that is distributed according to the type (e.g. normal distribution). The sum of the
-        individual bytes is equal to the cumulative size specified.
-        :param config: The DistributedTrafficConfig containing the configuration parameters for the distribution.
-        :return: A numpy array containing the traffic over time, distributed according to the specified distribution.
+        Generate traffic distributed over time according to statistical distribution.
+
+        The cumulative_size bytes are distributed across time slots according to
+        the specified distribution (normal, uniform, or exponential). The sum of
+        all bytes equals cumulative_size.
+
+        Args:
+            config: Distribution configuration with type and parameters
+
+        Returns:
+            Array of bytes per time slot
         """
         num_slots = int(config.duration / self.__granularity)
+        logging.debug(f"Distribution: {config.distribution.value}, {config.cumulative_size}B over {config.duration}ms ({num_slots} slots)")
         generated_traffic = np.zeros(num_slots, dtype=int)
 
         if num_slots == 0:
             return generated_traffic
 
-        if config.distribution == DistributionType.normal:
+        # Generate probability distribution weights
+        if config.distribution == DistributionType.NORMAL:
             mean = num_slots / 2 if config.mean is None else config.mean * num_slots
             std = num_slots / 6 if config.variance is None else np.sqrt(config.variance)
+            if std <= 0:
+                raise ValueError(
+                    f"Normal distribution requires variance > 0, got {config.variance} (std={std})")
             slot_indices = np.arange(num_slots)
             weights = np.exp(-0.5 * ((slot_indices - mean) / std) ** 2)
             weights /= (std * np.sqrt(2 * np.pi))
-            normalized_weights = weights / np.sum(weights)
-            generated_traffic = (normalized_weights * config.cumulative_size).astype(int)
-        elif config.distribution == DistributionType.uniform:
+        elif config.distribution == DistributionType.UNIFORM:
             weights = np.ones(num_slots)
-            normalized_weights = weights / np.sum(weights)
-            generated_traffic = (normalized_weights * config.cumulative_size).astype(int)
-        elif config.distribution == DistributionType.exponential:
+        elif config.distribution == DistributionType.EXPONENTIAL:
             slot_indices = np.arange(num_slots)
             lambda_ = 3.0 / num_slots if config.lambda_ is None else config.lambda_
             multiplier = num_slots - 1 - slot_indices if config.reverse else slot_indices
             weights = np.exp(-lambda_ * multiplier)
-            normalized_weights = weights / np.sum(weights)
-            generated_traffic = (normalized_weights * config.cumulative_size).astype(int)
         else:
-            print('Unknown distribution type')
+            logging.error(f"Unknown distribution type: {config.distribution}")
             return np.zeros(0, dtype=int)
 
+        # Normalize and distribute cumulative_size across slots
+        normalized_weights = weights / np.sum(weights)
+        generated_traffic = (normalized_weights * config.cumulative_size).astype(int)
+
+        # Handle rounding errors to ensure exact cumulative_size
         remainder = config.cumulative_size - np.sum(generated_traffic)
         if remainder > 0:
             random_indices = np.random.choice(num_slots, size=min(remainder, num_slots), replace=False)
@@ -128,6 +175,7 @@ class TrafficPlanGenerator:
 
     @__generate_traffic.register
     def _(self, config: TrafficSequenceConfig) -> ndarray[tuple[int], dtype[Any]]:
+        """Generate sequential traffic by concatenating sub-configurations."""
         tpg = TrafficPlanGenerator(self.__parameters)
         for tconfig in config.sequence:
             tpg.__append_traffic('dummy', tpg.__generate_traffic(tconfig))
@@ -135,6 +183,7 @@ class TrafficPlanGenerator:
 
     @__generate_traffic.register
     def _(self, config: OverlapTrafficConfig) -> ndarray[tuple[int], dtype[Any]]:
+        """Generate overlapping traffic by adding sub-configurations at time offsets."""
         tpg = TrafficPlanGenerator(self.__parameters)
         for (offset, tconfig) in config.overlaps:
             tpg.__overlap_traffic('dummy', tpg.__generate_traffic(tconfig), offset)
@@ -142,19 +191,26 @@ class TrafficPlanGenerator:
 
     @__generate_traffic.register
     def _(self, config: Pause) -> ndarray[tuple[int], dtype[Any]]:
+        """Generate pause (zero traffic) for specified duration."""
         return np.zeros(int(config.duration / self.__granularity), dtype=int)
 
-    def plot(self, traffic: dict = None, plot_single: bool = True, plot_cumulative: bool = True, time_unit: str = 's'):
+    def plot(self,
+             traffic: dict = None,
+             plot_single: bool = True,
+             plot_cumulative: bool = True,
+             time_unit: str = 's'):
         """
-        Plots the generated traffic plan.
+        Plot generated traffic plan.
 
-        :param traffic: Pass a traffic plan, if None is provided, it uses the generated traffic plan.
-        :param plot_single: Plot traffic of single UEs.
-        :param plot_cumulative: Plot cumulative traffic of all UEs.
-        :param time_unit: Time unit on the x-Axis. Supported units: 'ms', 's', 'm', 'h'
-        :return:
+        Args:
+            traffic: Traffic dict to plot (defaults to self.traffic)
+            plot_single: Whether to plot individual UE traffic (defaults to True)
+            plot_cumulative: Whether to plot cumulative traffic across all UEs (defaults to True)
+            time_unit: Time unit for x-axis ('ms', 's', 'm', 'h') (defaults to s)
         """
-        def plot_traffic(name, trfc):
+
+        def plot_traffic(name, p_trfc):
+            """Helper to plot single traffic array."""
             match time_unit:
                 case 's':
                     time_dividend = 1000
@@ -164,8 +220,8 @@ class TrafficPlanGenerator:
                     time_dividend = 1000 * 60 * 60
                 case _:
                     time_dividend = 1
-            time_axis_ms = np.arange(0, trfc.size * self.__granularity, self.__granularity)[:len(trfc)]
-            plt.step(time_axis_ms / time_dividend, list(map(lambda x: x / 1000, trfc)), label=name)
+            time_axis_ms = np.arange(0, p_trfc.size * self.__granularity, self.__granularity)[:len(p_trfc)]
+            plt.step(time_axis_ms / time_dividend, list(map(lambda x: x / 1000, p_trfc)), label=name)
 
         if traffic is None:
             traffic = self.__traffic
